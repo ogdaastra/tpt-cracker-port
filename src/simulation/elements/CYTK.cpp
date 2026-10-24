@@ -87,6 +87,11 @@ bool Element_CYTK_attempt_move(int x, int y, Simulation *sim, Particle *parts, i
 	rotate(x, y, FROM_FIXED_E(parts[i].tmp3, PT_CYTK));
 	x += parts[i].x;
 	y += parts[i].y;
+	// the rotated hull can reach past the screen edge; treat that as a wall (TPT's BOUNDS_CHECK is always true)
+	if (x < 1 || y < 1 || x >= XRES - 1 || y >= YRES - 1) {
+		parts[i].vx = parts[i].vy = 0;
+		return true;
+	}
 
 	int r, rx, ry;
 

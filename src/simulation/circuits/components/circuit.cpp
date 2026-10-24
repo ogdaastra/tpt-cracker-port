@@ -179,7 +179,7 @@ void Circuit::mark_nodes(const coord_vec &skeleton, coord_vec &nodes) {
 void Circuit::trim_nodes(const coord_vec &nodes) {
     NodeId new_node_id = 2;
     bool visited[YRES][XRES];
-    std::fill(&visited[0][0], &visited[YRES][0], 0);
+    std::fill(&visited[0][0], &visited[0][0] + YRES * XRES, false);
 
     for (const auto &pos : nodes) {
         if (node_skeleton_map[YX(pos.y, pos.x)] <= CircuitParams::SKELETON || visited[pos.y][pos.x]) // Already cleared, skip
@@ -1014,6 +1014,11 @@ Circuit::Circuit(const Circuit &other) {
 }
 
 Circuit::~Circuit() {
+    // Don't leave RSPK pointing at a deleted circuit (add_circuit deletes empty circuits right after
+    // generate() registered them, and the divergence-check copy registers itself too)
+    for (auto id : global_rspk_ids)
+        if (circuit_map[id] == this)
+            circuit_map[id] = nullptr;
     delete_maps();
     delete copy;
     for (unsigned i = 0; i < branch_cache.size(); i++)

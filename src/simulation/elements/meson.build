@@ -384,7 +384,12 @@ simulation_elem_ids = [
 	[ 'ALUM',  MOD_ELEMENT_OFFSET + 186 ],
 	[ 'ALMP',  MOD_ELEMENT_OFFSET + 187 ],
 	[ 'RSST',  MOD_ELEMENT_OFFSET + 188 ],
-	[ 'RSSS',  MOD_ELEMENT_OFFSET + 189 ]
+	[ 'RSSS',  MOD_ELEMENT_OFFSET + 189 ],
+	# Jacob1's Mod (github.com/jacob1/The-Powder-Toy), GPL-3.0
+	[ 'EXPL',  MOD_ELEMENT_OFFSET + 190 ],
+	[ 'RAZR',  MOD_ELEMENT_OFFSET + 191 ],
+	[ 'PWHT',  MOD_ELEMENT_OFFSET + 192 ],
+	[ 'BUTN',  MOD_ELEMENT_OFFSET + 193 ]
 ]
 
 simulation_elem_src = []

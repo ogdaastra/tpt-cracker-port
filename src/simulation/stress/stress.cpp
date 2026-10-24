@@ -12,10 +12,10 @@ StressField::StressField(Simulation * simulation) : sim(simulation) {
 
 void StressField::Clear() {
     if (!enabled) return;
-    std::fill(&stress_map[0][0], &stress_map[YRES][0], 0.0f);
-    std::fill(&stress_map_x[0][0], &stress_map_x[YRES][0], 0.0f);
-    std::fill(&stress_map_y[0][0], &stress_map_y[YRES][0], 0.0f);
-    std::fill(&gravitational_stress_map[0][0], &gravitational_stress_map[YRES / CELL][0], 0.0f);
+    std::fill(&stress_map[0][0], &stress_map[0][0] + sizeof(stress_map) / sizeof(stress_map[0][0]), 0.0f);
+    std::fill(&stress_map_x[0][0], &stress_map_x[0][0] + sizeof(stress_map_x) / sizeof(stress_map_x[0][0]), 0.0f);
+    std::fill(&stress_map_y[0][0], &stress_map_y[0][0] + sizeof(stress_map_y) / sizeof(stress_map_y[0][0]), 0.0f);
+    std::fill(&gravitational_stress_map[0][0], &gravitational_stress_map[0][0] + sizeof(gravitational_stress_map) / sizeof(gravitational_stress_map[0][0]), 0.0f);
 }
 
 

@@ -45,7 +45,7 @@ coord_vec floodfill(Simulation *sim, int x, int y) {
     int crx, cry; // Temp rx and ry from offsets for junctions
 
     bool visited[YRES][XRES];
-    std::fill(&visited[0][0], &visited[YRES][0], 0);
+    std::fill(&visited[0][0], &visited[0][0] + YRES * XRES, false);
  
     coords.push(x, y);
     offsets.push(0, 0);
@@ -170,7 +170,7 @@ coord_vec coord_vec_to_skeleton(Simulation *sim, const coord_vec &floodfill) {
     int output_map[YRES][XRES];
     int diff;
 
-    std::fill(&output_map[0][0], &output_map[YRES][0], 0.0f);
+    std::fill(&output_map[0][0], &output_map[0][0] + YRES * XRES, 0);
     for (Pos p : floodfill)
         output_map[p.y][p.x] = 1;
 

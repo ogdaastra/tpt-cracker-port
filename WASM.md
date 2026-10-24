@@ -4,6 +4,10 @@ The real C++ game (Cracker1000's Mod v55.1, based on The Powder Toy of January 2
 Emscripten and running in the browser. Same simulation, UI, fonts and Lua scripts as the desktop
 game; no rewrite, no streaming. `PORT_LOG.md` records how and why every change was made.
 
+On top of the mod: 143 more elements from TPT Ultimata, a newer Cracker1000's Mod branch (DFOM, DIGS, ALUM,
+ALMP, RSST, RSSS) and Jacob1's Mod, plus Ultimata's walls, Life rules, tools and the engine code they need
+(circuits, vehicles, time dilation, ...). List: `ADDED_ELEMENTS.md`; how they were merged: `PORT_LOG.md` 13.
+
 **Browser:** Microsoft Edge or Google Chrome **137 or newer** (needs WebAssembly JSPI).
 Other browsers get a readable message instead of a broken page.
 
@@ -31,7 +35,7 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 ```
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
-screenshots and measurements to `artifacts/browser/`. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 ## Deploy (Vercel)
 
@@ -65,8 +69,11 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | Threads | none: gravity and background tasks run on the main thread |
 | Window | the page scales the canvas; the page's Fullscreen button replaces the in-game one |
 | `platform.restart()` | reloads the page; `platform.openLink()` opens a new tab |
+| Sound | NOTE and `tpt.play_sound()` play through Web Audio (an AudioContext at 44.1 kHz starts in Chromium; volume kept low) |
 
 ## License
 
 GPL-3.0 (`LICENSE`). The deployed site and the offline ZIP carry the complete corresponding source
 (`source/`), the FFTW source, and the notices of all bundled libraries (`THIRD_PARTY_NOTICES.txt`).
+The added elements are GPL-3.0 code from TPT Ultimata (Bowserinator), Cracker1000's Mod and Jacob1's Mod;
+Eigen 3.3.7 (MPL-2.0, parts BSD/LGPL-2.1) is used by Ultimata's circuit solver (`src/eigen/COPYING.*`).

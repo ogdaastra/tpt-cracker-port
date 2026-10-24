@@ -77,6 +77,252 @@
   },
   "suites": [
     {
+      "title": "added-elements.spec.mjs",
+      "file": "added-elements.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "every added element exists, is in a menu, and runs without breaking the simulation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15706,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:12:50.177Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-2d90fd2b860198bb2e83",
+          "file": "added-elements.spec.mjs",
+          "line": 35,
+          "column": 1
+        },
+        {
+          "title": "walls from TPT Ultimata: I-WALL keeps particles alive, the walls are in the wall menu",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5290,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:05.981Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-bb4737ed456a4c2caf90",
+          "file": "added-elements.spec.mjs",
+          "line": 92,
+          "column": 1
+        },
+        {
+          "title": "reactions of new elements: RSST solidifies under PHOT, EXPL blows up WOOD, BUTN sparks when clicked",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 14178,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:11.279Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-c35159efaa30a559f9a1",
+          "file": "added-elements.spec.mjs",
+          "line": 108,
+          "column": 1
+        },
+        {
+          "title": "undo/redo and stamps keep the added elements and Ultimata state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5823,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:25.465Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-e4612a9703c1f132c37f",
+          "file": "added-elements.spec.mjs",
+          "line": 157,
+          "column": 1
+        },
+        {
+          "title": "TPT Ultimata circuits: a VOLT source drives current (RSPK) round a METL loop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 8889,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:31.296Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-2cb62d5d7b93db61411a",
+          "file": "added-elements.spec.mjs",
+          "line": 206,
+          "column": 1
+        },
+        {
+          "title": "a large block of VOLT that is not a circuit does not freeze the game",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10400,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:40.195Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-c65afa37f9f8c090fd3e",
+          "file": "added-elements.spec.mjs",
+          "line": 231,
+          "column": 1
+        },
+        {
+          "title": "portals still carry particles (portal buffers are now allocated per channel)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9917,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T19:13:50.604Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9b221b8400a0ddd9fb69-bf3397799e9790beaae7",
+          "file": "added-elements.spec.mjs",
+          "line": 250,
+          "column": 1
+        }
+      ]
+    },
+    {
       "title": "tpt.spec.mjs",
       "file": "tpt.spec.mjs",
       "column": 0,
@@ -98,12 +344,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 3195,
+                  "duration": 3145,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:21:17.296Z",
+                  "startTime": "2026-10-24T19:14:00.551Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -132,12 +378,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5324,
+                  "duration": 5343,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:21:20.588Z",
+                  "startTime": "2026-10-24T19:14:03.705Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -166,12 +412,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 10126,
+                  "duration": 9907,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:21:25.920Z",
+                  "startTime": "2026-10-24T19:14:09.061Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -200,12 +446,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 13775,
+                  "duration": 13481,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:21:36.055Z",
+                  "startTime": "2026-10-24T19:14:18.979Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -234,12 +480,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 17757,
+                  "duration": 17623,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:21:49.838Z",
+                  "startTime": "2026-10-24T19:14:32.469Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -268,12 +514,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 14979,
+                  "duration": 14601,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:22:07.606Z",
+                  "startTime": "2026-10-24T19:14:50.102Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -302,12 +548,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 9447,
+                  "duration": 9301,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:22:22.593Z",
+                  "startTime": "2026-10-24T19:15:04.710Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -336,12 +582,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 9186,
+                  "duration": 8999,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:22:32.049Z",
+                  "startTime": "2026-10-24T19:15:14.022Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -370,12 +616,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 7420,
+                  "duration": 7146,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:22:41.252Z",
+                  "startTime": "2026-10-24T19:15:23.034Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -404,12 +650,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 28442,
+                  "duration": 28182,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:22:48.682Z",
+                  "startTime": "2026-10-24T19:15:30.187Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -438,12 +684,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 27973,
+                  "duration": 27689,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:23:17.132Z",
+                  "startTime": "2026-10-24T19:15:58.377Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -472,12 +718,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 218,
+                  "duration": 171,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:23:45.115Z",
+                  "startTime": "2026-10-24T19:16:26.075Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -506,12 +752,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 267,
+                  "duration": 191,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T13:23:45.343Z",
+                  "startTime": "2026-10-24T19:16:26.254Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -529,9 +775,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-24T13:21:16.562Z",
-    "duration": 149918.951,
-    "expected": 13,
+    "startTime": "2026-10-24T19:12:49.478Z",
+    "duration": 218083.821,
+    "expected": 20,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

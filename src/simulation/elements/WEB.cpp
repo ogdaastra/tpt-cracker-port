@@ -162,9 +162,11 @@ static int graphics(GRAPHICS_FUNC_ARGS) {
 	}
 
 	// Connect web strands if far apart
+	if (cpart->tmp2 < 0 || cpart->tmp2 >= NPART)
+		return 0;
 	int ox = ren->sim->parts[cpart->tmp2].x;
 	int oy = ren->sim->parts[cpart->tmp2].y;
-	if (cpart->tmp2 >= 0 && (abs(cpart->x - ox) > 1 || abs(cpart->y - oy) > 1)) {
+	if (abs(cpart->x - ox) > 1 || abs(cpart->y - oy) > 1) {
 		ren->draw_line(cpart->x, cpart->y, ox, oy,
 			*colr, *colg, *colb, 255);
 	}

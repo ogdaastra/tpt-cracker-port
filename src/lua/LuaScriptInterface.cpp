@@ -2944,6 +2944,7 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, FLAG_STAGNANT);
 	SETCONST(l, FLAG_SKIPMOVE);
 	SETCONST(l, FLAG_MOVABLE);
+	SETCONST(l, FLAG_EXPLODE);
 	SETCONST(l, FLAG_PHOTDECO);
 	lua_pushinteger(l, 0);
 	lua_setfield(l, -2, "ST_NONE");

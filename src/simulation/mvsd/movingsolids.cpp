@@ -55,6 +55,9 @@ void MOVINGSOLID::MVSDGroup::calc_forces(Particle *parts, int pmap[YRES][XRES], 
     // move particles with the force and rotate the entire solid
 
 
+    // The center can lie outside the screen for a solid touching the edge; sample the fields inside it
+    int fcx = cx < 0 ? 0 : (cx >= XRES ? XRES - 1 : cx), fcy = cy < 0 ? 0 : (cy >= YRES ? YRES - 1 : cy);
+
     // We can pretend gravity acts on the center of mass
     switch (sim->gravityMode) {
         case 0: { // Downwards gravity
@@ -71,17 +74,17 @@ void MOVINGSOLID::MVSDGroup::calc_forces(Particle *parts, int pmap[YRES][XRES], 
     }
 
     // Newtonian gravity
-    fx += MVSD_NEWTON_GRAVITY * sim->gravx[(cy / CELL) * (XRES / CELL) + (cx / CELL)];
-    fy += MVSD_NEWTON_GRAVITY * sim->gravy[(cy / CELL) * (XRES / CELL) + (cx / CELL)];
+    fx += MVSD_NEWTON_GRAVITY * sim->gravx[(fcy / CELL) * (XRES / CELL) + (fcx / CELL)];
+    fy += MVSD_NEWTON_GRAVITY * sim->gravy[(fcy / CELL) * (XRES / CELL) + (fcx / CELL)];
 
     // Pressure
-    fx += MVSD_AIR * sim->vx[cy / CELL][cx / CELL];
-    fy += MVSD_AIR * sim->vy[cy / CELL][cx / CELL];
+    fx += MVSD_AIR * sim->vx[fcy / CELL][fcx / CELL];
+    fy += MVSD_AIR * sim->vy[fcy / CELL][fcx / CELL];
 
     // Stasis field (Yes the checks are needed)
-    if (cy < YRES && cx < XRES && sim->stasis->strength[cy/STASIS_CELL][cx/STASIS_CELL] != 0) {
-        fx += (sim->stasis->vx[cy / STASIS_CELL][cx / STASIS_CELL] - vx) * sim->stasis->strength[cy/STASIS_CELL][cx/STASIS_CELL];
-        fy += (sim->stasis->vy[cy / STASIS_CELL][cx / STASIS_CELL] - vy) * sim->stasis->strength[cy/STASIS_CELL][cx/STASIS_CELL];
+    if (sim->stasis->strength[fcy/STASIS_CELL][fcx/STASIS_CELL] != 0) {
+        fx += (sim->stasis->vx[fcy / STASIS_CELL][fcx / STASIS_CELL] - vx) * sim->stasis->strength[fcy/STASIS_CELL][fcx/STASIS_CELL];
+        fy += (sim->stasis->vy[fcy / STASIS_CELL][fcx / STASIS_CELL] - vy) * sim->stasis->strength[fcy/STASIS_CELL][fcx/STASIS_CELL];
     }
 
     // Apply the net force (it's really an acceleration tbh)

@@ -109,7 +109,7 @@ void Element_BALI_create(ELEMENT_CREATE_FUNC_ARGS) {
 	sim->parts[i].life = RNG::Ref().between(380, 625);
 
 	// Random ctype to destroy
-	sim->parts[i].ctype = BALI_DATA::DEFAULT_CTYPES[RNG::Ref().between(0, BALI_DATA::NUM_DEFAULT_CTYPES)];
+	sim->parts[i].ctype = BALI_DATA::DEFAULT_CTYPES[RNG::Ref().between(0, BALI_DATA::NUM_DEFAULT_CTYPES - 1)];
 }
 
 static int update(UPDATE_FUNC_ARGS) {

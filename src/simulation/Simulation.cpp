@@ -2441,6 +2441,8 @@ void Simulation::ResetGlobalElementState()
 
 bool Simulation::IsWallBlocking(int x, int y, int type)
 {
+	if (x < 0 || y < 0 || x >= XRES || y >= YRES) // some TPT Ultimata elements probe past the edge
+		return true;
 	if (bmap[y/CELL][x/CELL])
 	{
 		int wall = bmap[y/CELL][x/CELL];
@@ -3202,7 +3204,7 @@ bool Simulation::move(int i, int x, int y, float nxf, float nyf)
 void Simulation::RecalculateFaraday() {
 	if (faraday_updated) return;
 
-	std::fill(&faraday_map[0][0], &faraday_map[YRES / CELL][0], 0);
+	std::fill(&faraday_map[0][0], &faraday_map[0][0] + (YRES / CELL) * (XRES / CELL), 0);
 	int group_id = 1;
 	for (int x = 0; x < XRES / CELL; x++)
 	for (int y = 0; y < YRES / CELL; y++) {
@@ -3479,7 +3481,7 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
 	}
 
 	elementCount[t]--;
-	if (sys_pause)
+	if (sys_pause && InBounds(x, y))
 		density_map[y / DENSITY_CELL][x / DENSITY_CELL]--;
 
 	parts[i].type = PT_NONE;
@@ -3875,9 +3877,11 @@ void Simulation::UpdateParticles(int start, int end)
 		if (itr->second.particles() == 0)
 			itr = MOVINGSOLID::solids.erase(itr);
 		else {
-			// Stasised moving solids don't update
-			if (!(bmap[itr->second.getCY() / CELL][itr->second.getCX() / CELL] == WL_STASIS &&
-				emap[itr->second.getCY() / CELL][itr->second.getCX() / CELL] < 8)) {
+			// Stasised moving solids don't update (the center of a solid can be off screen)
+			int scx = itr->second.getCX(), scy = itr->second.getCY();
+			bool inStasis = scx >= 0 && scy >= 0 && scx < XRES && scy < YRES &&
+				bmap[scy / CELL][scx / CELL] == WL_STASIS && emap[scy / CELL][scx / CELL] < 8;
+			if (!inStasis) {
 				itr->second.update(parts, pmap, this);
 			}
 			itr++;
@@ -3885,7 +3889,7 @@ void Simulation::UpdateParticles(int start, int end)
 	}
 
 	// Reset density calculations
-	std::fill(&density_map[0][0], &density_map[YRES / DENSITY_CELL][0], 0);
+	std::fill(&density_map[0][0], &density_map[0][0] + (YRES / DENSITY_CELL) * (XRES / DENSITY_CELL), 0);
 
 	// Recalc stress field
 	stressField->Clear();
@@ -3910,18 +3914,18 @@ void Simulation::UpdateParticles(int start, int end)
 			x = (int)(parts[i].x+0.5f);
 			y = (int)(parts[i].y+0.5f);
 
-			// Time dilation: skip update
-			if (!(elements[t].Properties & PROP_NO_TIME) &&
-					!(t == PT_GBMB && parts[i].life > 0) &&  // GBMB needs to update to make gravity
-					time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
-				continue;
-
 			// Kill a particle off screen
 			if (x<CELL || y<CELL || x>=XRES-CELL || y>=YRES-CELL)
 			{
 				kill_part(i);
 				continue;
 			}
+
+			// Time dilation: skip update (after the off-screen check, which keeps x and y inside the maps)
+			if (!(elements[t].Properties & PROP_NO_TIME) &&
+					!(t == PT_GBMB && parts[i].life > 0) &&  // GBMB needs to update to make gravity
+					time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
+				continue;
 
 			// Kill a particle in a wall where it isn't supposed to go
 			if (bmap[y/CELL][x/CELL] &&
@@ -4580,6 +4584,27 @@ killed:
 			if (parts[i].type == PT_NONE)//if its dead, skip to next particle
 				continue;
 
+			// EXPL (from Jacob1's Mod) marks what it touches; marked particles blow up after a random delay
+			if (parts[i].flags & FLAG_EXPLODE)
+			{
+				if (RNG::Ref().chance(1, 10))
+				{
+					parts[i].flags &= ~FLAG_EXPLODE;
+					pv[y/CELL][x/CELL] += 5.0f;
+					int boom = RNG::Ref().chance(1, 3) ? (RNG::Ref().chance(1, 2) ? PT_BOMB : PT_PLSM) : PT_EMBR;
+					if (create_part(i, x, y, boom) >= 0)
+					{
+						parts[i].temp = MAX_TEMP;
+						if (boom == PT_EMBR)
+						{
+							parts[i].vx = float(RNG::Ref().between(-10, 10));
+							parts[i].vy = float(RNG::Ref().between(-10, 10));
+						}
+					}
+					continue;
+				}
+			}
+
 			if (transitionOccurred)
 				continue;
 
@@ -5154,12 +5179,16 @@ killed:
 			}
 movedone:
 			// Time dilation: speed up
-			if (!(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0 && update_count <= time_dilation[y / CELL][x / CELL])
+			if (InBounds(x, y) && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0 && update_count <= time_dilation[y / CELL][x / CELL])
 				goto update_loop_begin;
 
 			// Update density value
 			if (parts[i].type)
-				density_map[(int)(parts[i].y + 0.5f) / DENSITY_CELL][(int)(parts[i].x + 0.5f) / DENSITY_CELL]++;
+			{
+				int dx = (int)(parts[i].x + 0.5f), dy = (int)(parts[i].y + 0.5f);
+				if (InBounds(dx, dy))
+					density_map[dy / DENSITY_CELL][dx / DENSITY_CELL]++;
+			}
 			continue;
 		}
 	}
@@ -5237,7 +5266,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 				elementCount[t]++;
 
 			// Time dilation: slow down
-			if (!(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
+			if (inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
 				continue;
 
 			//decrease particle life
@@ -5254,7 +5283,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 				{
 					// automatically decrease life
 					// Time dilation: speed up
-					if (!(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0) {
+					if (inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0) {
 						parts[i].life -= time_dilation[y / CELL][x / CELL];
 						if (parts[i].life < 1)
 							parts[i].life = 1;
@@ -5831,7 +5860,7 @@ Simulation::Simulation():
 
 	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));
 	memcpy(portal_ry, tportal_ry, sizeof(tportal_ry));
-	std::fill(&density_map[0][0], &density_map[YRES / DENSITY_CELL][0], 0);
+	std::fill(&density_map[0][0], &density_map[0][0] + (YRES / DENSITY_CELL) * (XRES / DENSITY_CELL), 0);
 
 	currentTick = 0;
 	std::fill(elementCount, elementCount+PT_NUM, 0);
