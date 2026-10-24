@@ -36,6 +36,9 @@
 # include <CoreServices/CoreServices.h>
 #endif
 #include <sys/stat.h>
+#ifdef __EMSCRIPTEN__
+# include <emscripten.h>
+#endif
 
 #include "Format.h"
 #include "Misc.h"
@@ -107,6 +110,9 @@ int GetModifiers()
 
 void LoadWindowPosition()
 {
+#ifdef __EMSCRIPTEN__
+	return; // the canvas has no window position or borders (SDL_GetWindowBordersSize is unsupported)
+#endif
 	int savedWindowX = Client::Ref().GetPrefInteger("WindowX", INT_MAX);
 	int savedWindowY = Client::Ref().GetPrefInteger("WindowY", INT_MAX);
 
@@ -137,6 +143,9 @@ void LoadWindowPosition()
 
 void SaveWindowPosition()
 {
+#ifdef __EMSCRIPTEN__
+	return;
+#endif
 	int x, y;
 	SDL_GetWindowPosition(sdl_window, &x, &y);
 
@@ -514,6 +523,14 @@ void EngineProcess()
 			frameStart = std::max(frameStart, frameStartTimeBlock * timeBlockDuration);
 			SDL_Delay((frameStart - now) / UINT64_C(1'000'000));
 		}
+#ifdef __EMSCRIPTEN__
+		else
+		{
+			// No frame limit: still yield to the browser once per frame (with JSPI, SDL_Delay suspends
+			// the whole C++ stack, nested modal loops included, and resumes it from the event loop).
+			SDL_Delay(0);
+		}
+#endif
 		auto correctedFrameTime = frameStart - oldFrameStart;
 		drawingTimer += correctedFrameTime;
 		correctedFrameTimeAvg = correctedFrameTimeAvg + (correctedFrameTime - correctedFrameTimeAvg) * 0.05;
@@ -571,6 +588,9 @@ void BlueScreen(String detailMessage)
 			if(event.type == SDL_QUIT)
 				exit(-1);
 		blit(engine->g->vid);
+#ifdef __EMSCRIPTEN__
+		SDL_Delay(100); // keep the page responsive while showing the error
+#endif
 	}
 }
 
@@ -802,7 +822,13 @@ int main(int argc, char * argv[])
 
 	SDLOpen();
 
+#ifdef __EMSCRIPTEN__
+	// The page scales the canvas with CSS to fit the browser window, so don't pick a larger internal
+	// scale on first run (that would also open a blocking "Large screen detected" prompt at startup).
+	if (false)
+#else
 	if (Client::Ref().IsFirstRun())
+#endif
 	{
 		scale = GuessBestScale();
 		if (scale > 1)
@@ -971,5 +997,31 @@ int main(int argc, char * argv[])
 		SDL_GL_UnloadLibrary();
 	}
 	SDL_Quit();
+#ifdef __EMSCRIPTEN__
+	EM_ASM({
+		if (Module['tptOnQuit'])
+			Module['tptOnQuit']();
+	});
+#endif
 	return 0;
 }
+
+#ifdef __EMSCRIPTEN__
+extern "C"
+{
+	// Called by the web page after it has written a file into the virtual filesystem, e.g. a save
+	// imported with the file picker or dropped onto the page. Queued as an SDL_DROPFILE event, the
+	// same path dropping a file onto the desktop game's window takes.
+	EMSCRIPTEN_KEEPALIVE void tpt_open_file(const char *path)
+	{
+		SDL_Event event;
+		SDL_zero(event);
+		event.type = SDL_DROPFILE;
+		event.drop.file = SDL_strdup(path);
+		if (SDL_PushEvent(&event) != 1)
+		{
+			SDL_free(event.drop.file);
+		}
+	}
+}
+#endif

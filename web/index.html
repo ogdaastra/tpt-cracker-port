@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cracker1000's Mod</title>
+<meta name="description" content="Cracker1000's Mod for The Powder Toy (v55.1), compiled to WebAssembly and running in your browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+	<h1>Cracker1000's Mod <small>v55.1 · The Powder Toy · WebAssembly</small></h1>
+	<nav class="actions">
+		<button type="button" id="btn-import" disabled title="Load a .cps or .stm save file from your computer">Import save…</button>
+		<input type="file" id="file-import" accept=".cps,.stm" hidden>
+		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
+		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
+	</nav>
+</header>
+
+<main id="stage">
+	<div id="game">
+		<canvas id="canvas" tabindex="0" aria-label="The Powder Toy simulation"></canvas>
+	</div>
+
+	<div id="status" class="overlay" role="status" aria-live="polite">
+		<p id="status-text">Loading…</p>
+		<progress id="status-progress"></progress>
+	</div>
+
+	<div id="failure" class="overlay failure" role="alert" hidden>
+		<h2>The game could not start</h2>
+		<p id="failure-message"></p>
+		<details>
+			<summary>Technical details</summary>
+			<pre id="failure-details"></pre>
+		</details>
+		<p><button type="button" onclick="location.reload()">Reload the page</button></p>
+	</div>
+</main>
+
+<dialog id="export-dialog" aria-labelledby="export-title">
+	<form method="dialog">
+		<h2 id="export-title">Saves stored in this browser</h2>
+		<p class="hint">Save a simulation in the game with the save button in the bottom bar
+			(you are not logged in, so it saves locally); it then appears here.</p>
+		<ul id="export-list"></ul>
+		<p><button value="close">Close</button></p>
+	</form>
+</dialog>
+
+<footer class="bar">
+	<p>
+		The real C++ game compiled with Emscripten; runs locally in your browser.
+		Online features (save browser, login, multiplayer, updater) are unavailable in this build.
+		Saves and settings are kept in this browser's storage.
+	</p>
+	<p>
+		Licensed under the <a href="LICENSE.txt">GNU GPL v3</a>.
+		<a href="SOURCE.html">Source code and build instructions</a>.
+		Based on <a href="https://github.com/cracker1000/The-Powder-Toy" rel="noopener">Cracker1000's Mod</a>
+		and <a href="https://github.com/The-Powder-Toy/The-Powder-Toy" rel="noopener">The Powder Toy</a>.
+	</p>
+</footer>
+
+<script src="tpt-web.js"></script>
+</body>
+</html>

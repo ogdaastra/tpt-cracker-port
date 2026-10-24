@@ -27,9 +27,29 @@
 #ifdef MACOSX
 # include <mach-o/dyld.h>
 #endif
+#ifdef __EMSCRIPTEN__
+# include <emscripten.h>
+#endif
 
 #include "Misc.h"
 #include "client/Client.h"
+
+#ifdef __EMSCRIPTEN__
+// Restarting a page means reloading it; flush the data directory to IndexedDB first (wasm/pre.js),
+// then never return, the reload tears the module down.
+EM_ASYNC_JS(void, EmscriptenReloadPage, (), {
+	try
+	{
+		await Module['tptSyncNow']();
+	}
+	catch (e)
+	{
+		err('could not flush data before reloading: ' + e);
+	}
+	location.reload();
+	await new Promise(() => {});
+});
+#endif
 
 namespace Platform
 {
@@ -60,6 +80,12 @@ ByteString GetCwd()
 
 void DoRestart()
 {
+#ifdef __EMSCRIPTEN__
+# if !defined(RENDERER) && !defined(FONTEDITOR)
+	Client::Ref().Shutdown(); // writes powder.pref, as the other platforms do before restarting
+# endif
+	EmscriptenReloadPage();
+#endif
 	ByteString exename = ExecutableName();
 	if (exename.length())
 	{
@@ -106,6 +132,10 @@ void OpenURI(ByteString uri)
 	{
 		fprintf(stderr, "cannot open URI: system(...) failed\n");
 	}
+#elif defined(__EMSCRIPTEN__)
+	MAIN_THREAD_EM_ASM({
+		window.open(UTF8ToString($0), '_blank', 'noopener');
+	}, uri.c_str());
 #else
 	fprintf(stderr, "cannot open URI: not implemented\n");
 #endif
@@ -504,7 +534,11 @@ bool WriteFile(std::vector<char> fileData, ByteString filename)
 
 ByteString ExecutableName()
 {
-#ifdef WIN
+#ifdef __EMSCRIPTEN__
+	// There is no executable in a browser, but scripts (e.g. the mod's manager.lua) need an absolute
+	// path from platform.exeName(); report a virtual one named after the app.
+	return "/" APPEXE;
+#elif defined(WIN)
 	std::wstring buf(L"?");
 	while (true)
 	{

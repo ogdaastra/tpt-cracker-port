@@ -2759,7 +2759,7 @@ end
 end
 
 function keyclicky(key)
-if (key == 106) and TPTMP.chatHidden == true and shrtv == "1" then
+if (key == 106) and (not TPTMP or TPTMP.chatHidden == true) and shrtv == "1" then -- TPTMP is absent when multiplayer is unavailable (browser build)
 open()
 end
 end

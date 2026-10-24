@@ -13,7 +13,9 @@ luaconsole_files = files(
 	'LuaTextbox.cpp',
 	'LuaWindow.cpp',
 )
-if enable_http
+# Without HTTP, LuaTCPSocket.cpp still provides socket.gettime/socket.sleep (no socket.tcp). The mod's
+# manager.lua refuses to run without the socket table, and crackerk.lua needs MANAGER for its settings.
+if enable_http or host_platform == 'emscripten'
 	luaconsole_files += files(
 		'LuaTCPSocket.cpp',
 	)

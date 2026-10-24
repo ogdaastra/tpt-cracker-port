@@ -230,7 +230,8 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	initPlatformAPI();
 	initEventAPI();
 	initHttpAPI();
-#ifndef NOHTTP
+#if !defined(NOHTTP) || defined(__EMSCRIPTEN__)
+	// In the WebAssembly build (no HTTP) this registers socket.gettime/socket.sleep only, see src/lua/meson.build
 	initSocketAPI();
 #endif
 
@@ -451,12 +452,20 @@ tpt.partsdata = nil");
 		if (luaL_loadbuffer(l, (const char *)manager_lua, manager_lua_size, "@[built-in manager.lua]") || lua_pcall(l, 0, 0, 0))
 		{
 			//Ignore;
+#ifdef __EMSCRIPTEN__
+			// The browser console is the only place a player can see why a built-in script failed.
+			std::cerr << "built-in manager.lua failed: " << lua_tostring(l, -1) << std::endl;
+#endif
 		}
 		if (!Platform::FileExists("scripts/downloaded/2 LBPHacker-TPTMulti.lua")) // Don't run inbuilt multiplayer when a newer version is already present, prevents the error on startup.
 		{
 			if (luaL_loadbuffer(l, (const char *)tptmp_lua, tptmp_lua_size, "@[built-in tptmp.lua]") || lua_pcall(l, 0, 0, 0))
 			{
 				//Ignore;
+#ifdef __EMSCRIPTEN__
+				// The browser console is the only place a player can see why a built-in script failed.
+				std::cerr << "built-in tptmp.lua failed: " << lua_tostring(l, -1) << std::endl;
+#endif
 			}
 		}
 		if (!Platform::FileExists("debugmode.txt"))
@@ -464,10 +473,18 @@ tpt.partsdata = nil");
 			if (luaL_loadbuffer(l, (const char *)crackerk_lua, crackerk_lua_size, "@[built-in crackerk.lua]") || lua_pcall(l, 0, 0, 0))
 			{
 				//Ignore;
+#ifdef __EMSCRIPTEN__
+				// The browser console is the only place a player can see why a built-in script failed.
+				std::cerr << "built-in crackerk.lua failed: " << lua_tostring(l, -1) << std::endl;
+#endif
 			}
 			if (luaL_loadbuffer(l, (const char *)failsafe_lua, failsafe_lua_size, "@[built-in failsafe.lua]") || lua_pcall(l, 0, 0, 0))
 			{
 				//Ignore;
+#ifdef __EMSCRIPTEN__
+				// The browser console is the only place a player can see why a built-in script failed.
+				std::cerr << "built-in failsafe.lua failed: " << lua_tostring(l, -1) << std::endl;
+#endif
 			}
 		}
 	}
@@ -4853,7 +4870,7 @@ LuaScriptInterface::~LuaScriptInterface() {
 	delete legacy;
 }
 
-#ifndef NOHTTP
+#if !defined(NOHTTP) || defined(__EMSCRIPTEN__)
 void LuaScriptInterface::initSocketAPI()
 {
 	LuaTCPSocket::Open(l);
