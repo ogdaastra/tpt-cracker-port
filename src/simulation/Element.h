@@ -50,8 +50,19 @@ public:
 	float HighTemperature;
 	int HighTemperatureTransition;
 
+	float MeltingPoint = -1.0f; // Used for LQUD state
+	float BoilingPoint = -1.0f; // Used for LQUD state
+
+	int FoodValue;
+	unsigned int FixedMultiplier;
+
 	int (*Update) (UPDATE_FUNC_ARGS);
 	int (*Graphics) (GRAPHICS_FUNC_ARGS);
+
+	int (*MoltenGraphics) (GRAPHICS_FUNC_ARGS) = nullptr;
+	int (*LiquidGraphics) (GRAPHICS_FUNC_ARGS) = nullptr;
+	int (*FrozenGraphics) (GRAPHICS_FUNC_ARGS) = nullptr;
+	int (*BrokenGraphics) (GRAPHICS_FUNC_ARGS) = nullptr;
 
 	void (*Create)(ELEMENT_CREATE_FUNC_ARGS) = nullptr;
 	bool (*CreateAllowed)(ELEMENT_CREATE_ALLOWED_FUNC_ARGS) = nullptr;

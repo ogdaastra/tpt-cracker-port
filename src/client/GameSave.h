@@ -100,6 +100,7 @@ public:
 	Plane<unsigned char> blockMap;
 	Plane<float> fanVelX;
 	Plane<float> fanVelY;
+	Plane<float> oneWay;
 	Plane<float> pressure;
 	Plane<float> velocityX;
 	Plane<float> velocityY;
@@ -110,6 +111,7 @@ public:
 	bool legacyEnable = false;
 	bool gravityEnable = false;
 	bool aheatEnable = false;
+	bool stressEnable = false;
 	bool paused = false;
 	int gravityMode = 0;
 	float customGravityX = 0.0f;

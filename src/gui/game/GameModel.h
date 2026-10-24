@@ -3,6 +3,7 @@
 #include "Config.h"
 
 #include <vector>
+#include <utility>
 #include <deque>
 #include <memory>
 
@@ -192,6 +193,7 @@ public:
 	void AddObserver(GameView * observer);
 
 	void SetPaused(bool pauseState);
+	std::pair<float, float> get_mouse_pos(); // simulation coordinates, for TPT Ultimata's GNSH
 	bool GetPaused();
 	void SetDecoration(bool decorationState);
 	bool GetDecoration();

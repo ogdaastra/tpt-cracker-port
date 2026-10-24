@@ -25,6 +25,7 @@ common_files = files(
 	'Probability.cpp',
 )
 
+subdir('music')
 subdir('bson')
 subdir('bzip2')
 subdir('client')

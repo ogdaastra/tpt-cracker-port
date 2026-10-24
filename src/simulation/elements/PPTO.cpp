@@ -87,8 +87,9 @@ static int update(UPDATE_FUNC_ARGS)
 		sim->pv[(y / CELL)][(x / CELL)] = 2.0f;
 		int r, nnx, rx, ry, np, fe = 0;
 		int count = 0;
-		parts[i].tmp = (int)((parts[i].temp - 73.15f) / 100 + 1);
-		if (parts[i].tmp >= CHANNELS) parts[i].tmp = CHANNELS - 1;
+		// channel layout shared with PRTI/PRTO (TPT Ultimata Faraday walls): region * CHANNELS + temperature channel
+		parts[i].tmp = sim->faraday_map[y / CELL][x / CELL] * CHANNELS + (int)((parts[i].temp - 73.15f) / 100 + 1);
+		if (parts[i].tmp >= FARADAY_CHANNELS * CHANNELS) parts[i].tmp = FARADAY_CHANNELS * CHANNELS - 1;
 		else if (parts[i].tmp < 0) parts[i].tmp = 0;
 		for (count = 0; count < 8; count++)
 		{

@@ -60,10 +60,9 @@ void Element::Element_PRTI()
 static int update(UPDATE_FUNC_ARGS)
 {
 	int fe = 0;
-
-	parts[i].tmp = (int)((parts[i].temp-73.15f)/100+1);
-	if (parts[i].tmp >= CHANNELS)
-		parts[i].tmp = CHANNELS-1;
+	parts[i].tmp = sim->faraday_map[y / CELL][x / CELL] * CHANNELS + (int)((parts[i].temp - 73.15f) / 100 + 1);
+	if (parts[i].tmp >= FARADAY_CHANNELS * CHANNELS)
+		parts[i].tmp = FARADAY_CHANNELS * CHANNELS - 1;
 	else if (parts[i].tmp < 0)
 		parts[i].tmp = 0;
 

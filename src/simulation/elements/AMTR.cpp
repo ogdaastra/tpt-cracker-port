@@ -58,27 +58,55 @@ static int update(UPDATE_FUNC_ARGS)
 				if (!r)
 					continue;
 				rt = TYP(r);
-				if (rt!=PT_AMTR && rt!=PT_DMND && rt!=PT_CLNE && rt!=PT_PCLN && rt!=PT_VOID && rt!=PT_BHOL && rt!=PT_NBHL && rt!=PT_PRTI && rt!=PT_PRTO)
+				if (!(sim->elements[rt].Properties & PROP_INDESTRUCTIBLE) && rt!=PT_AMTR && 
+						rt!=PT_PCLN && rt!=PT_VOID && rt!=PT_BHOL && rt!=PT_NBHL && rt!=PT_PRTI && rt!=PT_PRTO &&
+						rt!=PT_ANH2)
 				{
-					parts[i].life++;
-					if (parts[i].life==4)
-					{
+					if (parts[i].tmp2 == 1) { // Realistic antimatter explosion
+						sim->pv[y/CELL][x/CELL] -= 10.0f;
+						parts[ID(r)].temp += 9000.0f;
+
+						int count = RNG::Ref().between(4, 50);
+						for (int j = 0; j < count; j++) {
+							int ni = sim->create_part(-3, x, y, PT_PHOT);
+							if (ni >= 0) {
+								parts[ni].temp = MAX_TEMP;
+								parts[ni].life = RNG::Ref().between(0, 299);
+
+								float angle = RNG::Ref().uniform01() * 2.0f * M_PI;
+								float v = RNG::Ref().uniform01() * 5.0f;
+								parts[ni].vx = v * cosf(angle);
+								parts[ni].vy = v * sinf(angle);
+							}
+						}
+
+						sim->kill_part(ID(r));
 						sim->kill_part(i);
 						return 1;
 					}
-					if (RNG::Ref().chance(1, 10))
-						sim->create_part(ID(r), x+rx, y+ry, PT_PHOT);
-					else
-						sim->kill_part(ID(r));
-					sim->pv[y/CELL][x/CELL] -= 2.0f;
+					else { // Default antimatter behavior
+						parts[i].life++;
+						if (parts[i].life == 4) {
+							sim->kill_part(i);
+							return 1;
+						}
+						if (RNG::Ref().chance(1, 10))
+							sim->create_part(ID(r), x+rx, y+ry, PT_PHOT);
+						else
+							sim->kill_part(ID(r));
+						sim->pv[y/CELL][x/CELL] -= 2.0f;
+					}
 				}
 			}
 	return 0;
 }
 
-static int graphics(GRAPHICS_FUNC_ARGS)
-{
-	// don't render AMTR as a gas
-	// this function just overrides the default graphics
-	return 1;
+static int graphics(GRAPHICS_FUNC_ARGS) {
+	if (cpart->tmp2 == 1) {
+		*firer = *fireg = *fireb = 150;
+		*firea = 60;
+		*pixel_mode |= FIRE_ADD;
+	}
+
+	return 0;
 }

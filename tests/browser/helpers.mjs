@@ -182,3 +182,27 @@ export async function expectNoUnexplainedErrors(log) {
 	expect.soft(log.failedRequests, 'failed requests').toEqual([]);
 	expect.soft(log.badResponses, 'HTTP error responses').toEqual([]);
 }
+
+let luaFileCounter = 0;
+
+// Runs a whole Lua chunk: the code is written to the virtual filesystem and run with dofile from the
+// in-game console (the console's line limit makes typing long code impossible). The chunk's return
+// value comes back as a string; Lua errors are thrown with their message.
+export async function luaFile(page, code, timeoutMs = 20_000) {
+	const n = ++luaFileCounter;
+	const src = `/tmp/lf${n}.lua`, out = `/tmp/lf${n}.out`;
+	const wrapped = `local ok, r = pcall(function()\n${code}\nend)\n` +
+		`local f = io.open("${out}", "w") f:write((ok and "OK " or "ERR ") .. tostring(r)) f:close()\n`;
+	await page.evaluate(([p, c]) => window.tptPage.module.FS.writeFile(p, c), [src, wrapped]);
+	await consoleRun(page, `dofile("${src}")`);
+	let result = null;
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		result = await readFsText(page, out);
+		if (result !== null) break;
+		await page.waitForTimeout(50);
+	}
+	if (result === null) throw new Error(`Lua chunk ${src} produced no result`);
+	if (!result.startsWith('OK ')) throw new Error(`Lua error in ${src}: ${result}`);
+	return result.slice(3);
+}

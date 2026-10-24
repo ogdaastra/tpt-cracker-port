@@ -1,8 +1,8 @@
 #include "simulation/ElementCommon.h"
 
 static int update(UPDATE_FUNC_ARGS);
-static int graphics(GRAPHICS_FUNC_ARGS);
-static void create(ELEMENT_CREATE_FUNC_ARGS);
+int Element_ELEC_graphics(GRAPHICS_FUNC_ARGS);
+void Element_ELEC_create(ELEMENT_CREATE_FUNC_ARGS);
 
 void Element::Element_ELEC()
 {
@@ -46,8 +46,8 @@ void Element::Element_ELEC()
 	HighTemperatureTransition = NT;
 
 	Update = &update;
-	Graphics = &graphics;
-	Create = &create;
+	Graphics = &Element_ELEC_graphics;
+	Create = &Element_ELEC_create;
 }
 
 static int update(UPDATE_FUNC_ARGS)
@@ -82,16 +82,6 @@ static int update(UPDATE_FUNC_ARGS)
 				case PT_LCRY:
 					parts[ID(r)].tmp2 = RNG::Ref().between(5, 9);
 					break;
-				case PT_WATR:
-				case PT_DSTW:
-				case PT_SLTW:
-				case PT_CBNW:
-					if (RNG::Ref().chance(1, 3))
-						sim->create_part(ID(r), x+rx, y+ry, PT_O2);
-					else
-						sim->create_part(ID(r), x+rx, y+ry, PT_H2);
-					sim->kill_part(i);
-					return 1;
 				case PT_PROT: // this is the correct reaction, not NEUT, but leaving NEUT in anyway
 					if (parts[ID(r)].tmp2 & 0x1)
 						break;
@@ -111,10 +101,27 @@ static int update(UPDATE_FUNC_ARGS)
 					parts[ID(r)].tmp2 += 5;
 					parts[ID(r)].life = 1000;
 					break;
+				case PT_RSST: // Destroy RSST
+					if (!rx && !ry)
+					{
+						sim->kill_part(ID(r));
+						sim->kill_part(i);
+						return 1;
+					}
+					break;
 				case PT_NONE: //seems to speed up ELEC even if it isn't used
 					break;
 				default:
-					if ((sim->elements[rt].Properties & PROP_CONDUCTS) && (rt!=PT_NBLE||parts[i].temp<2273.15))
+					if (sim->elements[rt].Properties & PROP_WATER) {
+						if (RNG::Ref().chance(1, 3))
+							sim->create_part(ID(r), x+rx, y+ry, PT_O2);
+						else
+							sim->create_part(ID(r), x+rx, y+ry, PT_H2);
+						sim->kill_part(i);
+						return 1;
+					}
+
+					if ((sim->elements[rt].Properties & PROP_CONDUCTS) && rt != PT_MMSH && rt != PT_THOR && (rt!=PT_NBLE||parts[i].temp<2273.15))
 					{
 						sim->create_part(-1, x+rx, y+ry, PT_SPRK);
 						sim->kill_part(i);
@@ -126,7 +133,7 @@ static int update(UPDATE_FUNC_ARGS)
 	return 0;
 }
 
-static int graphics(GRAPHICS_FUNC_ARGS)
+int Element_ELEC_graphics(GRAPHICS_FUNC_ARGS)
 {
 	*firea = 70;
 	*firer = *colr;
@@ -137,7 +144,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-static void create(ELEMENT_CREATE_FUNC_ARGS)
+void Element_ELEC_create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	float a = RNG::Ref().between(0, 359) * 3.14159f / 180.0f;
 	sim->parts[i].life = 680;

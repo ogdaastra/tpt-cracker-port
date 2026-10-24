@@ -33,3 +33,6 @@ Module['preRun'].push(() => {
 Module['tptSyncNow'] = () => new Promise((resolve, reject) => {
 	FS.syncfs(false, (error) => error ? reject(error) : resolve());
 });
+
+// Size of the WebAssembly memory in bytes (the browser tests watch it for runaway allocations).
+Module['tptMemoryBytes'] = () => HEAPU8.length;

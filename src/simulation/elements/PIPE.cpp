@@ -520,8 +520,8 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 				else if (TYP(r) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
 				{
 					int portaltmp = sim->parts[ID(r)].tmp;
-					if (portaltmp >= CHANNELS)
-						portaltmp = CHANNELS-1;
+					if (portaltmp >= FARADAY_CHANNELS * CHANNELS)
+						portaltmp = FARADAY_CHANNELS * CHANNELS-1;
 					else if (portaltmp < 0)
 						portaltmp = 0;
 					for (int nnx = 0; nnx < 80; nnx++)
@@ -550,8 +550,8 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 		else if (TYP(r) == PT_PRTI) //Pass particles into PRTI for a pipe speed increase
 		{
 			int portaltmp = sim->parts[ID(r)].tmp;
-			if (portaltmp >= CHANNELS)
-				portaltmp = CHANNELS-1;
+			if (portaltmp >= FARADAY_CHANNELS * CHANNELS)
+				portaltmp = FARADAY_CHANNELS * CHANNELS-1;
 			else if (portaltmp < 0)
 				portaltmp = 0;
 			for (int nnx = 0; nnx < 80; nnx++)

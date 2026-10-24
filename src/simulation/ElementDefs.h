@@ -33,11 +33,17 @@
 #define PROP_SPARKSETTLE	0x20000  //2^17 Allow Sparks/Embers to settle
 #define PROP_NOAMBHEAT		0x40000  //2^18 Don't transfer or receive heat from ambient heat.
 #define PROP_NOCTYPEDRAW	0x100000 // 2^20 When this element is drawn upon with, do not set ctype (like BCLN for CLNE)
+#define PROP_VEHICLE        0x200000 // 2^21 A vehicle element, ie cybertruck
+#define PROP_NO_TIME        0x400000 // 2^22 Not affected by time dilation
+#define PROP_WATER          0x1000000 // 2^23 Water element (like SLTW, SWTR)
+#define PROP_INDESTRUCTIBLE 0x2000000 // 2^24 Indestructible
+#define PROP_EDIBLE         0x4000000 // 2^25 Edible (food)
 
 #define FLAG_STAGNANT	0x1
 #define FLAG_SKIPMOVE  0x2 // skip movement for one frame, only implemented for PHOT
 //#define FLAG_WATEREQUAL 0x4 //if a liquid was already checked during equalization
 #define FLAG_MOVABLE  0x8 // compatibility with old saves (moving SPNG), only applies to SPNG
+#define FLAG_EXPLODE  0x10 // touched by EXPL (Jacob1's Mod): explodes after a random delay
 #define FLAG_PHOTDECO  0x8 // compatibility with old saves (decorated photons), only applies to PHOT. Having the same value as FLAG_MOVABLE is fine because they apply to different elements, and this saves space for future flags,
 
 

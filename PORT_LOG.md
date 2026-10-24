@@ -239,3 +239,100 @@ offline ZIP + file:// tests, uploads dist/, offline ZIP, logs/screenshots/report
 - Verified from this session: production URL returns 200, no Vercel toolbar script, full suite 13/13.
 - Changes made on Vercel at the owner's request: Vercel Authentication disabled (site public); preview and
   production feedback toolbar disabled (it intercepted keys and reloaded the page, breaking the game in tests).
+
+## 13. Added elements: TPT Ultimata, newer Cracker1000's Mod, Jacob1's Mod
+Requested after the port shipped: add the elements TPT Ultimata has that Cracker1000's Mod v55.1 does not,
+the elements of newer Cracker releases (DFOM etc.), and other standout elements from other mods.
+Full list with menus and descriptions: `ADDED_ELEMENTS.md` (143 elements).
+
+### 13.1 Sources
+| Source | Commit | Taken |
+|---|---|---|
+| TPT Ultimata (Bowserinator), github.com/Bowserinator/TPT-Ultimata-Mod `development` | b749717 (Oct 2023) | 133 elements, 3 walls, 14 Life rules, 5 tools, simulation subsystems (circuits, vehicles, moving solids, quantum, stress, EM field, stasis, time dilation, Faraday regions, NOTE sound), Eigen 3.3.7 |
+| Cracker1000's Mod, branch `Bledge-2024` | 4ee2995 (Oct 2025) | DFOM, DIGS, ALUM, ALMP, RSST, RSSS (written for TPT 98, adapted to 97) |
+| Jacob1's Mod, `c++` | 0635c0e (Sep 2026) | EXPL, RAZR, PWHT, BUTN (rewritten: Jacob1's simulation API differs) |
+All GPL-3.0 (Eigen: MPL-2.0 with some BSD/LGPL-2.1 files; its licence texts are in `src/eigen/` and in
+`THIRD_PARTY_NOTICES.txt`). The bundled Eigen files were checked byte-for-byte against upstream 3.3.7.
+
+### 13.2 Method
+Ultimata and Cracker v55.1 are both forks of the official game of January 2023 (merge-base of Ultimata with
+the official repo: 225293cc). The Ultimata changes were merged three-way against that commit: new files copied,
+core files (`Simulation.*`, `SimulationData.*`, `GameSave.*`, `Air.cpp`, `Sign.cpp`, `Element.*`, ...) merged
+with `git merge-file`, conflicts resolved by hand. The official elements Ultimata had edited (45 files) were
+reviewed one by one: edits that only matter when a new element is present were kept, edits that would change
+how existing saves behave were not (Cracker keeps official behaviour for compatibility). Not taken, for example:
+SAWD displaced by powders, CBNW treated as water for PHOT/legacy FIRE, an older PTNM, PTNM+COAL -> SUFR,
+THDR ignoring CLUD, FIGH accepting element 0, GLOW+GEL -> RSST (TPT 98), Ultimata's renderer tweaks.
+
+### 13.3 Decisions
+- **UI stays Cracker's.** Ultimata's own UI (two-column side bar, config/transform/text/ruler/PROP2 tools,
+  extra brushes, mod options, FPS graph, extra quick options) was not ported. The side bar has no free slot
+  (Cracker's script-manager and multiplayer buttons use the two above Walls, and its themes draw at fixed
+  positions), so Ultimata's menus (Electromagnetic, Organic, Space, Random) were mapped onto the official ones.
+  Menu numbering stays official because scripts use raw section numbers (`crackerk.lua` does).
+- **Names:** Ultimata's ROCK and SLCN collide with official elements: renamed ROCK2 and SLCN2 (like Cracker's
+  LITH2). Ultimata's BEE, CLUD, CMNT, COPR, CSNS, MGNT, PINV, RADN and SEED are different elements with names
+  Cracker already uses: Cracker's are kept.
+- **IDs:** new elements take IDs 243-385 after Cracker's (saves map elements by identifier, so Ultimata saves
+  still load their elements). Walls: Cracker's ZHOLE is 19, so I-WALL/FARADAY/ONE WAY are 20/21/22 here
+  (19/20/21 in Ultimata); Ultimata saves using those walls load them as different walls.
+- **Undo history** keeps the official delta snapshots (Ultimata had reverted to full copies); `SnapshotDelta`
+  gained the one-way, Faraday and time-dilation maps, the timer and the portal contents.
+- **Portal buffers:** Faraday regions multiply portal channels (200 x 101). Ultimata declared a fixed array
+  for all of them (~700 MB inside `Simulation`); here a channel is allocated on first use (`PortalBuffers.h`).
+  Cracker's PPTI/PPTO use the same channel layout.
+- **Global state:** circuits, quantum states and moving solids are globals in Ultimata; only the simulation the
+  game runs may reset them (`ownsGlobalElementState`), so save thumbnails don't wipe them. Undo clears them and
+  they rebuild from the particles.
+- **Sound:** Ultimata 97 had commented out its audio output, so NOTE was silent; the device is opened again
+  (on first use), mixed at ~18 % of full scale. `tpt.play_sound()` is exposed.
+- **RSSS insulates** like INSL through `parts_avg` (TPT 98 added `pavg != PT_RSSS` at each call site).
+- **EXPL** uses a new particle flag `FLAG_EXPLODE` (0x10), handled in `UpdateParticles` as in Jacob1's Mod.
+- Stress simulation (TRUS) and the EM field stay off by default as in Ultimata; with Ultimata's quick options
+  not ported, stress is only switched on by a save that has it (`stress_enable`).
+
+### 13.4 Bugs found and fixed (Ultimata code unless noted)
+| Problem | Found by | Fix |
+|---|---|---|
+| Browser tab crashed in ~3 of 4 runs with all new elements placed | browser test | root cause below (circuit use-after-free) |
+| `Circuit` freed by `add_circuit` while `circuit_map` still pointed to it; RSPK's ChangeType then wrote into freed memory | ASan | destructor clears its `circuit_map` entries |
+| ...which made every VOLT pixel of a non-circuit blob flood-fill the blob again each frame (game froze) | ASan stress run (hang) | per-pixel "recently failed" marker, retry every 20 frames |
+| BALI picked `DEFAULT_CTYPES[N]` (inclusive RNG bound) | ASan | `N - 1` |
+| WEB graphics read `parts[-1]` | UBSan | check before reading |
+| Vehicle hull points rotated past the screen edge read `pmap` out of bounds | UBSan | treat as wall; `IsWallBlocking` bounds-checks |
+| Moving-solid centre off screen indexed gravity/air/stasis maps out of bounds | ASan | clamp |
+| Time dilation / density map read with off-screen coordinates | UBSan | read after the off-screen kill / `InBounds` |
+| `std::fill(&a[0][0], &a[ROWS][0])` one-past-end row (7 places) | UBSan | explicit element counts |
+| `FARADAY_CHANNELS` macro without parentheses | review | parenthesised |
+| QLOG wrote WiFi with the old `[channel][1]` layout | review | Faraday-aware index |
+| IRDM sparks created at `x + ry` | review | `x + rx` |
+| Deco blend modes: `restrict_flt` result ignored, uninitialised targets | compiler warning | assign / initialise |
+| HRSE colour `elements[ctype \|\| PT_DUST]` | compiler warning | ternary |
+| Header guards `MANGET_H`, `FOMRAT_CIRCUIT_H` | compiler warning | fixed |
+| One-way wall save data read past its end; rotation used a stale vector | review | bounds check; rotate per direction |
+| CPTR default capacitance 0.1 became 0 when tmp3 became an int; divide by zero | review | default 1; guard |
+| CLNE-GOL save hack rewrote old saves' custom rules; new Life rules used GOL IDs as old element IDs | review | removed; old ID -1 |
+| Crash for one specific user name (`pip...ick`, an Ultimata joke) | review | removed |
+| ALMP wrote `parts[-1]` when EMBR creation failed; ALUM probes off screen (newer Cracker) | review | checks |
+
+### 13.5 Verification
+- `wasm/build.sh`: builds (0 errors), powder.wasm 4.94 MB (was 4.19 MB). Native ASan+UBSan build
+  (`-Db_sanitize=address,undefined`, LuaJIT) of the same tree, run headless (SDL dummy drivers) with an
+  autorun script:
+  - all 143 elements placed together, spread out and packed, 600-1500 frames, repeated: no ASan/UBSan reports;
+  - each element alone in a 111x51 block next to METL+SPRK, WATR, FIRE, STKM and pressure, 40 frames each:
+    no reports (the only UBSan line is a misaligned read in the official `FontReader.cpp`).
+- Browser tests, Chromium headless: `tests/browser/added-elements.spec.mjs` (7 tests: every element present,
+  enabled, in a shown menu, placeable, 8 s with all of them running; I-WALL; RSST+PHOT->RSSS, EXPL, BUTN click;
+  stamp round trip with all 143 types and undo/redo with the new state; a VOLT circuit producing RSPK; a
+  5600-pixel VOLT block keeps running (252 ticks in 4 s); portals) plus the 13 existing ones: 20/20 over HTTP, 18/18 from the
+  offline ZIP opened as file://. Performance test unchanged: 53-54 ticks/s idle and with 28k particles.
+- Crash probe (all elements, 20 s, repeated): 0/6 tab crashes after the fixes (most runs crashed before).
+
+### 13.6 Limitations of the additions
+- Ultimata's tools that need its UI (config tool, transform, text, ruler, PROP2, extra brushes and deco tools,
+  EM-field / stress / time-dilation view toggles) are not included; the simulation code behind them is.
+- Ultimata described itself as buggy; its circuit solver in particular was written for float `tmp3/tmp4`
+  and runs on integers since TPT 97 (voltages and currents are whole numbers).
+- Ultimata saves were not tested: their elements should load (saves map elements by identifier), but its
+  walls 19-21 load as different walls here.

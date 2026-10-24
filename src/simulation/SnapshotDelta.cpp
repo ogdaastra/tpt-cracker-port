@@ -2,6 +2,7 @@
 
 #include "common/tpt-minmax.h"
 
+#include <cstring>
 #include <utility>
 
 // * A SnapshotDelta is a bidirectional difference type between Snapshots, defined such
@@ -95,7 +96,33 @@ bool operator ==(const playerst &lhs, const playerst &rhs)
 	       lhs.frames      == rhs.frames      &&
 	       lhs.rocketBoots == rhs.rocketBoots &&
 	       lhs.fan         == rhs.fan         &&
-	       lhs.spawnID     == rhs.spawnID;
+	       lhs.spawnID     == rhs.spawnID     &&
+	       lhs.stkmID      == rhs.stkmID;
+}
+
+// * Needed by FillSingleDiff for handling Snapshot::PortalParticles.
+bool operator ==(const std::vector<PortalBuffers::Entry> &lhs, const std::vector<PortalBuffers::Entry> &rhs)
+{
+	if (lhs.size() != rhs.size())
+	{
+		return false;
+	}
+	for (auto i = 0U; i < lhs.size(); ++i)
+	{
+		if (std::get<0>(lhs[i]) != std::get<0>(rhs[i]) ||
+		    std::get<1>(lhs[i]) != std::get<1>(rhs[i]) ||
+		    std::get<2>(lhs[i]) != std::get<2>(rhs[i]) ||
+		    std::memcmp(&std::get<3>(lhs[i]), &std::get<3>(rhs[i]), sizeof(Particle)))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool operator !=(const std::vector<PortalBuffers::Entry> &lhs, const std::vector<PortalBuffers::Entry> &rhs)
+{
+	return !(lhs == rhs);
 }
 
 // * Needed by FillSingleDiff for handling Snapshot::signs.
@@ -216,10 +243,14 @@ std::unique_ptr<SnapshotDelta> SnapshotDelta::FromSnapshots(const Snapshot &oldS
 	FillHunkVector(oldSnap.ElecMap        , newSnap.ElecMap        , delta.ElecMap        );
 	FillHunkVector(oldSnap.FanVelocityX   , newSnap.FanVelocityX   , delta.FanVelocityX   );
 	FillHunkVector(oldSnap.FanVelocityY   , newSnap.FanVelocityY   , delta.FanVelocityY   );
+	FillHunkVector(oldSnap.OneWayDir      , newSnap.OneWayDir      , delta.OneWayDir      );
+	FillHunkVector(oldSnap.FaradayMap     , newSnap.FaradayMap     , delta.FaradayMap     );
+	FillHunkVector(oldSnap.TimeDilation   , newSnap.TimeDilation   , delta.TimeDilation   );
+	FillSingleDiff(oldSnap.timer          , newSnap.timer          , delta.timer          );
 	FillHunkVector(oldSnap.WirelessData   , newSnap.WirelessData   , delta.WirelessData   );
 	FillSingleDiff(oldSnap.signs          , newSnap.signs          , delta.signs          );
 	FillSingleDiff(oldSnap.Authors        , newSnap.Authors        , delta.Authors        );
-	FillHunkVectorPtr(reinterpret_cast<const uint32_t *>(&oldSnap.PortalParticles[0]), reinterpret_cast<const uint32_t *>(&newSnap.PortalParticles[0]), delta.PortalParticles, newSnap.PortalParticles.size() * ParticleUint32Count);
+	FillSingleDiff(oldSnap.PortalParticles, newSnap.PortalParticles, delta.PortalParticles);
 	FillHunkVectorPtr(reinterpret_cast<const uint32_t *>(&oldSnap.stickmen[0])       , reinterpret_cast<const uint32_t *>(&newSnap.stickmen[0]       ), delta.stickmen       , newSnap.stickmen       .size() * playerstUint32Count);
 
 	// * Slightly more interesting; this will only diff the common parts, the rest is copied separately.
@@ -249,10 +280,14 @@ std::unique_ptr<Snapshot> SnapshotDelta::Forward(const Snapshot &oldSnap)
 	ApplyHunkVector<false>(ElecMap        , newSnap.ElecMap        );
 	ApplyHunkVector<false>(FanVelocityX   , newSnap.FanVelocityX   );
 	ApplyHunkVector<false>(FanVelocityY   , newSnap.FanVelocityY   );
+	ApplyHunkVector<false>(OneWayDir      , newSnap.OneWayDir      );
+	ApplyHunkVector<false>(FaradayMap     , newSnap.FaradayMap     );
+	ApplyHunkVector<false>(TimeDilation   , newSnap.TimeDilation   );
+	ApplySingleDiff<false>(timer          , newSnap.timer          );
 	ApplyHunkVector<false>(WirelessData   , newSnap.WirelessData   );
 	ApplySingleDiff<false>(signs          , newSnap.signs          );
 	ApplySingleDiff<false>(Authors        , newSnap.Authors        );
-	ApplyHunkVectorPtr<false>(PortalParticles, reinterpret_cast<uint32_t *>(&newSnap.PortalParticles[0]));
+	ApplySingleDiff<false>(PortalParticles, newSnap.PortalParticles);
 	ApplyHunkVectorPtr<false>(stickmen       , reinterpret_cast<uint32_t *>(&newSnap.stickmen[0]       ));
 
 	// * Slightly more interesting; apply the common hunk vector, copy the extra portion separaterly.
@@ -280,10 +315,14 @@ std::unique_ptr<Snapshot> SnapshotDelta::Restore(const Snapshot &newSnap)
 	ApplyHunkVector<true>(ElecMap        , oldSnap.ElecMap        );
 	ApplyHunkVector<true>(FanVelocityX   , oldSnap.FanVelocityX   );
 	ApplyHunkVector<true>(FanVelocityY   , oldSnap.FanVelocityY   );
+	ApplyHunkVector<true>(OneWayDir      , oldSnap.OneWayDir      );
+	ApplyHunkVector<true>(FaradayMap     , oldSnap.FaradayMap     );
+	ApplyHunkVector<true>(TimeDilation   , oldSnap.TimeDilation   );
+	ApplySingleDiff<true>(timer          , oldSnap.timer          );
 	ApplyHunkVector<true>(WirelessData   , oldSnap.WirelessData   );
 	ApplySingleDiff<true>(signs          , oldSnap.signs          );
 	ApplySingleDiff<true>(Authors        , oldSnap.Authors        );
-	ApplyHunkVectorPtr<true>(PortalParticles, reinterpret_cast<uint32_t *>(&oldSnap.PortalParticles[0]));
+	ApplySingleDiff<true>(PortalParticles, oldSnap.PortalParticles);
 	ApplyHunkVectorPtr<true>(stickmen       , reinterpret_cast<uint32_t *>(&oldSnap.stickmen[0]       ));
 
 	// * Slightly more interesting; apply the common hunk vector, copy the extra portion separaterly.

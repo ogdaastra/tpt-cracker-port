@@ -68,7 +68,13 @@ notice() { # title file
 }
 {
 	echo "Third-party software linked into powder.wasm"
-	echo "The game itself (The Powder Toy, Cracker1000's Mod) is GPL-3.0, see LICENSE.txt."
+	echo "The game itself (The Powder Toy, Cracker1000's Mod, plus elements and engine code from TPT Ultimata"
+	echo "by Bowserinator and elements from Jacob1's Mod) is GPL-3.0, see LICENSE.txt."
+	notice "Eigen 3.3.7 (MPL-2.0; a few files BSD or LGPL-2.1, see COPYING.README), used by the TPT Ultimata circuit solver" "src/eigen/COPYING.README"
+	notice "Eigen: MPL-2.0" "src/eigen/COPYING.MPL2"
+	notice "Eigen: BSD (parts)" "src/eigen/COPYING.BSD"
+	notice "Eigen: LGPL-2.1 (parts: SimplicialCholesky, AMD ordering, IncompleteLUT)" "src/eigen/COPYING.LGPL"
+	notice "Eigen: MINPACK (parts)" "src/eigen/COPYING.MINPACK"
 	notice "Lua 5.1.5 (MIT)" "$WORK/src/lua-5.1.5/COPYRIGHT"
 	notice "JsonCpp 1.9.5 (MIT / public domain)" "$WORK/src/jsoncpp-1.9.5/LICENSE"
 	notice "FFTW 3.3.10 (GPL-2.0-or-later; source in source/fftw-3.3.10.tar.gz)" "$WORK/src/fftw-3.3.10/COPYRIGHT"

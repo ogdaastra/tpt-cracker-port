@@ -121,6 +121,7 @@
 
 //CELL, the size of the pressure, gravity, and wall maps. Larger than 1 to prevent extreme lag
 #define CELL	4
+#define STASIS_CELL 2 // TPT Ultimata stasis field (EXFN)
 #define ISTP	(CELL/2)
 #define CFDS	(4.0f/CELL)
 #define SIM_MAXVELOCITY 1e4f
@@ -132,7 +133,7 @@
 #define AIR_VLOSS 0.999f
 #define AIR_PLOSS 0.9999f
 
-#define NGOL 24
+#define NGOL 38 // 24 official rules + 14 from TPT Ultimata
 
 #define CIRCLE_BRUSH 0
 #define SQUARE_BRUSH 1

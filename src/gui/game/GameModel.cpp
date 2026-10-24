@@ -58,6 +58,9 @@ GameModel::GameModel():
 	decoSpace(0)
 {
 	sim = new Simulation();
+	// TPT Ultimata elements reach the game through these (GNSH aims at the mouse, MVSD pauses on placement)
+	sim->model = this;
+	sim->ownsGlobalElementState = true;
 	ren = new Renderer(ui::Engine::Ref().g, sim);
 
 	activeTools = regularToolset;
@@ -288,7 +291,7 @@ void GameModel::BuildMenus()
 			{
 				tempTool = new Element_TESC_Tool(i, sim->elements[i].Name, sim->elements[i].Description, PIXR(sim->elements[i].Colour), PIXG(sim->elements[i].Colour), PIXB(sim->elements[i].Colour), sim->elements[i].Identifier, sim->elements[i].IconGenerator);
 			}
-			else if(i == PT_STKM || i == PT_FIGH || i == PT_STKM2)
+			else if(i == PT_STKM || i == PT_FIGH || i == PT_STKM2 || i == PT_BALI || (sim->elements[i].Properties & PROP_VEHICLE) || i == PT_JCB1 || i == PT_GNSH)
 			{
 				tempTool = new PlopTool(i, sim->elements[i].Name, sim->elements[i].Description, PIXR(sim->elements[i].Colour), PIXG(sim->elements[i].Colour), PIXB(sim->elements[i].Colour), sim->elements[i].Identifier, sim->elements[i].IconGenerator);
 			}
@@ -906,6 +909,11 @@ int GameModel::GetActiveMenu()
 }
 
 //Get an element tool from an element ID
+std::pair<float, float> GameModel::get_mouse_pos()
+{
+	return std::make_pair(float(ren->mousePos.X), float(ren->mousePos.Y));
+}
+
 Tool * GameModel::GetElementTool(int elementID)
 {
 	for(std::vector<Tool*>::iterator iter = elementTools.begin(), end = elementTools.end(); iter != end; ++iter)

@@ -2,7 +2,7 @@
 
 static int update(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
-static void create(ELEMENT_CREATE_FUNC_ARGS);
+void Element_PROT_create(ELEMENT_CREATE_FUNC_ARGS);
 static int DeutImplosion(Simulation * sim, int n, int x, int y, float temp, int t);
 
 void Element::Element_PROT()
@@ -49,7 +49,7 @@ void Element::Element_PROT()
 
 	Update = &update;
 	Graphics = &graphics;
-	Create = &create;
+	Create = &Element_PROT_create;
 }
 
 static int update(UPDATE_FUNC_ARGS)
@@ -101,6 +101,10 @@ static int update(UPDATE_FUNC_ARGS)
 		else change = 0.0f;
 		parts[uID].temp = restrict_flt(parts[uID].temp + change, MIN_TEMP, MAX_TEMP);
 		break;
+	case PT_RSSS: // Destroy RSSS
+		sim->kill_part(uID);
+		sim->kill_part(i);
+		return 1;
 	case PT_NONE:
 		//slowly kill if it's not inside an element
 		if (parts[i].life)
@@ -125,7 +129,7 @@ static int update(UPDATE_FUNC_ARGS)
 		break;
 	}
 	//make temp of other things closer to it's own temperature. This will change temp of things that don't conduct, and won't change the PROT's temperature
-	if (utype && utype != PT_WIFI)
+	if (utype && utype != PT_WIFI && utype != PT_TPRS)
 		parts[uID].temp = restrict_flt(parts[uID].temp-(parts[uID].temp-parts[i].temp)/4.0f, MIN_TEMP, MAX_TEMP);
 
 
@@ -207,7 +211,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	return 1;
 }
 
-static void create(ELEMENT_CREATE_FUNC_ARGS)
+void Element_PROT_create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	float a = RNG::Ref().between(0, 35) * 0.17453f;
 	sim->parts[i].life = 680;

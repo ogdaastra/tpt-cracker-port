@@ -12,7 +12,17 @@ simulation_files = files(
 	'ToolClasses.cpp',
 	'Simulation.cpp',
 	'SnapshotDelta.cpp',
+	'Spaceship.cpp',
+	'Stasis.cpp',
 )
+
+subdir('transform')
+subdir('vehicles')
+subdir('stress')
+subdir('quantum')
+subdir('mvsd')
+subdir('circuits')
+subdir('magnetics')
 
 subdir('elements')
 subdir('simtools')

@@ -105,7 +105,7 @@ static int update(UPDATE_FUNC_ARGS)
 									if(!--partsRemaining)
 										docontinue = 0;
 								}
-							} else if (TYP(r)==PT_FILT) { // get color if passed through FILT
+							} else if (TYP(r)==PT_FILT || (parts[ID(r)].life > 0 && TYP(r) == PT_PFLT)) { // get color if passed through FILT
 								if (parts[ID(r)].dcolour == 0xFF000000)
 									colored = 0xFF000000;
 								else if (parts[ID(r)].tmp==0)

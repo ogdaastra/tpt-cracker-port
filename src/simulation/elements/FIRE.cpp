@@ -2,9 +2,11 @@
 #include "simulation/ElementCommon.h"
 
 int Element_FIRE_update(UPDATE_FUNC_ARGS);
+void Element_FIRE_create(ELEMENT_CREATE_FUNC_ARGS);
+int Element_THOR_update(UPDATE_FUNC_ARGS);
+
 static int updateLegacy(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
-static void create(ELEMENT_CREATE_FUNC_ARGS);
 
 void Element::Element_FIRE()
 {
@@ -49,7 +51,7 @@ void Element::Element_FIRE()
 
 	Update = &Element_FIRE_update;
 	Graphics = &graphics;
-	Create = &create;
+	Create = &Element_FIRE_create;
 }
 
 int Element_FIRE_update(UPDATE_FUNC_ARGS)
@@ -206,6 +208,22 @@ int Element_FIRE_update(UPDATE_FUNC_ARGS)
 							parts[ID(r)].ctype = PT_CRMC;
 						}
 					}
+					// LAVA(ZINC) + LAVA(COPR) = LAVA(BRAS)
+					else if (parts[i].ctype == PT_ZINC && rt == PT_LAVA && parts[ID(r)].ctype == PT_COPR) {
+						parts[i].ctype = PT_BRAS;
+						parts[ID(r)].ctype = PT_BRAS;
+					}
+					// LAVA(TIN) + LAVA(COPR) = LAVA(BRNZ)
+					else if (parts[i].ctype == PT_TIN && rt == PT_LAVA && parts[ID(r)].ctype == PT_COPR) {
+						parts[i].ctype = PT_BRNZ;
+						parts[ID(r)].ctype = PT_BRNZ;
+					}
+					// LAVA(BSMH) resets tmp and tmp2 and tmp3
+					else if (parts[i].ctype == PT_BSMH) {
+						parts[i].tmp = 0;
+						parts[i].tmp2 = 0;
+						parts[i].tmp3 = 0;
+					}
 					else if (rt == PT_O2 && parts[i].ctype == PT_SLCN)
 					{
 						switch (RNG::Ref().between(0, 2))
@@ -245,6 +263,26 @@ int Element_FIRE_update(UPDATE_FUNC_ARGS)
 							parts[ID(r)].ctype = PT_HEAC;
 						}
 					}
+					else if (rt == PT_TMRM && parts[i].ctype == PT_TMRM) {
+						if (parts[ID(r)].temp > sim->elements[PT_TMRM].HighTemperature) {
+							sim->part_change_type(ID(r), x+rx, y+ry, PT_LAVA);
+							parts[ID(r)].ctype = PT_TMRM;
+						}
+					}
+					// Molten THOR still is radioactive
+					else if (parts[i].ctype == PT_THOR) {
+						Element_THOR_update(sim, i, x, y, surround_space, nt, parts, pmap);
+					}
+
+					// Molten LEAD destroys nearby electronics
+					else if (parts[i].ctype == PT_LEAD &&
+						(rt == PT_WIFI || rt == PT_SWCH || rt == PT_INST || rt == PT_ARAY || rt == PT_CRAY ||
+						 rt == PT_DRAY || rt == PT_TESC || rt == PT_EMP  || rt == PT_ETRD ||
+						 rt == PT_DTEC || rt == PT_TSNS || rt == PT_LDTC || rt == PT_PSNS ||
+						 rt == PT_PDTC || rt == PT_TRBN || rt == PT_PSTN || rt == PT_FRAY ||
+						 rt == PT_FILT || rt == PT_HEAC || rt == PT_LSNS ||
+						 sim->elements[rt].MenuSection == SC_POWERED))
+						sim->part_change_type(ID(r), x, y, PT_BREC);
 					else if (parts[i].ctype == PT_ROCK && rt == PT_LAVA && parts[ID(r)].ctype == PT_GOLD && parts[ID(r)].tmp == 0 &&
 						sim->pv[y / CELL][x / CELL] >= 50 && RNG::Ref().chance(1, 10000)) // Produce GOLD veins/clusters
 					{
@@ -263,7 +301,8 @@ int Element_FIRE_update(UPDATE_FUNC_ARGS)
 				    //exceptions, t is the thing causing the spark and rt is what's burning
 				    (t != PT_SPRK || (rt != PT_RBDM && rt != PT_LRBD && rt != PT_INSL)) &&
 				    (t != PT_PHOT || rt != PT_INSL) &&
-				    (rt != PT_SPNG || parts[ID(r)].life == 0))
+				    (rt != PT_SPNG || parts[ID(r)].life == 0) &&
+					(rt != PT_CRBN || parts[ID(r)].temp > 300.0f + 273.0f))
 				{
 					sim->part_change_type(ID(r), x+rx, y+ry, PT_FIRE);
 					parts[ID(r)].temp = restrict_flt(sim->elements[PT_FIRE].DefaultProperties.temp + (sim->elements[rt].Flammable/2), MIN_TEMP, MAX_TEMP);
@@ -332,7 +371,7 @@ static int updateLegacy(UPDATE_FUNC_ARGS)
 						sim->part_change_type(i,x,y,PT_STNE);
 					}
 				}
-				if (rt==PT_WATR || rt==PT_DSTW || rt==PT_SLTW)
+				if ((sim->elements[rt].Properties & PROP_WATER) && rt != PT_CBNW) // CBNW: as in the official game
 				{
 					sim->kill_part(ID(r));
 					if (t==PT_FIRE)
@@ -359,9 +398,16 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	*colb = PIXB(color);
 
 	*firea = 255;
-	*firer = *colr;
-	*fireg = *colg;
-	*fireb = *colb;
+	if (cpart->dcolour == 0 || cpart->tmp2 == 0) {
+		*firer = *colr;
+		*fireg = *colg;
+		*fireb = *colb;
+	}
+	else {
+		*firer = (0.3 * *colr + PIXR(cpart->dcolour));
+		*fireg = (0.3 * *colg + PIXG(cpart->dcolour));
+		*fireb = (0.3 * *colb + PIXB(cpart->dcolour));
+	}
 
 	*pixel_mode = PMODE_NONE; //Clear default, don't draw pixel
 	*pixel_mode |= FIRE_ADD;
@@ -369,7 +415,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-static void create(ELEMENT_CREATE_FUNC_ARGS)
+void Element_FIRE_create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	sim->parts[i].life = RNG::Ref().between(120, 169);
 }

@@ -5,6 +5,10 @@ The Powder Toy - January 2023
 
 Website link - https://tpt-cracker-port-96z6vdz5n7-9854.vercel.app/
 
+This web version also has 143 extra elements from [TPT Ultimata](https://github.com/Bowserinator/TPT-Ultimata-Mod) (Bowserinator),
+a newer [Cracker1000's Mod](https://github.com/cracker1000/The-Powder-Toy) branch (DFOM, DIGS, ALUM, ALMP, RSST, RSSS)
+and [Jacob1's Mod](https://github.com/jacob1/The-Powder-Toy) (EXPL, RAZR, PWHT, BUTN). See [ADDED_ELEMENTS.md](ADDED_ELEMENTS.md).
+
 Get the latest version [from the Powder Toy website](https://powdertoy.co.uk/Discussions/Thread/View.html?Thread=23279).
 
 To use online features such as saving, you need to [register an account](https://powdertoy.co.uk/Register.html).
