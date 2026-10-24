@@ -79,12 +79,20 @@ void Gravity::grav_fft_init()
 	th_gravxbigt = reinterpret_cast<fftwf_complex*>(fftwf_malloc(fft_tsize * sizeof(fftwf_complex)));
 	th_gravybigt = reinterpret_cast<fftwf_complex*>(fftwf_malloc(fft_tsize * sizeof(fftwf_complex)));
 
+#ifdef __EMSCRIPTEN__
+	// WebAssembly has no cycle counter, so FFTW_MEASURE times every candidate with a coarse clock and
+	// 10 ms minimum batches: planning these 192x306 transforms took over 5 minutes (measured), blocking
+	// the page. FFTW_ESTIMATE plans in milliseconds and executes in about 1 ms per transform here.
+	const unsigned planFlags = FFTW_ESTIMATE;
+#else
+	const unsigned planFlags = FFTW_MEASURE;
+#endif
 	//select best algorithm, could use FFTW_PATIENT or FFTW_EXHAUSTIVE but that increases the time taken to plan, and I don't see much increase in execution speed
-	plan_ptgravx = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravx, th_ptgravxt, FFTW_MEASURE);
-	plan_ptgravy = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravy, th_ptgravyt, FFTW_MEASURE);
-	plan_gravmap = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_gravmapbig, th_gravmapbigt, FFTW_MEASURE);
-	plan_gravx_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravxbigt, th_gravxbig, FFTW_MEASURE);
-	plan_gravy_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravybigt, th_gravybig, FFTW_MEASURE);
+	plan_ptgravx = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravx, th_ptgravxt, planFlags);
+	plan_ptgravy = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravy, th_ptgravyt, planFlags);
+	plan_gravmap = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_gravmapbig, th_gravmapbigt, planFlags);
+	plan_gravx_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravxbigt, th_gravxbig, planFlags);
+	plan_gravy_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravybigt, th_gravybig, planFlags);
 
 	//(XRES/CELL)*(YRES/CELL)*4 is size of data array, scaling needed because FFTW calculates an unnormalized DFT
 	scaleFactor = -float(M_GRAV)/((XRES/CELL)*(YRES/CELL)*4);

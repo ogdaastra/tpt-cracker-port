@@ -307,6 +307,14 @@ if host_platform == 'emscripten'
 		'-lidbfs.js',
 		'--pre-js', em_pre_js,
 	]
+	# emcc optimises at link time too (wasm-opt, JS minification, assertions off from -O1), but Meson only
+	# passes the optimization level when compiling.
+	if get_option('optimization') != 'plain'
+		project_link_args += [ '-O' + get_option('optimization') ]
+	endif
+	if get_option('debug')
+		project_link_args += [ '-g' ]
+	endif
 endif
 
 if host_platform == 'windows'

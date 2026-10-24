@@ -293,6 +293,20 @@
 			},
 			instantiateWasm: instantiateWithProgress,
 			onAbort: (what) => fail('The game stopped because of an internal error.', what),
+			// main() has drawn its first frame: the game is visible and SDL listens for input
+			tptOnFirstFrame: () => {
+				if (failed) {
+					return;
+				}
+				window.tptPage.state = 'running';
+				window.tptPage.timings.firstFrame = performance.now();
+				statusBox.hidden = true;
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen']) {
+					$(id).disabled = false;
+				}
+				fit();
+				canvas.focus();
+			},
 			tptOnQuit: () => {
 				window.tptPage.state = 'quit';
 				statusBox.hidden = false;
@@ -300,19 +314,17 @@
 				setStatus('The game was closed. Reload the page to start it again.');
 			},
 		}).then((instance) => {
+			// runtime ready; main() is starting (Lua scripts load before the first frame)
 			mod = instance;
 			window.tptPage.module = instance;
-			window.tptPage.state = 'running';
-			window.tptPage.timings.running = performance.now();
+			window.tptPage.timings.runtimeReady = performance.now();
 			if (instance.tptPersistenceError) {
 				rememberError('persistence: ' + instance.tptPersistenceError);
 			}
-			statusBox.hidden = true;
-			for (const id of ['btn-import', 'btn-export', 'btn-fullscreen']) {
-				$(id).disabled = false;
+			if (window.tptPage.state === 'loading') {
+				window.tptPage.state = 'starting';
+				setStatus('Starting the game…');
 			}
-			fit();
-			canvas.focus();
 		}, (e) => fail('The game failed to initialise.', e && e.stack || e));
 	}
 

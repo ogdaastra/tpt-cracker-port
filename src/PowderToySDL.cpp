@@ -510,6 +510,19 @@ void EngineProcess()
 			}
 
 			blit(engine->g->vid);
+#ifdef __EMSCRIPTEN__
+			// Tell the page once that the game is on screen and taking input (SDL's event listeners
+			// exist from here on); the module's ready promise resolves before main() gets this far.
+			static bool firstFrameReported = false;
+			if (!firstFrameReported)
+			{
+				firstFrameReported = true;
+				EM_ASM({
+					if (Module['tptOnFirstFrame'])
+						Module['tptOnFirstFrame']();
+				});
+			}
+#endif
 		}
 		auto fpsLimit = ui::Engine::Ref().FpsLimit;
 		auto now = uint64_t(SDL_GetTicks()) * UINT64_C(1'000'000);

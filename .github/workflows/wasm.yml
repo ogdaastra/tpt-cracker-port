@@ -1,0 +1,78 @@
+name: wasm
+# Builds the WebAssembly version from scratch with the pinned Emscripten SDK and runs the browser tests.
+# No dependency caches: every run proves the sysroot can still be built from the pinned sources.
+on:
+  push:
+    branches:
+      - '**' # branch pushes only; release tags (r*.*) belong to the upstream build.yaml
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install build tools
+        run: |
+          python -m pip install 'meson==1.6.1'
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config wabt
+
+      - name: Build dependency sysroot (emsdk pinned in wasm/emsdk-version.txt)
+        env:
+          EMSDK_DIR: ${{ runner.temp }}/emsdk
+        run: ./wasm/build-deps.sh 2>&1 | tee build-deps.log
+
+      - name: Build the game and assemble dist/
+        env:
+          EMSDK_DIR: ${{ runner.temp }}/emsdk
+        run: ./wasm/build.sh 2>&1 | tee build-wasm.log
+
+      - name: Validate the WebAssembly binary
+        run: |
+          wasm-validate --enable-all dist/powder.wasm
+          ls -la dist dist/source
+
+      - name: Install Playwright and Chromium
+        working-directory: tests/browser
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: tests/browser
+        run: npx playwright test
+
+      - name: Upload site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: warn
+
+      - name: Upload logs, screenshots and test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            build-deps.log
+            build-wasm.log
+            build-wasm/meson-logs/
+            artifacts/
+          if-no-files-found: warn
