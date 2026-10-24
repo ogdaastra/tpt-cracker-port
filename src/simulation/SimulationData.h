@@ -23,7 +23,14 @@
 #define SC_DECO 15
 #define SC_CRACKER 16
 #define SC_CRACKER2 17
-#define SC_TOTAL 16
+// Menus added by this port, shown in the second side-bar column. Appended so the numbers above, which
+// Lua scripts use directly (e.g. crackerk.lua), keep their meaning.
+#define SC_ORGANIC 18
+#define SC_SPACE 19
+#define SC_CHARACTERS 20
+#define SC_CIRCUITS 21
+#define SC_METALS 22
+#define SC_TOTAL 23
 
 #define O_WL_WALLELEC	122
 #define O_WL_EWALL		123

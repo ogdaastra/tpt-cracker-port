@@ -14,7 +14,7 @@ void Element::Element_STKM2()
 	Name = "STK2";
 	Colour = PIXPACK(0x6464FF);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_CHARACTERS; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.5f;

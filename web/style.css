@@ -70,6 +70,7 @@ button {
 
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
+button.on { border-color: var(--accent); color: var(--accent); }
 
 #stage {
 	position: relative;
@@ -85,22 +86,120 @@ button:disabled { opacity: 0.45; cursor: default; }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	inset: 0;
+	flex: 1;
+	min-width: 0;
+	align-self: stretch;
+	position: relative;
 	background: #000;
 }
 
+/* element browser beside the game (below it on narrow screens) */
+#elements {
+	width: 280px;
+	flex: none;
+	align-self: stretch;
+	display: flex;
+	flex-direction: column;
+	background: var(--panel);
+	border-left: 1px solid var(--border);
+	min-height: 0;
+}
+
+#elements[hidden] { display: none; }
+
+.elements-head {
+	padding: 8px;
+	border-bottom: 1px solid var(--border);
+}
+
+.elements-head .hint {
+	margin: 6px 0 0;
+	font-size: 11px;
+}
+
+kbd {
+	font: 11px ui-monospace, monospace;
+	border: 1px solid var(--border);
+	border-radius: 3px;
+	padding: 0 3px;
+}
+
+#element-search {
+	width: 100%;
+	font: inherit;
+	color: var(--text);
+	background: #0f1216;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	padding: 5px 8px;
+}
+
+#element-search:focus { outline: none; border-color: var(--accent); }
+
+#element-groups {
+	flex: 1;
+	overflow-y: auto;
+	padding: 4px 8px 12px;
+	min-height: 0;
+}
+
+#element-groups details { border-bottom: 1px solid var(--border); }
+
+#element-groups summary {
+	cursor: pointer;
+	padding: 6px 0;
+	font-weight: 600;
+	user-select: none;
+}
+
+#element-groups summary .count {
+	color: var(--muted);
+	font-weight: 400;
+	margin-left: 4px;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding-bottom: 8px;
+}
+
+.chip {
+	--c: #888;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 6px;
+	font: 12px ui-monospace, "Cascadia Mono", Consolas, monospace;
+	border-radius: 3px;
+	background: #1d2128;
+}
+
+.chip::before {
+	content: "";
+	width: 10px;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--c);
+	flex: none;
+}
+
+.chip.sel-left { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chip.sel-right { border-color: var(--danger); box-shadow: inset 0 0 0 1px var(--danger); }
+.chip.sel-left.sel-right { box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 1px var(--danger); }
+
+.no-match { color: var(--muted); padding: 8px 0; }
+
 #canvas {
 	display: block;
-	/* the game draws at its native 629x424; scale up without blurring */
+	/* the game draws at its native 646x424; scale up without blurring */
 	image-rendering: pixelated;
 	image-rendering: crisp-edges;
 	outline: none;
 	cursor: default;
 	/* overwritten by tpt-web.js to fit the stage; this just avoids SDL's 1x1 probe size */
-	width: 629px;
+	width: 646px;
 	height: 424px;
 }
 
@@ -176,6 +275,17 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 
 /* fullscreen: the game area only, centred on black */
 #game:fullscreen { background: #000; }
+
+@media (max-width: 900px) {
+	#stage { flex-direction: column; }
+	#game { min-height: 240px; }
+	#elements {
+		width: auto;
+		max-height: 40vh;
+		border-left: 0;
+		border-top: 1px solid var(--border);
+	}
+}
 
 @media (max-width: 640px) {
 	.bar { padding: 6px 16px; }

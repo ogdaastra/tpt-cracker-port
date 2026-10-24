@@ -10,7 +10,7 @@ void Element::Element_LOGC() {
 	Name = "LOGC";
 	Colour = PIXPACK(0xFFFFFF);
 	MenuVisible = 1;
-	MenuSection = SC_ELEC; // SC_ELECTROMAG in TPT Ultimata
+	MenuSection = SC_CIRCUITS; // SC_ELECTROMAG in TPT Ultimata; SC_ELEC before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

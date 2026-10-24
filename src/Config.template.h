@@ -101,9 +101,12 @@
 #ifdef RENDERER
 #define MENUSIZE 0
 #define BARSIZE 0
+#define EXTRABARSIZE 0
 #else
 #define MENUSIZE 40
 #define BARSIZE 17
+// second column of menu buttons right of the classic side bar, for the menus added by this port
+#define EXTRABARSIZE 17
 #endif
 #define XRES	612
 #define YRES	384
@@ -112,7 +115,7 @@
 #define XCNTR   XRES/2
 #define YCNTR   YRES/2
 
-#define WINDOWW (XRES+BARSIZE)
+#define WINDOWW (XRES+BARSIZE+EXTRABARSIZE)
 #define WINDOWH (YRES+MENUSIZE)
 
 #define GRAV_DIFF

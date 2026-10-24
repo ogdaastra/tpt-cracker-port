@@ -33,6 +33,36 @@ const SCENES = {
 		end`,
 };
 
+// Milliseconds per frame from the game's own benchmark export (wasm, no rendering or browser
+// scheduling in the measurement): the median of several rounds, so one slow round doesn't count.
+async function frameCost(page, what, rounds, frames) {
+	const times = [];
+	for (let r = 0; r < rounds; r++) {
+		times.push(await page.evaluate(([f, w]) => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [f, w]), [frames, what]) / frames);
+	}
+	times.sort((a, b) => a - b);
+	return Math.round(times[Math.floor(times.length / 2)] * 1000) / 1000;
+}
+
+const round3 = (v) => Math.round(v * 1000) / 1000;
+
+test('cost of one simulation frame and one rendered frame', async ({ page }) => {
+	test.setTimeout(600_000);
+	await h.openGame(page);
+	await h.lua(page, 'tpt.set_pause(1) or 0'); // scenes start from the same state; the benchmark steps them itself
+	const out = {};
+	for (const [name, code] of Object.entries(SCENES)) {
+		await h.luaFile(page, code + '\nreturn 0', 120_000);
+		await page.evaluate(() => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [20, 0])); // warm-up
+		const n = Number(await h.luaFile(page, 'local n = 0 for i in sim.parts() do n = n + 1 end return n'));
+		const simMs = await frameCost(page, 0, 7, 30);
+		const renderMs = await frameCost(page, 1, 7, 20);
+		out[name] = { particles: n, simMsPerFrame: simMs, renderMsPerFrame: renderMs, totalMsPerFrame: round3(simMs + renderMs) };
+	}
+	results.frameCost = out;
+	console.log('frame cost', JSON.stringify(out));
+});
+
 async function ticksPerSecond(page, ms) {
 	const a = Number(await h.lua(page, 'TK'));
 	const ta = Date.now();
@@ -41,7 +71,9 @@ async function ticksPerSecond(page, ms) {
 	return (b - a) / ((Date.now() - ta) / 1000);
 }
 
-for (const throttle of (process.env.PERF_THROTTLES || '1,4').split(',').map(Number)) {
+// Whole-game tick rate with the frame cap removed, optionally with CDP CPU throttling to mimic a slower
+// device (PERF_THROTTLES=1,4). Much noisier than the frame cost above.
+for (const throttle of (process.env.PERF_THROTTLES || '').split(',').filter(Boolean).map(Number)) {
 	test(`simulation speed, CPU throttle ${throttle}x`, async ({ page }) => {
 		test.setTimeout(600_000);
 		await h.openGame(page);

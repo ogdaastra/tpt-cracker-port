@@ -8,7 +8,7 @@ void Element::Element_BRMT()
 	Name = "BRMT";
 	Colour = PIXPACK(0x705060);
 	MenuVisible = 1;
-	MenuSection = SC_POWDERS;
+	MenuSection = SC_METALS; // SC_POWDERS before the menu split
 	Enabled = 1;
 
 	Advection = 0.4f;

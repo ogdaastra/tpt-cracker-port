@@ -1,6 +1,7 @@
 #include "Config.h"
 #include "common/tpt-minmax.h"
 
+#include <algorithm>
 #include <map>
 #include <optional>
 #include <ctime>
@@ -52,6 +53,12 @@
 #include "gui/Style.h"
 
 #include "gui/game/GameController.h"
+#include "gui/game/GameModel.h"
+#include "gui/game/Menu.h"
+#include "gui/game/Tool.h"
+#include "graphics/Renderer.h"
+#include "simulation/Simulation.h"
+#include "simulation/SimulationData.h"
 #include "gui/game/GameView.h"
 #include "gui/dialogues/ConfirmPrompt.h"
 #include "gui/dialogues/ErrorMessage.h"
@@ -321,8 +328,24 @@ bool mouseDown = false;
 bool calculatedInitialMouse = false, delay = false;
 bool hasMouseMoved = false;
 
+#ifdef __EMSCRIPTEN__
+// The web page's element browser (see the exports at the end of this file) selects tools through a
+// queued SDL event, so the game state only changes inside the game loop.
+static GameController *webGameController = nullptr;
+static Uint32 webSelectToolEvent = (Uint32)-1;
+static void WebSelectTool(const char *identifier, int selection);
+#endif
+
 void EventProcess(SDL_Event event)
 {
+#ifdef __EMSCRIPTEN__
+	if (webSelectToolEvent != (Uint32)-1 && event.type == webSelectToolEvent)
+	{
+		WebSelectTool((const char *)event.user.data1, event.user.code);
+		SDL_free(event.user.data1);
+		return;
+	}
+#endif
 	switch (event.type)
 	{
 	case SDL_QUIT:
@@ -892,6 +915,10 @@ int main(int argc, char * argv[])
 	auto wrapWithBluescreen = [&]() {
 		gameController = new GameController();
 		engine->ShowWindow(gameController->GetView());
+#ifdef __EMSCRIPTEN__
+		webGameController = gameController;
+		webSelectToolEvent = SDL_RegisterEvents(1);
+#endif
 
 		auto openArg = arguments["open"];
 		if (openArg.has_value())
@@ -1036,5 +1063,144 @@ extern "C"
 			SDL_free(event.drop.file);
 		}
 	}
+
+	// Every visible menu (except Favorites) and its tools, as JSON for the page's element browser:
+	// {"menus":[{"id":1,"name":"Electronics","tools":[{"id":"DEFAULT_PT_METL","name":"METL","desc":"…","color":"#rrggbb"},…]},…]}
+	// The returned string stays valid until the next call.
+	EMSCRIPTEN_KEEPALIVE const char *tpt_element_list()
+	{
+		static std::string json;
+		json = "{\"menus\":[";
+		if (webGameController)
+		{
+			auto escape = [](const String &text) {
+				std::string out;
+				for (char c : text.ToUtf8())
+				{
+					switch (c)
+					{
+					case '"': out += "\\\""; break;
+					case '\\': out += "\\\\"; break;
+					case '\n': out += "\\n"; break;
+					default:
+						if ((unsigned char)c < 0x20)
+						{
+							char buf[8];
+							snprintf(buf, sizeof(buf), "\\u%04x", c);
+							out += buf;
+						}
+						else
+						{
+							out += c;
+						}
+					}
+				}
+				return out;
+			};
+			bool firstMenu = true;
+			auto menus = webGameController->GetMenuList();
+			for (int i = 0; i < (int)menus.size(); i++)
+			{
+				if (!menus[i]->GetVisible() || i == SC_FAVORITES || menus[i]->GetToolList().empty())
+					continue;
+				json += firstMenu ? "" : ",";
+				firstMenu = false;
+				json += "{\"id\":" + std::to_string(i) + ",\"name\":\"" + escape(menus[i]->GetDescription()) + "\",\"tools\":[";
+				bool firstTool = true;
+				for (auto *tool : menus[i]->GetToolList())
+				{
+					char colour[8];
+					snprintf(colour, sizeof(colour), "#%02x%02x%02x", tool->colRed & 0xFF, tool->colGreen & 0xFF, tool->colBlue & 0xFF);
+					json += firstTool ? "" : ",";
+					firstTool = false;
+					json += "{\"id\":\"" + escape(tool->GetIdentifier().FromUtf8()) + "\",\"name\":\"" + escape(tool->GetName()) +
+						"\",\"desc\":\"" + escape(tool->GetDescription()) + "\",\"color\":\"" + colour + "\"}";
+				}
+				json += "]}";
+			}
+		}
+		json += "]}";
+		return json.c_str();
+	}
+
+	// Identifiers of the left and right mouse tools, separated by a newline.
+	EMSCRIPTEN_KEEPALIVE const char *tpt_active_tools()
+	{
+		static std::string out;
+		out.clear();
+		if (webGameController)
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				auto *tool = webGameController->GetActiveTool(i);
+				out += (i ? "\n" : "") + (tool ? tool->GetIdentifier() : ByteString());
+			}
+		}
+		return out.c_str();
+	}
+
+	// Selects a tool for the left (0) or right (1) mouse button, as clicking it in its menu would.
+	EMSCRIPTEN_KEEPALIVE void tpt_select_tool(const char *identifier, int selection)
+	{
+		if (webSelectToolEvent == (Uint32)-1 || selection < 0 || selection > 1)
+			return;
+		SDL_Event event;
+		SDL_zero(event);
+		event.type = webSelectToolEvent;
+		event.user.code = selection;
+		event.user.data1 = SDL_strdup(identifier);
+		if (SDL_PushEvent(&event) != 1)
+		{
+			SDL_free(event.user.data1);
+		}
+	}
+
+	// Runs the simulation (what = 0) or the particle renderer (what = 1) for the given number of frames
+	// as fast as possible and returns the milliseconds taken; for benchmarks
+	// (tests/browser/perf.spec.mjs). Ignores pause, like single-frame stepping.
+	EMSCRIPTEN_KEEPALIVE double tpt_benchmark(int frames, int what)
+	{
+		if (!webGameController)
+			return -1;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		auto *ren = webGameController->GetModel()->GetRenderer();
+		auto start = emscripten_get_now();
+		for (int i = 0; i < frames; i++)
+		{
+			if (what == 0)
+			{
+				sim->framerender = 1;
+				sim->BeforeSim();
+				sim->UpdateParticles(0, NPART - 1);
+				sim->AfterSim();
+			}
+			else
+			{
+				ren->clearScreen(1.0f);
+				ren->RenderBegin();
+				ren->RenderEnd();
+			}
+		}
+		sim->framerender = 0;
+		return emscripten_get_now() - start;
+	}
+}
+
+static void WebSelectTool(const char *identifier, int selection)
+{
+	auto *tool = webGameController->GetModel()->GetToolFromIdentifier(identifier);
+	if (!tool)
+		return;
+	auto menus = webGameController->GetMenuList();
+	for (int i = 0; i < (int)menus.size(); i++)
+	{
+		auto tools = menus[i]->GetToolList();
+		if (i != SC_FAVORITES && menus[i]->GetVisible() && std::find(tools.begin(), tools.end(), tool) != tools.end())
+		{
+			webGameController->SetActiveMenu(i);
+			break;
+		}
+	}
+	webGameController->SetActiveTool(selection, tool);
 }
 #endif

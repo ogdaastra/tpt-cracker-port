@@ -15,7 +15,7 @@ void Element::Element_COTR()
 	Name = "COTR";
 	Colour = PIXPACK(0x5c0e0e);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_SPACE in TPT Ultimata
+	MenuSection = SC_SPACE; // SC_SPACE in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 

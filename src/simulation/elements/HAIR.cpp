@@ -18,7 +18,7 @@ void Element::Element_HAIR() {
 	Name = "HAIR";
 	Colour = PIXPACK(0x33302C);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_CRACKER2 in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_CRACKER2 in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.7f;

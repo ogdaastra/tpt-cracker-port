@@ -8,7 +8,7 @@ void Element::Element_MUD() {
 	Name = "MUD";
 	Colour = PIXPACK(0x493804);
 	MenuVisible = 1;
-	MenuSection = SC_LIQUID; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_LIQUID before the menu split
 	Enabled = 1;
 
 	Advection = 0.6f;

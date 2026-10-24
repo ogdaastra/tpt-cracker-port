@@ -7,7 +7,7 @@ void Element::Element_RSTR() {
 	Name = "RSTR";
 	Colour = PIXPACK(0xEACE9E);
 	MenuVisible = 1;
-	MenuSection = SC_ELEC; // SC_ELECTROMAG in TPT Ultimata
+	MenuSection = SC_CIRCUITS; // SC_ELECTROMAG in TPT Ultimata; SC_ELEC before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

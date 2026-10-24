@@ -8,7 +8,7 @@ void Element::Element_BMTL()
 	Name = "BMTL";
 	Colour = PIXPACK(0x505070);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

@@ -11,7 +11,7 @@ void Element::Element_WEB() {
 	Name = "WEB";
 	Colour = PIXPACK(0x333333);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.05f;

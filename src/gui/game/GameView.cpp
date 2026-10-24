@@ -38,6 +38,11 @@
 #include <cstring>
 #include <iostream>
 
+// Right edge of the classic side bar. The window is EXTRABARSIZE wider than that, for a second column
+// of menu buttons; everything else keeps its classic position (crackerk.lua draws its theme over
+// these buttons at fixed coordinates).
+constexpr int CLASSIC_W = XRES + BARSIZE;
+
 #ifdef GetUserName
 # undef GetUserName // dammit windows
 #endif
@@ -288,13 +293,13 @@ GameView::GameView():
 	tagSimulationButton->SetActionCallback({ [this] { c->OpenTags(); } });
 	AddComponent(tagSimulationButton);
 
-	clearSimButton = new ui::Button(ui::Point(Size.X-159, Size.Y-16), ui::Point(17, 15), "", "Erase everything");
+	clearSimButton = new ui::Button(ui::Point(CLASSIC_W-159, Size.Y-16), ui::Point(17, 15), "", "Erase everything");
 	clearSimButton->SetIcon(IconNew);
 	clearSimButton->Appearance.Margin.Left+=2;
 	clearSimButton->SetActionCallback({ [this] { c->ClearSim(); } });
 	AddComponent(clearSimButton);
 
-	loginButton = new SplitButton(ui::Point(Size.X-141, Size.Y-16), ui::Point(92, 15), "[sign in]", "Sign into simulation server", "Edit Profile", 19);
+	loginButton = new SplitButton(ui::Point(CLASSIC_W-141, Size.Y-16), ui::Point(92, 15), "[sign in]", "Sign into simulation server", "Edit Profile", 19);
 	loginButton->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	loginButton->SetIcon(IconLogin);
 	loginButton->SetSplitActionCallback({
@@ -303,25 +308,25 @@ GameView::GameView():
 	});
 	AddComponent(loginButton);
 
-	simulationOptionButton = new ui::Button(ui::Point(Size.X-48, Size.Y-16), ui::Point(15, 15), "", "Simulation options");
+	simulationOptionButton = new ui::Button(ui::Point(CLASSIC_W-48, Size.Y-16), ui::Point(15, 15), "", "Simulation options");
 	simulationOptionButton->SetIcon(IconSimulationSettings);
 	simulationOptionButton->Appearance.Margin.Left+=2;
 	simulationOptionButton->SetActionCallback({ [this] { c->OpenOptions(); } });
 	AddComponent(simulationOptionButton);
 
-	displayModeButton = new ui::Button(ui::Point(Size.X-32, Size.Y-16), ui::Point(15, 15), "", "Renderer options");
+	displayModeButton = new ui::Button(ui::Point(CLASSIC_W-32, Size.Y-16), ui::Point(15, 15), "", "Renderer options");
 	displayModeButton->SetIcon(IconRenderSettings);
 	displayModeButton->Appearance.Margin.Left+=2;
 	displayModeButton->SetActionCallback({ [this] { c->OpenRenderOptions(); } });
 	AddComponent(displayModeButton);
 
-	pauseButton = new ui::Button(ui::Point(Size.X-16, Size.Y-16), ui::Point(15, 15), "", "Pause/Resume the simulation");  //Pause
+	pauseButton = new ui::Button(ui::Point(CLASSIC_W-16, Size.Y-16), ui::Point(15, 15), "", "Pause/Resume the simulation");  //Pause
 	pauseButton->SetIcon(IconPause);
 	pauseButton->SetTogglable(true);
 	pauseButton->SetActionCallback({ [this] { c->SetPaused(pauseButton->GetToggleState()); } });
 	AddComponent(pauseButton);
 
-	ui::Button * tempButton = new ui::Button(ui::Point(WINDOWW-16, WINDOWH-32), ui::Point(15, 15), 0xE065, "Search for elements");
+	ui::Button * tempButton = new ui::Button(ui::Point(CLASSIC_W-16, WINDOWH-32), ui::Point(15, 15), 0xE065, "Search for elements");
 	tempButton->Appearance.Margin = ui::Border(0, 2, 3, 2);
 	tempButton->SetActionCallback({ [this] { c->OpenElementSearch(); } });
 	AddComponent(tempButton);
@@ -379,7 +384,7 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 	std::vector<QuickOption*> optionList = sender->GetQuickOptions();
 	for(auto *option : optionList)
 	{
-		ui::Button * tempButton = new ui::Button(ui::Point(WINDOWW-16, currentY), ui::Point(15, 15), option->GetIcon(), option->GetDescription());
+		ui::Button * tempButton = new ui::Button(ui::Point(CLASSIC_W-16, currentY), ui::Point(15, 15), option->GetIcon(), option->GetDescription());
 		//tempButton->Appearance.Margin = ui::Border(0, 2, 3, 2);
 		tempButton->SetTogglable(true);
 		tempButton->SetActionCallback({ [option] {
@@ -409,37 +414,50 @@ void GameView::NotifyMenuListChanged(GameModel * sender)
 	}
 	toolButtons.clear();
 	std::vector<Menu*> menuList = sender->GetMenuList();
-	for (int i = (int)menuList.size()-1; i >= 0; i--)
+	// The classic menus fill the classic column bottom-up; the menus this port adds go in the second
+	// column, top-down from the height of the topmost classic menu.
+	auto addMenuButton = [this, &menuList](int i, ui::Point position) {
+		String tempString = "";
+		tempString += menuList[i]->GetIcon();
+		String description = menuList[i]->GetDescription();
+		if (i == SC_FAVORITES && !Favorite::Ref().AnyFavorites())
+			description += " (Use ctrl+shift+click to toggle the favorite status of an element)";
+		auto *tempButton = new MenuButton(position, ui::Point(15, 15), tempString, description);
+		tempButton->Appearance.Margin = ui::Border(0, 2, 3, 2);
+		tempButton->menuID = i;
+		tempButton->needsClick = i == SC_DECO;
+		tempButton->SetTogglable(true);
+		auto mouseEnterCallback = [this, tempButton] {
+			// don't immediately change the active menu, the actual set is done inside GameView::OnMouseMove
+			// if we change it here it causes components to be removed, which causes the window to stop sending events
+			// and then the previous menusection button never gets sent the OnMouseLeave event and is never unhighlighted
+			if(!(tempButton->needsClick || c->GetMouseClickRequired()) && !GetMouseDown())
+				SetActiveMenuDelayed(tempButton->menuID);
+		};
+		auto actionCallback = [this, tempButton, mouseEnterCallback] {
+			if (tempButton->needsClick || c->GetMouseClickRequired())
+				c->SetActiveMenu(tempButton->menuID);
+			else
+				mouseEnterCallback();
+		};
+		tempButton->SetActionCallback({ actionCallback, nullptr, mouseEnterCallback });
+		AddComponent(tempButton);
+		menuButtons.push_back(tempButton);
+	};
+	for (int i = std::min((int)menuList.size(), SC_ORGANIC) - 1; i >= 0; i--)
 	{
 		if (menuList[i]->GetVisible())
 		{
-			String tempString = "";
-			tempString += menuList[i]->GetIcon();
-			String description = menuList[i]->GetDescription();
-			if (i == SC_FAVORITES && !Favorite::Ref().AnyFavorites())
-				description += " (Use ctrl+shift+click to toggle the favorite status of an element)";
-			auto *tempButton = new MenuButton(ui::Point(WINDOWW-16, currentY), ui::Point(15, 15), tempString, description);
-			tempButton->Appearance.Margin = ui::Border(0, 2, 3, 2);
-			tempButton->menuID = i;
-			tempButton->needsClick = i == SC_DECO;
-			tempButton->SetTogglable(true);
-			auto mouseEnterCallback = [this, tempButton] {
-				// don't immediately change the active menu, the actual set is done inside GameView::OnMouseMove
-				// if we change it here it causes components to be removed, which causes the window to stop sending events
-				// and then the previous menusection button never gets sent the OnMouseLeave event and is never unhighlighted
-				if(!(tempButton->needsClick || c->GetMouseClickRequired()) && !GetMouseDown())
-					SetActiveMenuDelayed(tempButton->menuID);
-			};
-			auto actionCallback = [this, tempButton, mouseEnterCallback] {
-				if (tempButton->needsClick || c->GetMouseClickRequired())
-					c->SetActiveMenu(tempButton->menuID);
-				else
-					mouseEnterCallback();
-			};
-			tempButton->SetActionCallback({ actionCallback, nullptr, mouseEnterCallback });
-			currentY-=16;
-			AddComponent(tempButton);
-			menuButtons.push_back(tempButton);
+			addMenuButton(i, ui::Point(CLASSIC_W-16, currentY));
+			currentY -= 16;
+		}
+	}
+	for (int i = SC_ORGANIC; i < (int)menuList.size(); i++)
+	{
+		if (menuList[i]->GetVisible())
+		{
+			currentY += 16;
+			addMenuButton(i, ui::Point(WINDOWW-16, currentY));
 		}
 	}
 }
@@ -1021,7 +1039,7 @@ void GameView::updateToolButtonScroll()
 
 		int offsetDelta = 0;
 
-		int newInitialX = WINDOWW - 56;
+		int newInitialX = CLASSIC_W - 56;
 		int totalWidth = (toolButtons[0]->Size.X + 1) * toolButtons.size();
 		int scrollSize = (int)(((float)(XRES - BARSIZE))/((float)totalWidth) * ((float)XRES - BARSIZE));
 
@@ -1289,19 +1307,19 @@ void GameView::ToolTip(ui::Point senderPosition, String toolTip)
 		}
 	}
 	// quickoption and menu tooltips
-	else if(senderPosition.X > Size.X-BARSIZE)// < Size.Y-(quickOptionButtons.size()+1)*16)
+	else if(senderPosition.X > XRES)// < Size.Y-(quickOptionButtons.size()+1)*16)
 	{
 		this->toolTip = toolTip;
-		toolTipPosition = ui::Point(Size.X-27-Graphics::textwidth(toolTip), senderPosition.Y+3);
+		toolTipPosition = ui::Point(CLASSIC_W-27-Graphics::textwidth(toolTip), senderPosition.Y+3);
 		if(toolTipPosition.Y+10 > Size.Y-MENUSIZE)
-			toolTipPosition = ui::Point(Size.X-27-Graphics::textwidth(toolTip), Size.Y-MENUSIZE-10);
+			toolTipPosition = ui::Point(CLASSIC_W-27-Graphics::textwidth(toolTip), Size.Y-MENUSIZE-10);
 		isToolTipFadingIn = true;
 	}
 	// element tooltips
 	else
 	{
 		this->toolTip = toolTip;
-		toolTipPosition = ui::Point(Size.X-27-Graphics::textwidth(toolTip), Size.Y-MENUSIZE-10);
+		toolTipPosition = ui::Point(CLASSIC_W-27-Graphics::textwidth(toolTip), Size.Y-MENUSIZE-10);
 		isToolTipFadingIn = true;
 	}
 }
@@ -2500,8 +2518,8 @@ void GameView::OnDraw()
 	}
 
 	// Clear menu areas, to ensure particle graphics don't overlap
-	memset(g->vid+((XRES+BARSIZE)*YRES), 0, (PIXELSIZE*(XRES+BARSIZE))*MENUSIZE);
-	g->clearrect(XRES, 1, BARSIZE, YRES-1);
+	memset(g->vid+(WINDOWW*YRES), 0, (PIXELSIZE*WINDOWW)*MENUSIZE);
+	g->clearrect(XRES, 1, WINDOWW-XRES, YRES-1);
 }
 
 ui::Point GameView::lineSnapCoords(ui::Point point1, ui::Point point2)

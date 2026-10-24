@@ -9,7 +9,7 @@ void Element::Element_SODM()
 	Name = "SODM";
 	Colour = PIXPACK(0xcaccce);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 

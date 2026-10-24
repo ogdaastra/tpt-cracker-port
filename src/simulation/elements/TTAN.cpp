@@ -9,7 +9,7 @@ void Element::Element_TTAN()
 	Name = "TTAN";
 	Colour = PIXPACK(0x909090);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

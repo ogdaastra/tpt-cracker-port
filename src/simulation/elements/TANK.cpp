@@ -20,7 +20,7 @@ void Element::Element_TANK() {
 	Name = "TANK";
 	Colour = PIXPACK(0x52482E);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_CRACKER2 in TPT Ultimata
+	MenuSection = SC_CHARACTERS; // SC_CRACKER2 in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.01f;

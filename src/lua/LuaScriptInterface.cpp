@@ -2970,6 +2970,11 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, SC_LIFE);
 	SETCONST(l, SC_TOOL);
 	SETCONST(l, SC_DECO);
+	SETCONST(l, SC_ORGANIC);
+	SETCONST(l, SC_SPACE);
+	SETCONST(l, SC_CHARACTERS);
+	SETCONST(l, SC_CIRCUITS);
+	SETCONST(l, SC_METALS);
 
 	//Element identifiers
 	for(int i = 0; i < PT_NUM; i++)

@@ -34,7 +34,7 @@ void Element::Element_ALUM()
 	Name = "ALUM";
 	Colour = PIXPACK(0xB0B0C4);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

@@ -300,7 +300,9 @@ void GameModel::BuildMenus()
 				tempTool = new ElementTool(i, sim->elements[i].Name, sim->elements[i].Description, PIXR(sim->elements[i].Colour), PIXG(sim->elements[i].Colour), PIXB(sim->elements[i].Colour), sim->elements[i].Identifier, sim->elements[i].IconGenerator);
 			}
 
-			if (sim->elements[i].MenuSection >= 0 && sim->elements[i].MenuSection < SC_TOTAL && sim->elements[i].MenuVisible)
+			// SC_CRACKER and SC_CRACKER2 are hidden menus of the mod; their elements stay out of every menu
+			int section = sim->elements[i].MenuSection;
+			if (section >= 0 && section < SC_TOTAL && section != SC_CRACKER && section != SC_CRACKER2 && sim->elements[i].MenuVisible)
 			{
 				menuList[sim->elements[i].MenuSection]->AddTool(tempTool);
 			}

@@ -8,7 +8,7 @@ void Element::Element_HONY() {
 	Name = "HONY";
 	Colour = PIXPACK(0xFF9900);
 	MenuVisible = 1;
-	MenuSection = SC_LIQUID; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_LIQUID before the menu split
 	Enabled = 1;
 
 	Advection = 0.6f;

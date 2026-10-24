@@ -9,7 +9,7 @@ void Element::Element_STMH() {
 	Name = "STMH";
 	Colour = PIXPACK(0xc4AE95);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

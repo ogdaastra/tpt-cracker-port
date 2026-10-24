@@ -10,7 +10,7 @@ void Element::Element_BEE()
 	Name = "BEE";
 	Colour = PIXPACK(0xff8000);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_ORGANIC; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 1.0f;

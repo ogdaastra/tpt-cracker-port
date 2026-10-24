@@ -18,7 +18,7 @@ void Element::Element_BIRD() {
 	Name = "BIRD";
 	Colour = PIXPACK(0xB8A174);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.1f;
