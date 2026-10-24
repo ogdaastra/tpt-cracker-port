@@ -104,8 +104,6 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 
 	RecalcFreeParticles(false);
 
-	std::fill(&density_map[0][0], &density_map[0][0] + (YRES / DENSITY_CELL) * (XRES / DENSITY_CELL), 0);
-
 	bool doFullScan = false;
 	for (int n = 0; n < NPART && n < save->particlesCount; n++)
 	{
@@ -232,9 +230,6 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 			parts_lastActiveIndex = i;
 		parts[i] = tempPart;
 		elementCount[tempPart.type]++;
-
-
-		density_map[(int)(parts[i].y) / DENSITY_CELL][(int)(parts[i].x) / DENSITY_CELL]++;
 
 		void Element_STKM_init_legs(Simulation * sim, playerst *playerp, int i);
 		switch (parts[i].type)
@@ -621,6 +616,7 @@ void Simulation::Restore(const Snapshot &snap)
 	std::copy(snap.OneWayDir      .begin(), snap.OneWayDir      .end(), &oneWayDir[0][0] );
 	std::copy(snap.FaradayMap     .begin(), snap.FaradayMap     .end(), &faraday_map[0][0]);
 	std::copy(snap.TimeDilation   .begin(), snap.TimeDilation   .end(), &time_dilation[0][0]);
+	anyTimeDilation = true; // recomputed by the next BeforeSim
 	if (grav->IsEnabled())
 	{
 		grav->Clear();
@@ -2397,6 +2393,7 @@ void Simulation::clear_sim(void)
 	memset(&player2, 0, sizeof(player2));
 	std::fill(elementCount, elementCount+PT_NUM, 0);
 	std::fill(&time_dilation[0][0], &time_dilation[0][0] + ((XRES / CELL) * (YRES / CELL)), 0);
+	anyTimeDilation = false;
 	elementRecount = true;
 	fighcount = 0;
 	player.spwn = 0;
@@ -3481,8 +3478,6 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
 	}
 
 	elementCount[t]--;
-	if (sys_pause && InBounds(x, y))
-		density_map[y / DENSITY_CELL][x / DENSITY_CELL]--;
 
 	parts[i].type = PT_NONE;
 	parts[i].life = pfree;
@@ -3662,9 +3657,6 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	parts[i].type = t;
 	parts[i].x = (float)x;
 	parts[i].y = (float)y;
-
-	if (sys_pause)
-		density_map[y / DENSITY_CELL][x / DENSITY_CELL]++;
 
 	//and finally set the pmap/photon maps to the newly created particle
 	if (elements[t].Properties & TYPE_ENERGY)
@@ -3888,9 +3880,6 @@ void Simulation::UpdateParticles(int start, int end)
 		}
 	}
 
-	// Reset density calculations
-	std::fill(&density_map[0][0], &density_map[0][0] + (YRES / DENSITY_CELL) * (XRES / DENSITY_CELL), 0);
-
 	// Recalc stress field
 	stressField->Clear();
 
@@ -3922,7 +3911,7 @@ void Simulation::UpdateParticles(int start, int end)
 			}
 
 			// Time dilation: skip update (after the off-screen check, which keeps x and y inside the maps)
-			if (!(elements[t].Properties & PROP_NO_TIME) &&
+			if (anyTimeDilation && !(elements[t].Properties & PROP_NO_TIME) &&
 					!(t == PT_GBMB && parts[i].life > 0) &&  // GBMB needs to update to make gravity
 					time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
 				continue;
@@ -4017,8 +4006,9 @@ void Simulation::UpdateParticles(int start, int end)
 				GetGravityField(x, y, elements[t].Gravity, elements[t].NewtonianGravity, pGravX, pGravY);
 			}
 
-			// Electromagnetic field updates
-			emfield->ApplyElectromagneticForces(i);
+			// Electromagnetic field updates (checked here so a disabled field costs no call per particle)
+			if (emfield->isEnabled)
+				emfield->ApplyElectromagneticForces(i);
 
 			//velocity updates for the particle
 			if (t != PT_SPNG || !(parts[i].flags&FLAG_MOVABLE))
@@ -4547,7 +4537,8 @@ void Simulation::UpdateParticles(int start, int end)
 			} else s = 0;
 
 			// Stress computation
-			stressField->ComputeStress(parts[i].x + 0.5f, parts[i].y + 0.5f);
+			if (stressField->enabled)
+				stressField->ComputeStress(parts[i].x + 0.5f, parts[i].y + 0.5f);
 
 			// particle type change occurred
 			if (s)
@@ -5179,16 +5170,8 @@ killed:
 			}
 movedone:
 			// Time dilation: speed up
-			if (InBounds(x, y) && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0 && update_count <= time_dilation[y / CELL][x / CELL])
+			if (anyTimeDilation && InBounds(x, y) && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0 && update_count <= time_dilation[y / CELL][x / CELL])
 				goto update_loop_begin;
-
-			// Update density value
-			if (parts[i].type)
-			{
-				int dx = (int)(parts[i].x + 0.5f), dy = (int)(parts[i].y + 0.5f);
-				if (InBounds(dx, dy))
-					density_map[dy / DENSITY_CELL][dx / DENSITY_CELL]++;
-			}
 			continue;
 		}
 	}
@@ -5266,7 +5249,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 				elementCount[t]++;
 
 			// Time dilation: slow down
-			if (inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
+			if (anyTimeDilation && inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] < 0 && timer % (int)abs(time_dilation[y / CELL][x / CELL]) != 0)
 				continue;
 
 			//decrease particle life
@@ -5283,7 +5266,7 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 				{
 					// automatically decrease life
 					// Time dilation: speed up
-					if (inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0) {
+					if (anyTimeDilation && inBounds && !(elements[t].Properties & PROP_NO_TIME) && time_dilation[y / CELL][x / CELL] > 0) {
 						parts[i].life -= time_dilation[y / CELL][x / CELL];
 						if (parts[i].life < 1)
 							parts[i].life = 1;
@@ -5574,7 +5557,8 @@ void Simulation::BeforeSim()
 			stasis->Clear();
 
 		// Tick time dilation down to 0
-		if (timer % 4 == 0) {
+		if (timer % 4 == 0 && anyTimeDilation) {
+			bool any = false;
 			for (unsigned int y = 0; y < YRES / CELL; ++y)
 			for (unsigned int x = 0; x < XRES / CELL; ++x) {
 				if (time_dilation[y][x] < 0)
@@ -5587,7 +5571,9 @@ void Simulation::BeforeSim()
 					time_dilation[y][x] = MIN_TIME_DILATION;
 				else if (time_dilation[y][x] > MAX_TIME_DILATION)
 					time_dilation[y][x] = MAX_TIME_DILATION;
+				any = any || time_dilation[y][x];
 			}
+			anyTimeDilation = any;
 		}
 
 		RecalculateFaraday();
@@ -5860,7 +5846,6 @@ Simulation::Simulation():
 
 	memcpy(portal_rx, tportal_rx, sizeof(tportal_rx));
 	memcpy(portal_ry, tportal_ry, sizeof(tportal_ry));
-	std::fill(&density_map[0][0], &density_map[0][0] + (YRES / DENSITY_CELL) * (XRES / DENSITY_CELL), 0);
 
 	currentTick = 0;
 	std::fill(elementCount, elementCount+PT_NUM, 0);

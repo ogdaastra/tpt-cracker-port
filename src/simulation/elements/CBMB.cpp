@@ -60,7 +60,10 @@ void Element_CBMB_time_dilation(Simulation *sim, int x, int y, int radius, int v
 					x + dx >= 0 && x + dx < XRES / CELL && y + dy >= 0 && y + dy < YRES / CELL) {
 				float target = val * (1 - r / radius);
 				if (fabs(target) > fabs(sim->time_dilation[y + dy][x + dx]))
+				{
 					sim->time_dilation[y + dy][x + dx] = target;
+					sim->anyTimeDilation = true;
+				}
 			}
 		}
 }

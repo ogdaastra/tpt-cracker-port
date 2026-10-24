@@ -76,7 +76,7 @@ void Air::update_airh(void)
 		for (x=0; x<XRES/CELL; x++)
 		{
 			// Apply time dilation: (negative = loop every n frames)
-			if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
+			if (sim.anyTimeDilation && sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
 				continue;
 			int count = 0;
 			air_cell_update_begin:
@@ -137,7 +137,7 @@ void Air::update_airh(void)
 
 			// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
 			++count;
-			if (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
+			if (sim.anyTimeDilation && sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
 				goto air_cell_update_begin;
 		}
 	}
@@ -231,7 +231,7 @@ void Air::update_air(void)
 			for (x=0; x<XRES/CELL; x++)
 			{
 				// Apply time dilation: (negative = loop every n frames)
-				if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
+				if (sim.anyTimeDilation && sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
 					continue;
 				int count = 0;
 				air_cell_update_begin:
@@ -359,7 +359,7 @@ void Air::update_air(void)
 
 				// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
 				++count;
-				if (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
+				if (sim.anyTimeDilation && sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
 					goto air_cell_update_begin;
 			}
 		memcpy(vx, ovx, sizeof(vx));

@@ -27,7 +27,6 @@
 #define MAX_FARADAY_DIVISIONS 100
 #define MAX_TMP2_CHANNELS 100
 #define FARADAY_CHANNELS (MAX_FARADAY_DIVISIONS + MAX_TMP2_CHANNELS)
-#define DENSITY_CELL 4
 
 class Snapshot;
 class SimTool;
@@ -119,6 +118,8 @@ public:
 	float *gravmap;//gravmap[(YRES/CELL) * (XRES/CELL)];
 	// Time dilation, smaller = more updates
 	char time_dilation[YRES / CELL][XRES / CELL];
+	// false only while every time_dilation cell is 0; lets the per-particle and per-cell checks be skipped
+	bool anyTimeDilation = false;
 	const char MAX_TIME_DILATION = 8;
 	const char MIN_TIME_DILATION = -16;
 	//Walls
@@ -132,7 +133,6 @@ public:
 	int pmap[YRES][XRES];
 	int photons[YRES][XRES];
 	unsigned int pmap_count[YRES][XRES];
-	short density_map[YRES / DENSITY_CELL][XRES / DENSITY_CELL];
 	//Simulation Settings
 	int edgeMode;
 	int gravityMode;
