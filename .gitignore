@@ -1,0 +1,8 @@
+# WebAssembly port build outputs
+/build-wasm/
+/build-wasm-deps/
+/.cache/
+/dist/
+/node_modules/
+/tests/browser/node_modules/
+/artifacts/tmp/

@@ -182,7 +182,15 @@ curl_dep = enable_http ? dependency('libcurl', static: is_static) : []
 enable_gravfft = get_option('gravfft')
 fftw_dep = enable_gravfft ? dependency('fftw3f', static: is_static) : []
 
-threads_dep = dependency('threads')
+if host_platform == 'emscripten'
+	# Single-threaded WebAssembly build: Meson would add -pthread for dependency('threads'), which
+	# requires SharedArrayBuffer and cross-origin isolation (COOP/COEP) on the hosting page.
+	# The few worker threads (gravity, tasks, search) run synchronously instead, see __EMSCRIPTEN__
+	# blocks in src/simulation/Gravity.cpp, src/tasks/Task.cpp and src/gui/search/SearchModel.cpp.
+	threads_dep = []
+else
+	threads_dep = dependency('threads')
+endif
 zlib_dep = dependency('zlib', static: is_static)
 png_dep = dependency('libpng16', static: is_static)
 sdl2_dep = dependency('sdl2', static: is_static)
@@ -276,6 +284,31 @@ else
 	]
 endif
 
+if host_platform == 'emscripten'
+	# Native WebAssembly exceptions everywhere (the dependency sysroot is built the same way, see
+	# wasm/flags.sh). JSPI lets the game's blocking main loop and its nested modal loops
+	# (ConfirmPrompt::Blocking etc.) yield to the browser without instrumenting the code (Asyncify),
+	# and unlike ASYNCIFY=1 it is compatible with -fwasm-exceptions.
+	args_ccomp_em = [ '-fwasm-exceptions' ]
+	project_c_args   += args_ccomp_em
+	project_cpp_args += args_ccomp_em
+	em_pre_js = meson.project_source_root() / 'wasm' / 'pre.js'
+	project_link_args += [
+		'-fwasm-exceptions',
+		'-sJSPI',
+		'-sENVIRONMENT=web',
+		'-sMODULARIZE=1',
+		'-sEXPORT_NAME=createPowderToy',
+		'-sALLOW_MEMORY_GROWTH=1',
+		'-sINITIAL_MEMORY=268435456',
+		'-sSTACK_SIZE=8388608',
+		'-sEXIT_RUNTIME=0',
+		'-sEXPORTED_RUNTIME_METHODS=FS,UTF8ToString,stringToNewUTF8',
+		'-lidbfs.js',
+		'--pre-js', em_pre_js,
+	]
+endif
+
 if host_platform == 'windows'
 	args_ccomp_win = [ '-D_WIN32_WINNT=0x0501' ]
 	project_c_args   += args_ccomp_win
@@ -312,6 +345,8 @@ elif host_platform == 'linux'
 	ident_platform = is_64bit ? 'LIN64' : 'LIN32'
 elif host_platform == 'darwin'
 	ident_platform = host_arch == 'aarch64' ? 'MACOSARM' : 'MACOSX'
+elif host_platform == 'emscripten'
+	ident_platform = 'EMSCRIPTEN'
 else
 	ident_platform = 'UNKNOWN'
 endif
@@ -394,6 +429,7 @@ if get_option('build_powder')
 			cpp_args: project_cpp_args,
 			win_subsystem: is_debug ? 'console' : 'windows',
 			link_args: project_link_args,
+			link_depends: host_platform == 'emscripten' ? [ em_pre_js ] : [],
 			dependencies: powder_deps,
 		)
 	endif
