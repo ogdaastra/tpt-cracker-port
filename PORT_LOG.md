@@ -138,6 +138,9 @@ identified; emcc re-ran its sanity check and started from an empty cache), rerun
 - Clean build from scratch on GitHub Actions (ubuntu-24.04, normal port downloads, no caches):
   run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40093530610 - success
   (deps 2m20s, game 3m00s, wasm-validate ok, 11/11 browser tests at that commit).
+  Final code commit 3b0b2be: run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40098015865 -
+  success: build, wasm-validate, 13/13 browser tests over HTTP, offline ZIP built and 11/11 tests on
+  file://; artifacts `dist`, `offline-zip`, `test-artifacts` uploaded; `deploy` job skipped (no token).
 - Native Linux build (LuaJIT, libcurl, fftw, threads) of the same tree: 422/422 targets, runs headless
   (SDL dummy driver), writes powder.pref.
 - `wasm-validate --enable-all` passes; exports, sizes, sha256 and embedded game/mod strings recorded in
