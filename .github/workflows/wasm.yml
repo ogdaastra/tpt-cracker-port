@@ -62,6 +62,22 @@ jobs:
         working-directory: tests/browser
         run: npx playwright test
 
+      - name: Offline ZIP, tested opened straight from disk (file://)
+        run: |
+          ./wasm/make-offline-zip.sh "$RUNNER_TEMP/cracker1000-mod-wasm-offline.zip"
+          mkdir -p "$RUNNER_TEMP/offline" && unzip -q "$RUNNER_TEMP/cracker1000-mod-wasm-offline.zip" -d "$RUNNER_TEMP/offline"
+          cd tests/browser
+          TPT_BASE_URL="file://$RUNNER_TEMP/offline/cracker1000-mod-wasm/" TPT_START_PATH=index.html \
+            TPT_ARTIFACT_DIR=../../artifacts/browser-offline-file TPT_REPORT_DIR=../../artifacts/playwright-offline-file \
+            npx playwright test --grep-invert "page loads over HTTP|powder.wasm cannot be downloaded"
+
+      - name: Upload offline ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-zip
+          path: ${{ runner.temp }}/cracker1000-mod-wasm-offline.zip
+          if-no-files-found: error
+
       - name: Upload site
         if: always()
         uses: actions/upload-artifact@v4
@@ -130,6 +146,8 @@ jobs:
         working-directory: tests/browser
         env:
           TPT_BASE_URL: ${{ steps.preview.outputs.url }}/
+          TPT_ARTIFACT_DIR: ../../artifacts/browser-preview
+          TPT_REPORT_DIR: ../../artifacts/playwright-preview
         run: |
           npm ci || npm install
           npx playwright install --with-deps chromium

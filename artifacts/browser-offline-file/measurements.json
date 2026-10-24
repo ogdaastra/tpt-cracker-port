@@ -1,0 +1,63 @@
+{
+  "input": {
+    "particlesAfterDraw": 1962,
+    "particlesAfterErase": 0
+  },
+  "roundTrip": {
+    "rubrParticles": 4476,
+    "totalParticles": 4476,
+    "saveBytes": 574
+  },
+  "modElements": {
+    "placedParticles": 51,
+    "ticksIn5s": 310
+  },
+  "resize": [
+    {
+      "viewport": [
+        1600,
+        1000
+      ],
+      "canvas": [
+        1258,
+        848
+      ]
+    },
+    {
+      "viewport": [
+        900,
+        640
+      ],
+      "canvas": [
+        783,
+        528
+      ]
+    },
+    {
+      "viewport": [
+        640,
+        520
+      ],
+      "canvas": [
+        538,
+        362
+      ]
+    }
+  ],
+  "performance": {
+    "msToInteractive": 1065,
+    "pageTimingsMs": {
+      "start": 15.100000000093132,
+      "instantiated": 156.20000000018626,
+      "runtimeReady": 427.40000000037253,
+      "firstFrame": 453.5
+    },
+    "idleTicksPerSecond": 53.7,
+    "busyTicksPerSecond": 52,
+    "busyWithNewtonianGravityTicksPerSecond": 53.6,
+    "busyParticles": 30861,
+    "gravityField5CellsFromBlackHole": 0.0026691998355091,
+    "note": "fps cap is 60; headless Chromium, software WebGL (SwiftShader), 4 vCPU container"
+  },
+  "interruptedStartups": "0ms:40 5ms:40 10ms:40 20ms:40 30ms:40 50ms:40 80ms:40 120ms:40 200ms:40 300ms:40 0ms:40 10ms:40 20ms:40 40ms:40 60ms:40 100ms:40"
+}

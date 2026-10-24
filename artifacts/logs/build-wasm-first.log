@@ -1,0 +1,463 @@
+ninja: Entering directory `build-wasm'
+[1/412] Compiling C++ object toarray.p/resources_ToArray.cpp.o
+[2/412] Linking target toarray
+[3/412] Generating from 'eventcompat.lua'
+[4/412] Generating from 'failsafe.lua'
+[5/412] Generating from 'manager.lua'
+[6/412] Generating from 'save_online.png'
+[7/412] Generating from 'save_local.png'
+[8/412] Generating from 'font.bz2'
+[9/412] Generating from 'tptmp.lua'
+[10/412] Generating from 'crackerk.lua'
+[11/412] Compiling C++ object powder.js.p/meson-generated_eventcompat.lua.cpp.o
+[12/412] Compiling C++ object powder.js.p/meson-generated_failsafe.lua.cpp.o
+[13/412] Compiling C++ object powder.js.p/meson-generated_save_local.png.cpp.o
+[14/412] Compiling C++ object powder.js.p/src_SDLCompat.cpp.o
+[15/412] Compiling C++ object powder.js.p/meson-generated_save_online.png.cpp.o
+[16/412] Compiling C++ object powder.js.p/meson-generated_manager.lua.cpp.o
+[17/412] Compiling C++ object powder.js.p/meson-generated_font.bz2.cpp.o
+[18/412] Compiling C++ object powder.js.p/meson-generated_crackerk.lua.cpp.o
+[19/412] Compiling C++ object powder.js.p/meson-generated_tptmp.lua.cpp.o
+[20/412] Compiling C++ object powder.js.p/src_Update.cpp.o
+[21/412] Compiling C++ object powder.js.p/src_client_MD5.cpp.o
+[22/412] Compiling C++ object powder.js.p/src_lua_CommandInterface.cpp.o
+[23/412] Compiling C++ object powder.js.p/src_lua_LuaEvents.cpp.o
+[24/412] Compiling C++ object powder.js.p/src_lua_TPTSTypes.cpp.o
+[25/412] Compiling C++ object powder.js.p/src_lua_TPTScriptInterface.cpp.o
+[26/412] Compiling C++ object powder.js.p/src_PowderToySDL.cpp.o
+[27/412] Compiling C++ object powder.js.p/src_client_SaveInfo.cpp.o
+[28/412] Compiling C++ object powder.js.p/src_client_SaveFile.cpp.o
+[29/412] Compiling C++ object powder.js.p/src_client_ThumbnailRendererTask.cpp.o
+[30/412] Compiling C++ object powder.js.p/src_client_http_APIRequest.cpp.o
+[31/412] Compiling C++ object powder.js.p/src_client_http_ImageRequest.cpp.o
+[32/412] Compiling C++ object powder.js.p/src_client_http_GetUserInfoRequest.cpp.o
+[33/412] Compiling C++ object powder.js.p/src_client_http_SaveUserInfoRequest.cpp.o
+[34/412] Compiling C++ object powder.js.p/src_debug_DebugLines.cpp.o
+[35/412] Compiling C++ object powder.js.p/src_client_GameSave.cpp.o
+[36/412] Compiling C++ object powder.js.p/src_client_http_Request.cpp.o
+[37/412] Compiling C++ object powder.js.p/src_client_http_ThumbnailRequest.cpp.o
+[38/412] Compiling C++ object powder.js.p/src_client_Client.cpp.o
+[39/412] Compiling C++ object powder.js.p/src_debug_DebugParts.cpp.o
+[40/412] Compiling C++ object powder.js.p/src_debug_ParticleDebug.cpp.o
+[41/412] Compiling C++ object powder.js.p/src_graphics_FontReader.cpp.o
+[42/412] Compiling C++ object powder.js.p/src_graphics_RasterGraphics.cpp.o
+[43/412] Compiling C++ object powder.js.p/src_debug_ElementPopulation.cpp.o
+[44/412] Compiling C++ object powder.js.p/src_graphics_Graphics.cpp.o
+[45/412] Compiling C++ object powder.js.p/src_gui_console_ConsoleController.cpp.o
+[46/412] Compiling C++ object powder.js.p/src_gui_colourpicker_ColourPickerActivity.cpp.o
+[47/412] Compiling C++ object powder.js.p/src_gui_console_ConsoleView.cpp.o
+[48/412] Compiling C++ object powder.js.p/src_gui_console_ConsoleModel.cpp.o
+[49/412] Compiling C++ object powder.js.p/src_graphics_Renderer.cpp.o
+[50/412] Compiling C++ object powder.js.p/src_gui_game_BitmapBrush.cpp.o
+[51/412] Compiling C++ object powder.js.p/src_gui_game_Brush.cpp.o
+[52/412] Compiling C++ object powder.js.p/src_gui_game_DecorationTool.cpp.o
+[53/412] Compiling C++ object powder.js.p/src_gui_filebrowser_FileBrowserActivity.cpp.o
+[54/412] Compiling C++ object powder.js.p/src_gui_elementsearch_ElementSearchActivity.cpp.o
+[55/412] Compiling C++ object powder.js.p/src_gui_game_Menu.cpp.o
+[56/412] Compiling C++ object powder.js.p/src_gui_game_Favorite.cpp.o
+[57/412] Compiling C++ object powder.js.p/src_gui_game_GOLTool.cpp.o
+[58/412] Compiling C++ object powder.js.p/src_gui_game_GameController.cpp.o
+[59/412] Compiling C++ object powder.js.p/src_gui_game_QuickOptions.cpp.o
+[60/412] Compiling C++ object powder.js.p/src_gui_game_GameModel.cpp.o
+[61/412] Compiling C++ object powder.js.p/src_gui_game_PropertyTool.cpp.o
+[62/412] Compiling C++ object powder.js.p/src_gui_game_SampleTool.cpp.o
+[63/412] Compiling C++ object powder.js.p/src_gui_game_Tool.cpp.o
+[64/412] Compiling C++ object powder.js.p/src_gui_game_ToolButton.cpp.o
+[65/412] Compiling C++ object powder.js.p/src_gui_interface_AvatarButton.cpp.o
+[66/412] Compiling C++ object powder.js.p/src_gui_game_SignTool.cpp.o
+[67/412] Compiling C++ object powder.js.p/src_gui_game_GameView.cpp.o
+[68/412] Compiling C++ object powder.js.p/src_gui_interface_RichLabel.cpp.o
+[69/412] Compiling C++ object powder.js.p/src_gui_interface_SaveButton.cpp.o
+[70/412] Compiling C++ object powder.js.p/src_gui_localbrowser_LocalBrowserModel.cpp.o
+[71/412] Compiling C++ object powder.js.p/src_gui_localbrowser_LocalBrowserController.cpp.o
+[72/412] Compiling C++ object powder.js.p/src_gui_login_LoginController.cpp.o
+[73/412] Compiling C++ object powder.js.p/src_gui_login_LoginModel.cpp.o
+[74/412] Compiling C++ object powder.js.p/src_gui_localbrowser_LocalBrowserView.cpp.o
+[75/412] Compiling C++ object powder.js.p/src_gui_options_OptionsModel.cpp.o
+[76/412] Compiling C++ object powder.js.p/src_gui_login_LoginView.cpp.o
+[77/412] Compiling C++ object powder.js.p/src_gui_options_OptionsController.cpp.o
+[78/412] Compiling C++ object powder.js.p/src_gui_preview_PreviewController.cpp.o
+[79/412] Compiling C++ object powder.js.p/src_gui_preview_PreviewModel.cpp.o
+[80/412] Compiling C++ object powder.js.p/src_gui_options_OptionsView.cpp.o
+[81/412] Compiling C++ object powder.js.p/src_gui_render_RenderController.cpp.o
+[82/412] Compiling C++ object powder.js.p/src_gui_render_RenderModel.cpp.o
+[83/412] Compiling C++ object powder.js.p/src_gui_preview_PreviewView.cpp.o
+../src/gui/preview/PreviewView.cpp:614:38: warning: lambda capture 'this' is not used [-Wunused-lambda-capture]
+  614 |                                 tempAvatar->SetActionCallback({ [this, tempAvatar] {
+      |                                                                  ^~~~~
+1 warning generated.
+[84/412] Compiling C++ object powder.js.p/src_gui_profile_ProfileActivity.cpp.o
+[85/412] Compiling C++ object powder.js.p/src_gui_render_RenderView.cpp.o
+[86/412] Compiling C++ object powder.js.p/src_gui_search_SearchController.cpp.o
+[87/412] Compiling C++ object powder.js.p/src_gui_save_LocalSaveActivity.cpp.o
+[88/412] Compiling C++ object powder.js.p/src_gui_search_SearchModel.cpp.o
+[89/412] Compiling C++ object powder.js.p/src_gui_save_ServerSaveActivity.cpp.o
+[90/412] Compiling C++ object powder.js.p/src_gui_Style.cpp.o
+[91/412] Compiling C++ object powder.js.p/src_gui_tags_TagsController.cpp.o
+[92/412] Compiling C++ object powder.js.p/src_gui_tags_TagsModel.cpp.o
+[93/412] Compiling C++ object powder.js.p/src_gui_search_SearchView.cpp.o
+../src/gui/search/SearchView.cpp:577:5: warning: misleading indentation; statement is not part of the previous 'if' [-Wmisleading-indentation]
+  577 |                                 saveButton->SetShowVotes(true);
+      |                                 ^
+../src/gui/search/SearchView.cpp:575:4: note: previous statement is here
+  575 |                         if(Client::Ref().GetAuthUser().UserID)
+      |                         ^
+1 warning generated.
+[94/412] Compiling C++ object powder.js.p/src_gui_dialogues_ErrorMessage.cpp.o
+[95/412] Compiling C++ object powder.js.p/src_gui_dialogues_ConfirmPrompt.cpp.o
+[96/412] Compiling C++ object powder.js.p/src_gui_tags_TagsView.cpp.o
+[97/412] Compiling C++ object powder.js.p/src_gui_update_UpdateActivity.cpp.o
+[98/412] Compiling C++ object powder.js.p/src_gui_dialogues_InformationMessage.cpp.o
+[99/412] Compiling C++ object powder.js.p/src_gui_interface_Appearance.cpp.o
+[100/412] Compiling C++ object powder.js.p/src_gui_dialogues_SaveIDMessage.cpp.o
+[101/412] Compiling C++ object powder.js.p/src_gui_dialogues_TextPrompt.cpp.o
+[102/412] Compiling C++ object powder.js.p/src_gui_interface_Button.cpp.o
+[103/412] Compiling C++ object powder.js.p/src_gui_interface_Checkbox.cpp.o
+[104/412] Compiling C++ object powder.js.p/src_gui_interface_Component.cpp.o
+[105/412] Compiling C++ object powder.js.p/src_gui_interface_CopyTextButton.cpp.o
+[106/412] Compiling C++ object powder.js.p/src_gui_interface_ContextMenu.cpp.o
+[107/412] Compiling C++ object powder.js.p/src_gui_interface_DropDown.cpp.o
+[108/412] Compiling C++ object powder.js.p/src_gui_interface_Label.cpp.o
+[109/412] Compiling C++ object powder.js.p/src_gui_interface_Engine.cpp.o
+[110/412] Compiling C++ object powder.js.p/src_gui_interface_DirectionSelector.cpp.o
+[111/412] Compiling C++ object powder.js.p/src_gui_interface_Panel.cpp.o
+[112/412] Compiling C++ object powder.js.p/src_gui_interface_Spinner.cpp.o
+[113/412] Compiling C++ object powder.js.p/src_gui_interface_ProgressBar.cpp.o
+[114/412] Compiling C++ object powder.js.p/src_gui_interface_ScrollPanel.cpp.o
+[115/412] Compiling C++ object powder.js.p/src_lua_LuaBit.cpp.o
+[116/412] Compiling C++ object powder.js.p/src_gui_interface_Slider.cpp.o
+[117/412] Compiling C++ object powder.js.p/src_lua_LuaButton.cpp.o
+[118/412] Compiling C++ object powder.js.p/src_gui_interface_TextWrapper.cpp.o
+[119/412] Compiling C++ object powder.js.p/src_gui_interface_Window.cpp.o
+[120/412] Compiling C object powder.js.p/src_lua_LuaCompat.c.o
+[121/412] Compiling C++ object powder.js.p/src_gui_interface_Textbox.cpp.o
+[122/412] Compiling C++ object powder.js.p/src_lua_LuaCheckbox.cpp.o
+[123/412] Compiling C++ object powder.js.p/src_lua_LegacyLuaAPI.cpp.o
+[124/412] Compiling C++ object powder.js.p/src_lua_LuaComponent.cpp.o
+[125/412] Compiling C++ object powder.js.p/src_lua_LuaSmartRef.cpp.o
+[126/412] Compiling C++ object powder.js.p/src_lua_LuaProgressBar.cpp.o
+[127/412] Compiling C++ object powder.js.p/src_lua_LuaLabel.cpp.o
+[128/412] Compiling C++ object powder.js.p/src_lua_LuaSlider.cpp.o
+[129/412] Compiling C++ object powder.js.p/src_resampler_resampler.cpp.o
+[130/412] Compiling C++ object powder.js.p/src_lua_LuaTextbox.cpp.o
+[131/412] Compiling C++ object powder.js.p/src_simulation_Air.cpp.o
+[132/412] Compiling C++ object powder.js.p/src_lua_LuaWindow.cpp.o
+[133/412] Compiling C++ object powder.js.p/src_simulation_Element.cpp.o
+[134/412] Compiling C++ object powder.js.p/src_simulation_ElementClasses.cpp.o
+[135/412] Compiling C++ object powder.js.p/src_simulation_GOLString.cpp.o
+[136/412] Compiling C++ object powder.js.p/src_simulation_Gravity.cpp.o
+[137/412] Compiling C++ object powder.js.p/src_simulation_Particle.cpp.o
+[138/412] Compiling C++ object powder.js.p/src_simulation_Sign.cpp.o
+[139/412] Compiling C++ object powder.js.p/src_simulation_SaveRenderer.cpp.o
+[140/412] Compiling C++ object powder.js.p/src_lua_LuaScriptInterface.cpp.o
+[141/412] Compiling C++ object powder.js.p/src_simulation_ToolClasses.cpp.o
+[142/412] Compiling C++ object powder.js.p/src_simulation_SimTool.cpp.o
+[143/412] Compiling C++ object powder.js.p/src_simulation_elements_NONE.cpp.o
+[144/412] Compiling C++ object powder.js.p/src_simulation_SimulationData.cpp.o
+[145/412] Compiling C++ object powder.js.p/src_simulation_elements_WATR.cpp.o
+[146/412] Compiling C++ object powder.js.p/src_simulation_elements_DUST.cpp.o
+[147/412] Compiling C++ object powder.js.p/src_simulation_SnapshotDelta.cpp.o
+[148/412] Compiling C++ object powder.js.p/src_simulation_elements_FIRE.cpp.o
+[149/412] Compiling C++ object powder.js.p/src_simulation_elements_OIL.cpp.o
+[150/412] Compiling C++ object powder.js.p/src_simulation_elements_STNE.cpp.o
+[151/412] Compiling C++ object powder.js.p/src_simulation_elements_GUNP.cpp.o
+[152/412] Compiling C++ object powder.js.p/src_simulation_elements_LAVA.cpp.o
+[153/412] Compiling C++ object powder.js.p/src_simulation_elements_CLNE.cpp.o
+[154/412] Compiling C++ object powder.js.p/src_simulation_elements_NITR.cpp.o
+[155/412] Compiling C++ object powder.js.p/src_simulation_Simulation.cpp.o
+[156/412] Compiling C++ object powder.js.p/src_simulation_elements_PLEX.cpp.o
+[157/412] Compiling C++ object powder.js.p/src_simulation_elements_GAS.cpp.o
+[158/412] Compiling C++ object powder.js.p/src_simulation_elements_ICEI.cpp.o
+[159/412] Compiling C++ object powder.js.p/src_simulation_elements_GOO.cpp.o
+[160/412] Compiling C++ object powder.js.p/src_simulation_elements_METL.cpp.o
+[161/412] Compiling C++ object powder.js.p/src_simulation_elements_SNOW.cpp.o
+[162/412] Compiling C++ object powder.js.p/src_simulation_elements_WOOD.cpp.o
+[163/412] Compiling C++ object powder.js.p/src_simulation_elements_NEUT.cpp.o
+[164/412] Compiling C++ object powder.js.p/src_simulation_elements_SPRK.cpp.o
+[165/412] Compiling C++ object powder.js.p/src_simulation_elements_PLUT.cpp.o
+[166/412] Compiling C++ object powder.js.p/src_simulation_elements_PLNT.cpp.o
+[167/412] Compiling C++ object powder.js.p/src_simulation_elements_ACID.cpp.o
+[168/412] Compiling C++ object powder.js.p/src_simulation_elements_VOID.cpp.o
+[169/412] Compiling C++ object powder.js.p/src_simulation_elements_WTRV.cpp.o
+[170/412] Compiling C++ object powder.js.p/src_simulation_elements_CNCT.cpp.o
+[171/412] Compiling C++ object powder.js.p/src_simulation_elements_DSTW.cpp.o
+[172/412] Compiling C++ object powder.js.p/src_simulation_elements_SLTW.cpp.o
+[173/412] Compiling C++ object powder.js.p/src_simulation_elements_SALT.cpp.o
+[174/412] Compiling C++ object powder.js.p/src_simulation_elements_BMTL.cpp.o
+[175/412] Compiling C++ object powder.js.p/src_simulation_elements_DMND.cpp.o
+[176/412] Compiling C++ object powder.js.p/src_simulation_elements_BRMT.cpp.o
+[177/412] Compiling C++ object powder.js.p/src_simulation_elements_PHOT.cpp.o
+[178/412] Compiling C++ object powder.js.p/src_simulation_elements_URAN.cpp.o
+[179/412] Compiling C++ object powder.js.p/src_simulation_elements_PSCN.cpp.o
+[180/412] Compiling C++ object powder.js.p/src_simulation_elements_MWAX.cpp.o
+[181/412] Compiling C++ object powder.js.p/src_simulation_elements_WAX.cpp.o
+[182/412] Compiling C++ object powder.js.p/src_simulation_elements_INSL.cpp.o
+[183/412] Compiling C++ object powder.js.p/src_simulation_elements_LNTG.cpp.o
+[184/412] Compiling C++ object powder.js.p/src_simulation_elements_NSCN.cpp.o
+[185/412] Compiling C++ object powder.js.p/src_simulation_elements_RBDM.cpp.o
+[186/412] Compiling C++ object powder.js.p/src_simulation_elements_BHOL.cpp.o
+[187/412] Compiling C++ object powder.js.p/src_simulation_elements_WHOL.cpp.o
+[188/412] Compiling C++ object powder.js.p/src_simulation_elements_SAND.cpp.o
+[189/412] Compiling C++ object powder.js.p/src_simulation_elements_NTCT.cpp.o
+[190/412] Compiling C++ object powder.js.p/src_simulation_elements_LRBD.cpp.o
+[191/412] Compiling C++ object powder.js.p/src_simulation_elements_GLAS.cpp.o
+[192/412] Compiling C++ object powder.js.p/src_simulation_elements_THDR.cpp.o
+[193/412] Compiling C++ object powder.js.p/src_simulation_elements_PTCT.cpp.o
+[194/412] Compiling C++ object powder.js.p/src_simulation_elements_BGLA.cpp.o
+[195/412] Compiling C++ object powder.js.p/src_simulation_elements_ETRD.cpp.o
+[196/412] Compiling C++ object powder.js.p/src_simulation_elements_PLSM.cpp.o
+[197/412] Compiling C++ object powder.js.p/src_simulation_elements_LCRY.cpp.o
+[198/412] Compiling C++ object powder.js.p/src_simulation_elements_NBLE.cpp.o
+[199/412] Compiling C++ object powder.js.p/src_simulation_elements_BTRY.cpp.o
+[200/412] Compiling C++ object powder.js.p/src_simulation_elements_NICE.cpp.o
+[201/412] Compiling C++ object powder.js.p/src_simulation_elements_STKM.cpp.o
+[202/412] Compiling C++ object powder.js.p/src_simulation_elements_SWCH.cpp.o
+[203/412] Compiling C++ object powder.js.p/src_simulation_elements_LO2.cpp.o
+[204/412] Compiling C++ object powder.js.p/src_simulation_elements_SMKE.cpp.o
+[205/412] Compiling C++ object powder.js.p/src_simulation_elements_DESL.cpp.o
+[206/412] Compiling C++ object powder.js.p/src_simulation_elements_COAL.cpp.o
+[207/412] Compiling C++ object powder.js.p/src_simulation_elements_O2.cpp.o
+[208/412] Compiling C++ object powder.js.p/src_simulation_elements_YEST.cpp.o
+[209/412] Compiling C++ object powder.js.p/src_simulation_elements_THRM.cpp.o
+[210/412] Compiling C++ object powder.js.p/src_simulation_elements_INWR.cpp.o
+[211/412] Compiling C++ object powder.js.p/src_simulation_elements_DYST.cpp.o
+[212/412] Compiling C++ object powder.js.p/src_simulation_elements_GLOW.cpp.o
+[213/412] Compiling C++ object powder.js.p/src_simulation_elements_BRCK.cpp.o
+[214/412] Compiling C++ object powder.js.p/src_simulation_elements_FIRW.cpp.o
+[215/412] Compiling C++ object powder.js.p/src_simulation_elements_CFLM.cpp.o
+[216/412] Compiling C++ object powder.js.p/src_simulation_elements_FSEP.cpp.o
+[217/412] Compiling C++ object powder.js.p/src_simulation_elements_FUSE.cpp.o
+[218/412] Compiling C++ object powder.js.p/src_simulation_elements_AMTR.cpp.o
+[219/412] Compiling C++ object powder.js.p/src_simulation_elements_BCOL.cpp.o
+[220/412] Compiling C++ object powder.js.p/src_simulation_elements_IRON.cpp.o
+[221/412] Compiling C++ object powder.js.p/src_simulation_elements_PCLN.cpp.o
+[222/412] Compiling C++ object powder.js.p/src_simulation_elements_HSWC.cpp.o
+[223/412] Compiling C++ object powder.js.p/src_simulation_elements_MORT.cpp.o
+[224/412] Compiling C++ object powder.js.p/src_simulation_elements_LIFE.cpp.o
+[225/412] Compiling C++ object powder.js.p/src_simulation_elements_DRIC.cpp.o
+[226/412] Compiling C++ object powder.js.p/src_simulation_elements_CO2.cpp.o
+[227/412] Compiling C++ object powder.js.p/src_simulation_elements_DLAY.cpp.o
+[228/412] Compiling C++ object powder.js.p/src_simulation_elements_CBNW.cpp.o
+[229/412] Compiling C++ object powder.js.p/src_simulation_elements_STOR.cpp.o
+[230/412] Compiling C++ object powder.js.p/src_simulation_elements_PVOD.cpp.o
+[231/412] Compiling C++ object powder.js.p/src_simulation_elements_LIGH.cpp.o
+[232/412] Compiling C++ object powder.js.p/src_simulation_elements_CONV.cpp.o
+[233/412] Compiling C++ object powder.js.p/src_simulation_elements_CAUS.cpp.o
+[234/412] Compiling C++ object powder.js.p/src_simulation_elements_TESC.cpp.o
+[235/412] Compiling C++ object powder.js.p/src_simulation_elements_SPNG.cpp.o
+[236/412] Compiling C++ object powder.js.p/src_simulation_elements_DEST.cpp.o
+[237/412] Compiling C++ object powder.js.p/src_simulation_elements_RIME.cpp.o
+[238/412] Compiling C++ object powder.js.p/src_simulation_elements_LOVE.cpp.o
+[239/412] Compiling C++ object powder.js.p/src_simulation_elements_BCLN.cpp.o
+[240/412] Compiling C++ object powder.js.p/src_simulation_elements_FOG.cpp.o
+[241/412] Compiling C++ object powder.js.p/src_simulation_elements_DEUT.cpp.o
+[242/412] Compiling C++ object powder.js.p/src_simulation_elements_PUMP.cpp.o
+[243/412] Compiling C++ object powder.js.p/src_simulation_elements_FWRK.cpp.o
+[244/412] Compiling C++ object powder.js.p/src_simulation_elements_WARP.cpp.o
+[245/412] Compiling C++ object powder.js.p/src_simulation_elements_PIPE.cpp.o
+[246/412] Compiling C++ object powder.js.p/src_simulation_elements_FRZZ.cpp.o
+[247/412] Compiling C++ object powder.js.p/src_simulation_elements_FRZW.cpp.o
+[248/412] Compiling C++ object powder.js.p/src_simulation_elements_GRAV.cpp.o
+[249/412] Compiling C++ object powder.js.p/src_simulation_elements_BIZR.cpp.o
+[250/412] Compiling C++ object powder.js.p/src_simulation_elements_BIZRS.cpp.o
+[251/412] Compiling C++ object powder.js.p/src_simulation_elements_BIZRG.cpp.o
+[252/412] Compiling C++ object powder.js.p/src_simulation_elements_ISOZ.cpp.o
+[253/412] Compiling C++ object powder.js.p/src_simulation_elements_INST.cpp.o
+[254/412] Compiling C++ object powder.js.p/src_simulation_elements_ISZS.cpp.o
+[255/412] Compiling C++ object powder.js.p/src_simulation_elements_PRTO.cpp.o
+[256/412] Compiling C++ object powder.js.p/src_simulation_elements_PRTI.cpp.o
+[257/412] Compiling C++ object powder.js.p/src_simulation_elements_ANAR.cpp.o
+[258/412] Compiling C++ object powder.js.p/src_simulation_elements_PSTE.cpp.o
+[259/412] Compiling C++ object powder.js.p/src_simulation_elements_VINE.cpp.o
+[260/412] Compiling C++ object powder.js.p/src_simulation_elements_PSTS.cpp.o
+[261/412] Compiling C++ object powder.js.p/src_simulation_elements_INVIS.cpp.o
+[262/412] Compiling C++ object powder.js.p/src_simulation_elements_E116.cpp.o
+[263/412] Compiling C++ object powder.js.p/src_simulation_elements_SPAWN2.cpp.o
+[264/412] Compiling C++ object powder.js.p/src_simulation_elements_SHLD2.cpp.o
+[265/412] Compiling C++ object powder.js.p/src_simulation_elements_SHLD1.cpp.o
+[266/412] Compiling C++ object powder.js.p/src_simulation_elements_SPAWN.cpp.o
+[267/412] Compiling C++ object powder.js.p/src_simulation_elements_SHLD4.cpp.o
+[268/412] Compiling C++ object powder.js.p/src_simulation_elements_SHLD3.cpp.o
+[269/412] Compiling C++ object powder.js.p/src_simulation_elements_LOLZ.cpp.o
+[270/412] Compiling C++ object powder.js.p/src_simulation_elements_WIFI.cpp.o
+[271/412] Compiling C++ object powder.js.p/src_simulation_elements_FILT.cpp.o
+[272/412] Compiling C++ object powder.js.p/src_simulation_elements_ARAY.cpp.o
+[273/412] Compiling C++ object powder.js.p/src_simulation_elements_BOMB.cpp.o
+[274/412] Compiling C++ object powder.js.p/src_simulation_elements_BRAY.cpp.o
+[275/412] Compiling C++ object powder.js.p/src_simulation_elements_STKM2.cpp.o
+[276/412] Compiling C++ object powder.js.p/src_simulation_elements_SING.cpp.o
+[277/412] Compiling C++ object powder.js.p/src_simulation_elements_C5.cpp.o
+[278/412] Compiling C++ object powder.js.p/src_simulation_elements_QRTZ.cpp.o
+[279/412] Compiling C++ object powder.js.p/src_simulation_elements_PQRT.cpp.o
+[280/412] Compiling C++ object powder.js.p/src_simulation_elements_EMP.cpp.o
+[281/412] Compiling C++ object powder.js.p/src_simulation_elements_ELEC.cpp.o
+[282/412] Compiling C++ object powder.js.p/src_simulation_elements_ACEL.cpp.o
+[283/412] Compiling C++ object powder.js.p/src_simulation_elements_DCEL.cpp.o
+[284/412] Compiling C++ object powder.js.p/src_simulation_elements_BANG.cpp.o
+[285/412] Compiling C++ object powder.js.p/src_simulation_elements_BREC.cpp.o
+[286/412] Compiling C++ object powder.js.p/src_simulation_elements_IGNT.cpp.o
+[287/412] Compiling C++ object powder.js.p/src_simulation_elements_GEL.cpp.o
+[288/412] Compiling C++ object powder.js.p/src_simulation_elements_TRON.cpp.o
+[289/412] Compiling C++ object powder.js.p/src_simulation_elements_EXOT.cpp.o
+[290/412] Compiling C++ object powder.js.p/src_simulation_elements_TTAN.cpp.o
+[291/412] Compiling C++ object powder.js.p/src_simulation_elements_BOYL.cpp.o
+[292/412] Compiling C++ object powder.js.p/src_simulation_elements_E146.cpp.o
+[293/412] Compiling C++ object powder.js.p/src_simulation_elements_EMBR.cpp.o
+[294/412] Compiling C++ object powder.js.p/src_simulation_elements_H2.cpp.o
+[295/412] Compiling C++ object powder.js.p/src_simulation_elements_NBHL.cpp.o
+[296/412] Compiling C++ object powder.js.p/src_simulation_elements_SOAP.cpp.o
+[297/412] Compiling C++ object powder.js.p/src_simulation_elements_NWHL.cpp.o
+[298/412] Compiling C++ object powder.js.p/src_simulation_elements_MERC.cpp.o
+[299/412] Compiling C++ object powder.js.p/src_simulation_elements_PBCN.cpp.o
+[300/412] Compiling C++ object powder.js.p/src_simulation_elements_WIRE.cpp.o
+[301/412] Compiling C++ object powder.js.p/src_simulation_elements_GPMP.cpp.o
+[302/412] Compiling C++ object powder.js.p/src_simulation_elements_CLST.cpp.o
+[303/412] Compiling C++ object powder.js.p/src_simulation_elements_FIGH.cpp.o
+[304/412] Compiling C++ object powder.js.p/src_simulation_elements_GBMB.cpp.o
+[305/412] Compiling C++ object powder.js.p/src_simulation_elements_FRAY.cpp.o
+[306/412] Compiling C++ object powder.js.p/src_simulation_elements_RPEL.cpp.o
+[307/412] Compiling C++ object powder.js.p/src_simulation_elements_DTEC.cpp.o
+[308/412] Compiling C++ object powder.js.p/src_simulation_elements_DMG.cpp.o
+[309/412] Compiling C++ object powder.js.p/src_simulation_elements_PPIP.cpp.o
+[310/412] Compiling C++ object powder.js.p/src_simulation_elements_TSNS.cpp.o
+[311/412] Compiling C++ object powder.js.p/src_simulation_elements_CRAY.cpp.o
+[312/412] Compiling C++ object powder.js.p/src_simulation_elements_VIBR.cpp.o
+[313/412] Compiling C++ object powder.js.p/src_simulation_elements_PSTN.cpp.o
+[314/412] Compiling C++ object powder.js.p/src_simulation_elements_BVBR.cpp.o
+[315/412] Compiling C++ object powder.js.p/src_simulation_elements_FRME.cpp.o
+[316/412] Compiling C++ object powder.js.p/src_simulation_elements_GOLD.cpp.o
+[317/412] Compiling C++ object powder.js.p/src_simulation_elements_PROT.cpp.o
+[318/412] Compiling C++ object powder.js.p/src_simulation_elements_PSNS.cpp.o
+[319/412] Compiling C++ object powder.js.p/src_simulation_elements_TUNG.cpp.o
+[320/412] Compiling C++ object powder.js.p/src_simulation_elements_VIRS.cpp.o
+[321/412] Compiling C++ object powder.js.p/src_simulation_elements_VRSG.cpp.o
+[322/412] Compiling C++ object powder.js.p/src_simulation_elements_VRSS.cpp.o
+[323/412] Compiling C++ object powder.js.p/src_simulation_elements_CRMC.cpp.o
+[324/412] Compiling C++ object powder.js.p/src_simulation_elements_GRVT.cpp.o
+[325/412] Compiling C++ object powder.js.p/src_simulation_elements_DRAY.cpp.o
+[326/412] Compiling C++ object powder.js.p/src_simulation_elements_HEAC.cpp.o
+[327/412] Compiling C++ object powder.js.p/src_simulation_elements_SAWD.cpp.o
+[328/412] Compiling C++ object powder.js.p/src_simulation_elements_RFRG.cpp.o
+[329/412] Compiling C++ object powder.js.p/src_simulation_elements_POLO.cpp.o
+[330/412] Compiling C++ object powder.js.p/src_simulation_elements_RFGL.cpp.o
+[331/412] Compiling C++ object powder.js.p/src_simulation_elements_LSNS.cpp.o
+[332/412] Compiling C++ object powder.js.p/src_simulation_elements_LDTC.cpp.o
+[333/412] Compiling C++ object powder.js.p/src_simulation_elements_ROCK.cpp.o
+[334/412] Compiling C++ object powder.js.p/src_simulation_elements_VSNS.cpp.o
+[335/412] Compiling C++ object powder.js.p/src_simulation_elements_SLCN.cpp.o
+[336/412] Compiling C++ object powder.js.p/src_simulation_elements_PTNM.cpp.o
+[337/412] Compiling C++ object powder.js.p/src_simulation_elements_FNTC.cpp.o
+[338/412] Compiling C++ object powder.js.p/src_simulation_elements_LITH.cpp.o
+[339/412] Compiling C++ object powder.js.p/src_simulation_elements_CLNT.cpp.o
+[340/412] Compiling C++ object powder.js.p/src_simulation_elements_LED.cpp.o
+../src/simulation/elements/LED.cpp:62:3: warning: misleading indentation; statement is not part of the previous 'if' [-Wmisleading-indentation]
+   62 |                 int r, rx, ry;
+      |                 ^
+../src/simulation/elements/LED.cpp:59:2: note: previous statement is here
+   59 |         if (parts[i].life > 0)
+      |         ^
+1 warning generated.
+[341/412] Compiling C++ object powder.js.p/src_simulation_elements_TIMC.cpp.o
+[342/412] Compiling C++ object powder.js.p/src_simulation_elements_FUEL.cpp.o
+[343/412] Compiling C++ object powder.js.p/src_simulation_elements_DMRN.cpp.o
+[344/412] Compiling C++ object powder.js.p/src_simulation_elements_PINV.cpp.o
+[345/412] Compiling C++ object powder.js.p/src_simulation_elements_COND.cpp.o
+[346/412] Compiling C++ object powder.js.p/src_simulation_elements_WALL.cpp.o
+[347/412] Compiling C++ object powder.js.p/src_simulation_elements_FPTC.cpp.o
+[348/412] Compiling C++ object powder.js.p/src_simulation_elements_UVRD.cpp.o
+[349/412] Compiling C++ object powder.js.p/src_simulation_elements_SUN.cpp.o
+../src/simulation/elements/SUN.cpp:72:6: warning: unused variable 'r' [-Wunused-variable]
+   72 |         int r, rx, ry, rt;
+      |             ^
+../src/simulation/elements/SUN.cpp:72:17: warning: unused variable 'rt' [-Wunused-variable]
+   72 |         int r, rx, ry, rt;
+      |                        ^~
+2 warnings generated.
+[350/412] Compiling C++ object powder.js.p/src_simulation_elements_QGPP.cpp.o
+[351/412] Compiling C++ object powder.js.p/src_simulation_elements_TMPS.cpp.o
+[352/412] Compiling C++ object powder.js.p/src_simulation_elements_CMNT.cpp.o
+[353/412] Compiling C++ object powder.js.p/src_simulation_elements_PHOS.cpp.o
+[354/412] Compiling C++ object powder.js.p/src_simulation_elements_PRMT.cpp.o
+[355/412] Compiling C++ object powder.js.p/src_simulation_elements_NTRG.cpp.o
+../src/simulation/elements/NTRG.cpp:50:17: warning: unused variable 'np' [-Wunused-variable]
+   50 |         int r, rx, ry, np;
+      |                        ^~
+1 warning generated.
+[356/412] Compiling C++ object powder.js.p/src_simulation_elements_CLUD.cpp.o
+[357/412] Compiling C++ object powder.js.p/src_simulation_elements_ECLR.cpp.o
+[358/412] Compiling C++ object powder.js.p/src_simulation_elements_BEE.cpp.o
+[359/412] Compiling C++ object powder.js.p/src_simulation_elements_PPTI.cpp.o
+[360/412] Compiling C++ object powder.js.p/src_simulation_elements_LITH2.cpp.o
+[361/412] Compiling C++ object powder.js.p/src_simulation_elements_CEXP.cpp.o
+[362/412] Compiling C++ object powder.js.p/src_simulation_elements_PROJ.cpp.o
+[363/412] Compiling C++ object powder.js.p/src_simulation_elements_PPTO.cpp.o
+[364/412] Compiling C++ object powder.js.p/src_simulation_elements_CWIR.cpp.o
+[365/412] Compiling C++ object powder.js.p/src_simulation_elements_SEED.cpp.o
+[366/412] Compiling C++ object powder.js.p/src_simulation_elements_COPR.cpp.o
+[367/412] Compiling C++ object powder.js.p/src_simulation_elements_CSNS.cpp.o
+[368/412] Compiling C++ object powder.js.p/src_simulation_elements_CLRC.cpp.o
+[369/412] Compiling C++ object powder.js.p/src_simulation_elements_PCON.cpp.o
+[370/412] Compiling C++ object powder.js.p/src_simulation_elements_TURB.cpp.o
+[371/412] Compiling C++ object powder.js.p/src_simulation_elements_STRC.cpp.o
+../src/simulation/elements/STRC.cpp:114:12: warning: variable 'top' set but not used [-Wunused-but-set-variable]
+  114 |         Particle* top, * bottom, * left, * right;
+      |                   ^
+1 warning generated.
+[372/412] Compiling C++ object powder.js.p/src_simulation_elements_BFLM.cpp.o
+../src/simulation/elements/BFLM.cpp:5:12: warning: unused function 'updateLegacy' [-Wunused-function]
+    5 | static int updateLegacy(UPDATE_FUNC_ARGS);
+      |            ^~~~~~~~~~~~
+1 warning generated.
+[373/412] Compiling C++ object powder.js.p/src_simulation_elements_PET.cpp.o
+[374/412] Compiling C++ object powder.js.p/src_simulation_elements_AMBE.cpp.o
+[375/412] Compiling C++ object powder.js.p/src_simulation_elements_CHLR.cpp.o
+[376/412] Compiling C++ object powder.js.p/src_simulation_elements_MISL.cpp.o
+[377/412] Compiling C++ object powder.js.p/src_simulation_elements_ELEX.cpp.o
+[378/412] Compiling C++ object powder.js.p/src_simulation_elements_RADN.cpp.o
+[379/412] Compiling C++ object powder.js.p/src_simulation_elements_ACTY.cpp.o
+[380/412] Compiling C++ object powder.js.p/src_simulation_elements_GRPH.cpp.o
+[381/412] Compiling C++ object powder.js.p/src_simulation_elements_BASE.cpp.o
+[382/412] Compiling C++ object powder.js.p/src_simulation_elements_WHEL.cpp.o
+[383/412] Compiling C++ object powder.js.p/src_simulation_elements_NAPM.cpp.o
+[384/412] Compiling C++ object powder.js.p/src_simulation_elements_GSNS.cpp.o
+../src/simulation/elements/GSNS.cpp:52:25: warning: '&&' within '||' [-Wlogical-op-parentheses]
+   52 |         if ((parts[i].tmp == 0 && (sim->gravp[(y / CELL)*(XRES / CELL) + (x / CELL)] >= parts[i].temp - 273.15f) || (parts[i].tmp == 2 &&  (sim->gravp[(y / CELL)*(XRES / CELL) + (x / CELL)]) < parts[i].temp - 273.15f)))
+      |              ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~
+../src/simulation/elements/GSNS.cpp:52:25: note: place parentheses around the '&&' expression to silence this warning
+   52 |         if ((parts[i].tmp == 0 && (sim->gravp[(y / CELL)*(XRES / CELL) + (x / CELL)] >= parts[i].temp - 273.15f) || (parts[i].tmp == 2 &&  (sim->gravp[(y / CELL)*(XRES / CELL) + (x / CELL)]) < parts[i].temp - 273.15f)))
+      |                                ^
+      |              (                                                                                                  )
+1 warning generated.
+[385/412] Compiling C++ object powder.js.p/src_simulation_elements_MGNT.cpp.o
+[386/412] Compiling C++ object powder.js.p/src_simulation_elements_BALL.cpp.o
+[387/412] Compiling C++ object powder.js.p/src_simulation_elements_SODM.cpp.o
+[388/412] Compiling C++ object powder.js.p/src_simulation_elements_RUBR.cpp.o
+../src/simulation/elements/RUBR.cpp:6:13: warning: unused function 'create' [-Wunused-function]
+    6 | static void create(ELEMENT_CREATE_FUNC_ARGS);
+      |             ^~~~~~
+1 warning generated.
+[389/412] Compiling C++ object powder.js.p/src_simulation_simtools_HEAT.cpp.o
+[390/412] Compiling C++ object powder.js.p/src_simulation_simtools_AIR.cpp.o
+[391/412] Compiling C++ object powder.js.p/src_simulation_simtools_COOL.cpp.o
+[392/412] Compiling C++ object powder.js.p/src_simulation_simtools_VAC.cpp.o
+[393/412] Compiling C++ object powder.js.p/src_simulation_simtools_PGRV.cpp.o
+[394/412] Compiling C++ object powder.js.p/src_simulation_simtools_NGRV.cpp.o
+[395/412] Compiling C++ object powder.js.p/src_simulation_simtools_MIX.cpp.o
+[396/412] Compiling C++ object powder.js.p/src_simulation_simtools_AMBM.cpp.o
+[397/412] Compiling C++ object powder.js.p/src_simulation_simtools_CYCL.cpp.o
+[398/412] Compiling C++ object powder.js.p/src_simulation_simtools_RSET.cpp.o
+[399/412] Compiling C++ object powder.js.p/src_simulation_simtools_AMBP.cpp.o
+[400/412] Compiling C++ object powder.js.p/src_tasks_Task.cpp.o
+[401/412] Compiling C++ object powder.js.p/src_tasks_AbandonableTask.cpp.o
+[402/412] Compiling C++ object powder.js.p/src_bson_BSON.cpp.o
+[403/412] Compiling C++ object powder.js.p/src_tasks_TaskWindow.cpp.o
+[404/412] Compiling C++ object powder.js.p/src_Misc.cpp.o
+[405/412] Compiling C++ object powder.js.p/src_common_tpt-rand.cpp.o
+[406/412] Compiling C++ object powder.js.p/src_Format.cpp.o
+[407/412] Compiling C++ object powder.js.p/src_Probability.cpp.o
+[408/412] Compiling C++ object powder.js.p/src_common_tpt-thread-local.cpp.o
+[409/412] Compiling C++ object powder.js.p/src_bzip2_bz2wrap.cpp.o
+[410/412] Compiling C++ object powder.js.p/src_common_Platform.cpp.o
+[411/412] Compiling C++ object powder.js.p/src_common_String.cpp.o
+[412/412] Linking target powder.js
+em++: warning: -sASYNCIFY=2 (JSPI) is still experimental [-Wexperimental]

@@ -1,0 +1,83 @@
+[env] cloning emsdk into /home/user/tpt-cracker-port/.cache/emsdk
+[env] installing emsdk 4.0.23
+Resolving SDK version '4.0.23' to 'sdk-releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'
+Installing SDK 'sdk-releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'..
+Installing tool 'node-24.19.0-64bit'..
+Downloading: /home/user/tpt-cracker-port/.cache/emsdk/downloads/node-v24.19.0-linux-x64.tar.xz from https://storage.googleapis.com/webassembly/emscripten-releases-builds/deps/node-v24.19.0-linux-x64.tar.xz, 31633904 Bytes
+ [----------------------------------------------------------------------------]
+Unpacking '/home/user/tpt-cracker-port/.cache/emsdk/downloads/node-v24.19.0-linux-x64.tar.xz' to '/home/user/tpt-cracker-port/.cache/emsdk/node/24.19.0_64bit'
+Done installing tool 'node-24.19.0-64bit'.
+Installing tool 'releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'..
+Downloading: /home/user/tpt-cracker-port/.cache/emsdk/downloads/aaa43392544d695232b70eda706d751f18980c2a-wasm-binaries.tar.xz from https://storage.googleapis.com/webassembly/emscripten-releases-builds/linux/aaa43392544d695232b70eda706d751f18980c2a/wasm-binaries.tar.xz, 356114228 Bytes
+ [----------------------------------------------------------------------------]
+Unpacking '/home/user/tpt-cracker-port/.cache/emsdk/downloads/aaa43392544d695232b70eda706d751f18980c2a-wasm-binaries.tar.xz' to '/home/user/tpt-cracker-port/.cache/emsdk/upstream'
+Done installing tool 'releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'.
+Done installing SDK 'sdk-releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'.
+Resolving SDK version '4.0.23' to 'sdk-releases-aaa43392544d695232b70eda706d751f18980c2a-64bit'
+Setting the following tools as active:
+   node-24.19.0-64bit
+   releases-aaa43392544d695232b70eda706d751f18980c2a-64bit
+
+Next steps:
+- To conveniently access emsdk tools from the command line,
+  consider adding the following directories to your PATH:
+    /home/user/tpt-cracker-port/.cache/emsdk
+    /home/user/tpt-cracker-port/.cache/emsdk/upstream/emscripten
+- This can be done for the current shell by running:
+    source "/home/user/tpt-cracker-port/.cache/emsdk/emsdk_env.sh"
+- Configure emsdk in your shell startup scripts by running:
+    echo 'source "/home/user/tpt-cracker-port/.cache/emsdk/emsdk_env.sh"' >> $HOME/.bash_profile
+shared:INFO: (Emscripten: Running sanity checks)
+[build-deps] cloning https://github.com/libsdl-org/SDL.git @ release-2.32.8
+[build-deps] seeding port sdl2 from /home/user/tpt-cracker-port/build-wasm-deps/src/SDL-release-2.32.8
+[build-deps] downloading https://zlib.net/fossils/zlib-1.3.1.tar.gz
+[build-deps] seeding port zlib from /home/user/tpt-cracker-port/build-wasm-deps/src/zlib-1.3.1
+[build-deps] cloning https://github.com/emscripten-ports/bzip2.git @ 1.0.6
+[build-deps] seeding port bzip2 from /home/user/tpt-cracker-port/build-wasm-deps/src/bzip2-1.0.6
+[build-deps] building Emscripten ports
+embuilder:INFO: building sdl2
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libSDL2.a... (this will be cached in "/home/user/tpt-cracker-port/.cache/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libSDL2.a" for subsequent builds)
+system_libs:INFO: compiled 118 inputs in 8.16s
+cache:INFO:  - ok
+embuilder:INFO: ...success. Took (8.23s)
+embuilder:INFO: building zlib
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libz.a... (this will be cached in "/home/user/tpt-cracker-port/.cache/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libz.a" for subsequent builds)
+system_libs:INFO: compiled 15 inputs in 0.98s
+cache:INFO:  - ok
+embuilder:INFO: ...success. Took (1.04s)
+embuilder:INFO: building bzip2
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libbz2.a... (this will be cached in "/home/user/tpt-cracker-port/.cache/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libbz2.a" for subsequent builds)
+system_libs:INFO: compiled 7 inputs in 0.69s
+cache:INFO:  - ok
+embuilder:INFO: ...success. Took (0.76s)
+embuilder:INFO: building libpng-legacysjlj
+ports:INFO: retrieving port: libpng from https://storage.googleapis.com/webassembly/emscripten-ports/libpng-1.6.39.tar.gz
+ports:INFO: unpacking port: libpng
+cache:INFO: generating port: sysroot/lib/wasm32-emscripten/libpng-legacysjlj.a... (this will be cached in "/home/user/tpt-cracker-port/.cache/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libpng-legacysjlj.a" for subsequent builds)
+system_libs:INFO: compiled 25 inputs in 1.88s
+cache:INFO:  - ok
+embuilder:INFO: ...success. Took (2.61s)
+embuilder:INFO: Built 4 targets in (12.67s)
+[build-deps] downloading https://www.lua.org/ftp/lua-5.1.5.tar.gz
+[build-deps] building Lua 5.1.5 as C++
+lauxlib.c:577:61: warning: while loop has empty body [-Wempty-body]
+  577 |    while ((c = getc(lf.f)) != EOF && c != LUA_SIGNATURE[0]) ;
+      |                                                             ^
+lauxlib.c:577:61: note: put the semicolon on a separate line to silence this warning
+1 warning generated.
+[build-deps] cloning https://github.com/open-source-parsers/jsoncpp.git @ 1.9.5
+[build-deps] building jsoncpp 1.9.5
+[build-deps] downloading https://www.fftw.org/fftw-3.3.10.tar.gz
+[build-deps] building fftw 3.3.10 (single precision)
+[build-deps] sysroot ready in /home/user/tpt-cracker-port/build-wasm-deps/prefix
+bzip2.pc
+fftw3f.pc
+jsoncpp.pc
+libpng16.pc
+lua5.1-c++.pc
+sdl2.pc
+zlib.pc
+
+real	2m33.681s
+user	3m14.086s
+sys	0m40.987s

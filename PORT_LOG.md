@@ -124,3 +124,107 @@ lua.org, fftw.org, zlib.net, storage.googleapis.com, registry.npmjs.org are reac
 
 First full compile of the tree (before any source change) had **0 errors**; the 11 warnings are
 pre-existing code-quality warnings in the mod sources (unused variables etc.) and were left alone.
+
+If Emscripten's cache gets cleared in a sandbox that needs seeding (happened once here, cause not
+identified; emcc re-ran its sanity check and started from an empty cache), rerun
+`TPT_SEED_PORTS=1 ./wasm/build-deps.sh`.
+
+## 5. Verification
+
+### 5.1 Build
+- Clean build from scratch, local (Emscripten cache cleared, build dirs removed):
+  `TPT_SEED_PORTS=1 ./wasm/build-deps.sh` 2m34s, `./wasm/build.sh` 2m03s, exit 0
+  (`artifacts/logs/clean-build-*.log`).
+- Clean build from scratch on GitHub Actions (ubuntu-24.04, normal port downloads, no caches):
+  run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40093530610 - success
+  (deps 2m20s, game 3m00s, wasm-validate ok, 11/11 browser tests at that commit).
+- Native Linux build (LuaJIT, libcurl, fftw, threads) of the same tree: 422/422 targets, runs headless
+  (SDL dummy driver), writes powder.pref.
+- `wasm-validate --enable-all` passes; exports, sizes, sha256 and embedded game/mod strings recorded in
+  `artifacts/validation/wasm-validation.txt`. powder.wasm 4,190,185 bytes, powder.js 191,929 bytes.
+
+### 5.2 Browser tests (`tests/browser/tpt.spec.mjs`, Playwright 1.63.0, Chromium 153 headless)
+All driven through the real UI: mouse/keyboard on the canvas, the game's own Lua console for reading state.
+
+| # | Test | Local HTTP | Offline ZIP via serve.py | Offline ZIP via file:// |
+|---|---|---|---|---|
+| 1 | page loads over HTTP; powder.js/powder.wasm 200 + application/wasm; no unexplained console errors / failed requests | pass | pass | n/a (HTTP-specific) |
+| 2 | canvas non-blank, keeps changing (falling powder) | pass | pass | pass |
+| 3 | left mouse draws DUST, right mouse erases (NONE), Space toggles pause | pass | pass | pass |
+| 4 | crackerk.lua finished (`failsafe == 1`, MANAGER table); MIST and PLNE ("SPSH") exist with the right names/menus; both selected via element search (E) and placed by clicking | pass | pass | pass |
+| 5 | local save via the game's save dialog -> page Export (download, `OPS1` magic, same bytes) -> clear -> page Import -> same particle count; reload -> files still there; game's own save browser (Ctrl+Open) lists and loads them | pass | pass | pass |
+| 6 | mod UI: J and the Cr-Menu button open/close Mod Settings; one particle of each of the 51 mod C++ elements runs 5 s | pass | pass | pass |
+| 7 | nested modal loops: Lua `tpt.confirm`, `tpt.input`, `tpt.throw_error` show dialogs and return | pass | pass | pass |
+| 8 | persistence: powder.pref written; MANAGER setting survives reload | pass | pass | pass |
+| 9 | resize to 1600x1000, 900x640, 640x520: canvas fits, keeps aspect, clicks land on the right cell | pass | pass | pass |
+| 10 | performance + Newtonian gravity field next to a black hole | pass | pass | pass |
+| 11 | 16 navigations during startup keep all 40 saves (regression for root cause 14) | pass | pass | pass |
+| 12 | readable failure page without JSPI | pass | pass | pass |
+| 13 | readable failure page when powder.wasm 404s | pass | pass | n/a |
+
+Measurements (headless Chromium, SwiftShader WebGL, 4 vCPU; `artifacts/browser/measurements.json`):
+navigation to first game frame ~0.33 s page time / ~0.9 s wall incl. test harness; idle 53.8 ticks/s,
+29,886 particles 54.8 ticks/s, same with Newtonian gravity 54.2 ticks/s (fps cap 60); gravity field
+2.7e-3 five cells from a black hole after 60 frames (0 before).
+Screenshots: `artifacts/browser/*.png` (HTTP) and `artifacts/browser-offline-file/` (file://).
+Not tested: real Microsoft Edge on Windows (same Chromium engine, but not run here), touch input,
+HiDPI, audio (the game has none), low-end hardware.
+
+## 6. Mod features (source -> status)
+
+| Feature | Where | Status |
+|---|---|---|
+| MIST (missile target tool, CR1K_PT_MIST, id 255) | crackerk.lua L10 | runtime-tested: exists, selectable, placed |
+| PLNE, shown as "SPSH" (space ship) | crackerk.lua L150 | runtime-tested: exists, selectable, placed |
+| 51 C++ elements FNTC..RUBR (ids 192-242) | src/simulation/elements/*.cpp | all runtime-tested together (placed, 5 s of simulation, no crash); RUBR also saved/loaded |
+| Mod Settings menu (Cr-Menu button, J shortcut) | crackerk.lua L325, L2760 | runtime-tested open/close; individual options present but not exercised |
+| Mod UI theme, HUD, intro text | crackerk.lua, GameView.cpp | visible in screenshots; not asserted beyond that |
+| Settings storage via MANAGER (script manager) | manager.lua | runtime-tested (persists across reload) |
+| URS updater / MOTD | crackerk.lua L432-660 | unavailable (no network); reports "URS updater: offline" |
+| Notifications script (Maticzpl) | crackerk.lua end | loads; needs network, shows its own messages |
+| TPTMP multiplayer | tptmp.lua | unavailable (no TCP sockets); prints why |
+| MOVS | changelog only | not found in the source by name; the changelog describes it as the earlier name of the space ship (now PLNE/"SPSH") - inferred, not traced |
+
+## 7. Deployment status: BLOCKED on credentials
+- Vercel MCP is authenticated (personal hobby account, team `team_Hd1pTA8fuMgOK5kVYAJlPhbd`), but:
+  - its `upload_file` takes the file content inside the tool call: the 4.2 MB wasm would be 5.6 MB of
+    base64 that has to pass through the agent's own output - not feasible;
+  - `create_deployment` from the public GitHub repo fails with `git_info_fail` (no GitHub connection on
+    the Vercel account); a Vercel Sandbox has no deployment credentials either.
+- Created by the probe: Vercel project `tpt-cracker-port` (`prj_HfIKw7K397cl1CqEp6UKmk8AkOsf`), one
+  failed deployment, nothing served. Build settings reset to static defaults afterwards.
+- The project uses the team default protection: Vercel Authentication on `all_except_custom_domains`,
+  i.e. even production `*.vercel.app` URLs require a Vercel login until that is changed.
+- Ready to go: `wasm/deploy-vercel.sh` (preview by default, `--prod` explicit) and the CI `deploy` job
+  (preview -> browser tests against it -> production only on manual run with `production: true`).
+  Needs a `VERCEL_TOKEN` (repository secret for CI, or a secret in this environment for a session).
+
+## 8. Offline bundle
+`./wasm/make-offline-zip.sh` -> `cracker1000-mod-wasm-offline.zip` (20 MB): site, `powder-wasm.js`
+(base64 binary for file://), `serve.py`, `serve.mjs`, `Start Game (Windows).cmd`, `start.sh`,
+README-OFFLINE.txt, LICENSE, sources. No .exe (the script refuses to package one).
+- Tested here: serve.py (13/13) and double-clicking index.html, i.e. file:// in Chromium (11/11).
+- Not tested: the Windows .cmd and Edge/Chrome on Windows (no Windows machine); serve.mjs only
+  syntax-equivalent to the tested test server, not run as a launcher.
+- Saves are per address: http://127.0.0.1:8123/ and file:// keep separate storage (README says so).
+
+## 9. CI
+`.github/workflows/wasm.yml`: pinned emsdk, no caches, build deps + game, wasm-validate, browser tests,
+offline ZIP + file:// tests, uploads dist/, offline ZIP, logs/screenshots/report; optional `deploy` job.
+
+## 10. Limitations
+- JSPI required: Chromium/Edge >= 137. Firefox/Safari get the failure page. A second build variant with
+  ASYNCIFY=1 + JS exceptions would run everywhere but slower and larger; not done.
+- No online features (save browser, login, votes, comments), no multiplayer, no updaters. A realistic
+  path for online saves: powdertoy.co.uk would have to send CORS headers or a proxy would be needed
+  (a proxy has cost/abuse implications - not added, not decided).
+- PUC Lua 5.1 instead of LuaJIT: heavy Lua scripts run slower; LuaJIT-only `ffi` scripts do not work
+  (the built-in scripts do not use it).
+- Single-threaded: gravity and thumbnail rendering share the main thread (measured cost small).
+- Saves live in browser storage; clearing site data deletes them (Export them as .cps files).
+- In-game "Scale"/"Fullscreen" options: the page scales the canvas; use the page's Fullscreen button.
+
+## 11. Next steps
+1. Add `VERCEL_TOKEN` (and decide on Deployment Protection), then deploy a preview, run the suite against
+   it (CI does this automatically), check it in Edge, promote to production when happy.
+2. Optional: run the suite with `TPT_BROWSER_CHANNEL=msedge` on a Windows machine with Edge.

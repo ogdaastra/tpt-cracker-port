@@ -10,7 +10,7 @@ export const GAME_H = 424; // WINDOWH = YRES + MENUSIZE
 export const DATA_DIR = '/libsdl/The Powder Toy';
 // Page to open relative to the base URL; index.html when testing a file:// copy of the site.
 export const START = process.env.TPT_START_PATH || './';
-export const ARTIFACTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../artifacts/browser');
+export const ARTIFACTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), process.env.TPT_ARTIFACT_DIR || '../../artifacts/browser');
 fs.mkdirSync(ARTIFACTS, { recursive: true });
 
 // Console messages that are understood and harmless; anything else at error level fails the load test.

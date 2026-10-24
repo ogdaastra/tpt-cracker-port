@@ -1,0 +1,74 @@
+{
+  "load": {
+    "msToRunning": 932,
+    "pageTimings": {
+      "start": 22,
+      "instantiated": 104,
+      "runtimeReady": 322.10000000009313,
+      "firstFrame": 345.8000000002794
+    },
+    "wasmBytes": 4190185,
+    "commit": "3523808655db10376634a0e3dfd9ce484f0dac71"
+  },
+  "input": {
+    "particlesAfterDraw": 1962,
+    "particlesAfterErase": 0
+  },
+  "roundTrip": {
+    "rubrParticles": 4476,
+    "totalParticles": 4476,
+    "saveBytes": 572
+  },
+  "modElements": {
+    "placedParticles": 51,
+    "ticksIn5s": 311
+  },
+  "resize": [
+    {
+      "viewport": [
+        1600,
+        1000
+      ],
+      "canvas": [
+        1258,
+        848
+      ]
+    },
+    {
+      "viewport": [
+        900,
+        640
+      ],
+      "canvas": [
+        783,
+        528
+      ]
+    },
+    {
+      "viewport": [
+        640,
+        520
+      ],
+      "canvas": [
+        538,
+        362
+      ]
+    }
+  ],
+  "performance": {
+    "msToInteractive": 901,
+    "pageTimingsMs": {
+      "start": 14.700000000186265,
+      "instantiated": 88.20000000018626,
+      "runtimeReady": 306.79999999981374,
+      "firstFrame": 328.39999999990687
+    },
+    "idleTicksPerSecond": 53.8,
+    "busyTicksPerSecond": 54.8,
+    "busyWithNewtonianGravityTicksPerSecond": 54.2,
+    "busyParticles": 29886,
+    "gravityField5CellsFromBlackHole": 0.0026691998355091,
+    "note": "fps cap is 60; headless Chromium, software WebGL (SwiftShader), 4 vCPU container"
+  },
+  "interruptedStartups": "0ms:40 5ms:40 10ms:40 20ms:40 30ms:40 50ms:40 80ms:40 120ms:40 200ms:40 300ms:40 0ms:40 10ms:40 20ms:40 40ms:40 60ms:40 100ms:40"
+}

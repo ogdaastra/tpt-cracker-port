@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.TPT_BASE_URL || 'http://127.0.0.1:8765/';
 const local = !process.env.TPT_BASE_URL;
+const reports = process.env.TPT_REPORT_DIR || '../../artifacts/playwright';
 
 export default defineConfig({
 	testDir: '.',
@@ -12,11 +13,11 @@ export default defineConfig({
 	expect: { timeout: 15_000 },
 	workers: 1, // one game instance at a time keeps timings meaningful
 	retries: 0,
-	outputDir: '../../artifacts/playwright/output',
+	outputDir: `${reports}/output`,
 	reporter: [
 		['list'],
-		['json', { outputFile: '../../artifacts/playwright/results.json' }],
-		['html', { outputFolder: '../../artifacts/playwright/report', open: 'never' }],
+		['json', { outputFile: `${reports}/results.json` }],
+		['html', { outputFolder: `${reports}/report`, open: 'never' }],
 	],
 	use: {
 		baseURL,
