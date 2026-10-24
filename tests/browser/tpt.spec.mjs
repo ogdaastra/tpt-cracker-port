@@ -197,7 +197,59 @@ test('save export and import round trip, persistence across reload', async ({ pa
 	expect(afterReload).toContain('imported-roundtrip.cps');
 	const reloadedBytes = await page.evaluate((p) => Array.from(window.tptPage.module.FS.readFile(p)), h.DATA_DIR + '/Saves/roundtrip.cps');
 	expect(Buffer.from(reloadedBytes).equals(bytes)).toBe(true);
+	// and the game's own save browser (Ctrl + Open button) lists them and loads one; it reads the
+	// directory and renders thumbnails through Task, which runs without threads in this build
+	await h.lua(page, 'sim.clearSim()');
+	await page.keyboard.down('Control');
+	await h.click(page, 9, 415);
+	await page.keyboard.up('Control');
+	await h.waitFrames(page, 30);
+	await h.saveScreenshot(page, '05-game-save-browser');
+	await h.click(page, 128, 131); // first entry of the 4x3 grid in the centred 500x350 window
+	await h.waitFrames(page, 30);
+	expect(Number(await h.lua(page, 'sim.elementCount(elem.DEFAULT_PT_RUBR)'))).toBe(rubr);
 	results.roundTrip = { rubrParticles: rubr, totalParticles: total, saveBytes: bytes.length };
+	await h.expectNoUnexplainedErrors(log);
+});
+
+test('blocking dialogs from Lua (tpt.confirm, tpt.input, tpt.throw_error) run nested main loops', async ({ page }) => {
+	const log = h.collect(page);
+	await h.openGame(page);
+	await h.lua(page, '0'); // defines the console helpers
+	async function consoleCommand(line) {
+		await page.keyboard.press('Backquote');
+		await h.waitFrames(page, 8);
+		await page.keyboard.type(line);
+		await page.keyboard.press('Enter'); // the Lua call now blocks inside a nested EngineProcess()
+		await h.waitFrames(page, 20);
+	}
+
+	await consoleCommand('C1=tpt.confirm("Port test","Nested main loop?","Yes")');
+	const during = await h.canvasStats(page);
+	await h.saveScreenshot(page, '10-blocking-confirm');
+	await page.keyboard.press('Enter'); // the dialog's Yes button
+	await h.waitFrames(page, 10);
+	await page.keyboard.press('Escape'); // close the console
+	await h.waitFrames(page, 6);
+	expect(await h.lua(page, 'tostring(C1)')).toBe('true');
+
+	await consoleCommand('I1=tpt.input("Port test","Type something")');
+	await page.keyboard.type('hello wasm');
+	await h.saveScreenshot(page, '10-blocking-input');
+	await page.keyboard.press('Enter');
+	await h.waitFrames(page, 10);
+	await page.keyboard.press('Escape');
+	await h.waitFrames(page, 6);
+	expect(await h.lua(page, 'I1')).toBe('hello wasm');
+
+	await consoleCommand('tpt.throw_error("Port test error") E1=1');
+	await h.saveScreenshot(page, '10-blocking-error');
+	await page.keyboard.press('Enter');
+	await h.waitFrames(page, 10);
+	await page.keyboard.press('Escape');
+	await h.waitFrames(page, 6);
+	expect(await h.lua(page, 'E1')).toBe('1');
+	expect(during.lit).toBeGreaterThan(0);
 	await h.expectNoUnexplainedErrors(log);
 });
 
