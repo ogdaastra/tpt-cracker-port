@@ -35,7 +35,16 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 ```
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
-screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+
+`PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
+times simulation and render frames inside the game (`tpt_benchmark`), writing `artifacts/browser/perf.json`.
+`PERF_THROTTLES=1,4` adds the whole-game tick rate with Chromium CPU throttling (much noisier).
+
+The page talks to the game through a few exported functions (`src/PowderToySDL.cpp`): `tpt_open_file`
+(imports), `tpt_element_list` / `tpt_active_tools` / `tpt_select_tool` (the Elements panel; selection is
+queued as an SDL event and handled in the game loop) and `tpt_benchmark`.
 
 ## Deploy (Vercel)
 
@@ -68,6 +77,7 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | Saves, stamps, settings, scripts | kept in the browser (IndexedDB) per site address; Export/Import buttons move them as `.cps` files |
 | Threads | none: gravity and background tasks run on the main thread |
 | Window | the page scales the canvas; the page's Fullscreen button replaces the in-game one |
+| Menus | 17 px wider window: a second column of menu buttons holds five menus split off the longest ones (see `ADDED_ELEMENTS.md`); the page adds a searchable Elements panel |
 | `platform.restart()` | reloads the page; `platform.openLink()` opens a new tab |
 | Sound | NOTE and `tpt.play_sound()` play through Web Audio (an AudioContext at 44.1 kHz starts in Chromium; volume kept low) |
 

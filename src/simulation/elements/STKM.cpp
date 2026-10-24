@@ -16,7 +16,7 @@ void Element::Element_STKM()
 	Name = "STKM";
 	Colour = PIXPACK(0xFFE0A0);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_CHARACTERS; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.5f;
@@ -648,7 +648,7 @@ void Element_STKM_interact(Simulation *sim, playerst *playerp, int i, int x, int
 			sim->parts[i].life -= RNG::Ref().between(32, 51);
 		}
 
-		if (sim->elements[TYP(r)].HeatConduct && (TYP(r)!=PT_HSWC||sim->parts[ID(r)].life==10) && ((playerp->elem!=PT_LIGH && sim->parts[ID(r)].temp>=323) || sim->parts[ID(r)].temp<=243) && (!playerp->rocketBoots || TYP(r)!=PT_PLSM))
+		if (!sim->IsHeatInsulator(sim->parts[ID(r)]) && ((playerp->elem!=PT_LIGH && sim->parts[ID(r)].temp>=323) || sim->parts[ID(r)].temp<=243) && (!playerp->rocketBoots || TYP(r)!=PT_PLSM))
 		{
 			sim->parts[i].life -= 2;
 			playerp->accs[3] -= 1;

@@ -10,7 +10,7 @@ void Element::Element_GOLD()
 	Name = "GOLD";
 	Colour = PIXPACK(0xDCAD2C);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

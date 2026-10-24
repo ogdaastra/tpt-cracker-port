@@ -34,7 +34,7 @@ void Element::Element_BSMH() {
 	Name = "BSMH";
 	Colour = PIXPACK(0xD0DBDB);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

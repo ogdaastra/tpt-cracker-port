@@ -27,7 +27,6 @@
 #define MAX_FARADAY_DIVISIONS 100
 #define MAX_TMP2_CHANNELS 100
 #define FARADAY_CHANNELS (MAX_FARADAY_DIVISIONS + MAX_TMP2_CHANNELS)
-#define DENSITY_CELL 4
 
 class Snapshot;
 class SimTool;
@@ -119,6 +118,8 @@ public:
 	float *gravmap;//gravmap[(YRES/CELL) * (XRES/CELL)];
 	// Time dilation, smaller = more updates
 	char time_dilation[YRES / CELL][XRES / CELL];
+	// false only while every time_dilation cell is 0; lets the per-particle and per-cell checks be skipped
+	bool anyTimeDilation = false;
 	const char MAX_TIME_DILATION = 8;
 	const char MIN_TIME_DILATION = -16;
 	//Walls
@@ -132,7 +133,6 @@ public:
 	int pmap[YRES][XRES];
 	int photons[YRES][XRES];
 	unsigned int pmap_count[YRES][XRES];
-	short density_map[YRES / DENSITY_CELL][XRES / DENSITY_CELL];
 	//Simulation Settings
 	int edgeMode;
 	int gravityMode;
@@ -171,6 +171,11 @@ public:
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
 	void init_can_move();
 	bool IsWallBlocking(int x, int y, int type);
+	// PIPE/PPIP tmp flag: the pipe formed next to HEAC and conducts heat (heat pipe, as in TPT 100)
+	static constexpr int PFLAG_CAN_CONDUCT = 0x00000001;
+	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
+	// not heat pipes
+	bool IsHeatInsulator(const Particle &p) const;
 	bool IsElement(int type) const {
 		return (type > 0 && type < PT_NUM && elements[type].Enabled);
 	}

@@ -7,7 +7,7 @@ void Element::Element_BRAS() {
 	Name = "BRAS";
 	Colour = PIXPACK(0xE3C359);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

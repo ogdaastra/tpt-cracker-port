@@ -14,6 +14,7 @@
 		<button type="button" id="btn-import" disabled title="Load a .cps or .stm save file from your computer">Import save…</button>
 		<input type="file" id="file-import" accept=".cps,.stm" hidden>
 		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
+		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
 	</nav>
 </header>
@@ -22,6 +23,15 @@
 	<div id="game">
 		<canvas id="canvas" tabindex="0" aria-label="The Powder Toy simulation"></canvas>
 	</div>
+
+	<aside id="elements" aria-label="Element browser" hidden>
+		<div class="elements-head">
+			<input type="search" id="element-search" placeholder="Search elements…" aria-label="Search elements" autocomplete="off" spellcheck="false">
+			<p class="hint">Click: left mouse tool · right-click: right mouse tool.
+				The game's own search is the magnifier button (or press <kbd>E</kbd>).</p>
+		</div>
+		<div id="element-groups"></div>
+	</aside>
 
 	<div id="status" class="overlay" role="status" aria-live="polite">
 		<p id="status-text">Loading…</p>

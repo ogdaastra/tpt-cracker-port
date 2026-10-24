@@ -17,7 +17,7 @@ void Element::Element_FIGH()
 	Name = "FIGH";
 	Colour = PIXPACK(0xFFE0A0);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_CHARACTERS; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.5f;

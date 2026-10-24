@@ -7,7 +7,7 @@ void Element::Element_SUGR() {
 	Name = "SUGR";
 	Colour = PIXPACK(0xFFF9F2);
 	MenuVisible = 1;
-	MenuSection = SC_POWDERS; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_POWDERS before the menu split
 	Enabled = 1;
 
 	Advection = 0.4f;

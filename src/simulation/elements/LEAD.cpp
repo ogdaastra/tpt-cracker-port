@@ -9,7 +9,7 @@ void Element::Element_LEAD() {
 	Name = "LEAD";
 	Colour = PIXPACK(0xD6D6FF);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.05f;

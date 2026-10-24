@@ -9,7 +9,7 @@ void Element::Element_HELM()
 	Name = "HELM";
 	Colour = PIXPACK(0xFFFFFF);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_CHARACTERS; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	// element properties here

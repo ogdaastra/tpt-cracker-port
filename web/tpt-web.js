@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements']) {
 			$(id).disabled = true;
 		}
 	}
@@ -67,7 +67,7 @@
 
 	// ------------------------------------------------------------------ canvas sizing
 	function fit() {
-		const w = canvas.width || 629;
+		const w = canvas.width || 646;
 		const h = canvas.height || 424;
 		const box = game.getBoundingClientRect();
 		if (!box.width || !box.height) {
@@ -247,6 +247,188 @@
 		importFile(e.dataTransfer.files[0]);
 	});
 
+	// ------------------------------------------------------------------ element browser
+	// Every menu of the game (elements, walls, tools…) as a searchable list beside the canvas. The list
+	// comes from the running game (tpt_element_list), so elements added by Lua scripts appear too;
+	// clicking one selects it in the game (tpt_select_tool, queued and handled by the game loop).
+	const panel = $('elements');
+	const search = $('element-search');
+	const groupsBox = $('element-groups');
+	const PANEL_KEY = 'tptElementPanel';
+	const GROUPS_KEY = 'tptElementPanelOpenGroups';
+	let menus = [];
+	let openGroups = null;
+
+	function storageGet(key) {
+		try {
+			return localStorage.getItem(key);
+		} catch (e) {
+			return null;
+		}
+	}
+
+	function storageSet(key, value) {
+		try {
+			localStorage.setItem(key, value);
+		} catch (e) {
+			// private window or storage blocked: the panel just forgets its state
+		}
+	}
+
+	function loadOpenGroups() {
+		try {
+			const v = JSON.parse(storageGet(GROUPS_KEY));
+			return Array.isArray(v) ? new Set(v) : new Set();
+		} catch (e) {
+			return new Set();
+		}
+	}
+
+	function readMenus() {
+		try {
+			return JSON.parse(mod.ccall('tpt_element_list', 'string', [], [])).menus;
+		} catch (e) {
+			rememberError('element list: ' + e);
+			return [];
+		}
+	}
+
+	function markSelection() {
+		let active = ['', ''];
+		try {
+			active = mod.ccall('tpt_active_tools', 'string', [], []).split('\n');
+		} catch (e) {
+			return;
+		}
+		for (const chip of groupsBox.querySelectorAll('.chip')) {
+			chip.classList.toggle('sel-left', chip.dataset.id === active[0]);
+			chip.classList.toggle('sel-right', chip.dataset.id === active[1]);
+		}
+	}
+
+	function selectTool(id, button) {
+		mod.ccall('tpt_select_tool', null, ['string', 'number'], [id, button]);
+		window.tptPage.lastPanelSelection = { id, button };
+		setTimeout(markSelection, 100); // after the game loop has handled it
+	}
+
+	function chipFor(tool) {
+		const chip = document.createElement('button');
+		chip.type = 'button';
+		chip.className = 'chip';
+		chip.textContent = tool.name || tool.id;
+		chip.title = tool.desc ? `${tool.name}: ${tool.desc}` : tool.name;
+		chip.dataset.id = tool.id;
+		chip.style.setProperty('--c', tool.color);
+		chip.addEventListener('click', () => selectTool(tool.id, 0));
+		chip.addEventListener('contextmenu', (e) => {
+			e.preventDefault();
+			selectTool(tool.id, 1);
+			canvas.focus();
+		});
+		return chip;
+	}
+
+	function render() {
+		const q = search.value.trim().toLowerCase();
+		groupsBox.textContent = '';
+		let shown = 0;
+		for (const menu of menus) {
+			let tools = menu.tools;
+			if (q) {
+				const byName = tools.filter((t) => t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q));
+				const byDesc = tools.filter((t) => !byName.includes(t) && t.desc.toLowerCase().includes(q));
+				tools = byName.concat(byDesc);
+			}
+			if (!tools.length) {
+				continue;
+			}
+			shown += tools.length;
+			const details = document.createElement('details');
+			details.dataset.menu = menu.name;
+			details.open = q ? true : openGroups.has(menu.name);
+			const summary = document.createElement('summary');
+			summary.textContent = menu.name;
+			const count = document.createElement('span');
+			count.className = 'count';
+			count.textContent = tools.length;
+			summary.append(count);
+			const chips = document.createElement('div');
+			chips.className = 'chips';
+			chips.append(...tools.map(chipFor));
+			details.append(summary, chips);
+			details.addEventListener('toggle', () => {
+				if (search.value.trim()) {
+					return; // opened by a search, not by the user
+				}
+				if (details.open) {
+					openGroups.add(menu.name);
+				} else {
+					openGroups.delete(menu.name);
+				}
+				storageSet(GROUPS_KEY, JSON.stringify([...openGroups]));
+			});
+			groupsBox.append(details);
+		}
+		if (!shown) {
+			const p = document.createElement('p');
+			p.className = 'no-match';
+			p.textContent = q ? `Nothing matches "${search.value.trim()}".` : 'No elements.';
+			groupsBox.append(p);
+		}
+		markSelection();
+	}
+
+	function setPanel(open) {
+		if (open) {
+			menus = readMenus();
+			if (!openGroups) {
+				openGroups = loadOpenGroups();
+			}
+			render();
+		}
+		panel.hidden = !open;
+		$('btn-elements').setAttribute('aria-expanded', String(open));
+		$('btn-elements').classList.toggle('on', open);
+		storageSet(PANEL_KEY, open ? '1' : '0');
+		fit();
+	}
+
+	$('btn-elements').addEventListener('click', () => {
+		setPanel(panel.hidden);
+		refocus();
+	});
+	search.addEventListener('input', render);
+	// typing in the search box must not reach the game, whose SDL key listeners are on the window
+	for (const type of ['keydown', 'keyup', 'keypress']) {
+		search.addEventListener(type, (e) => e.stopPropagation());
+	}
+	search.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') {
+			const first = groupsBox.querySelector('.chip');
+			if (first) {
+				selectTool(first.dataset.id, 0);
+			}
+		} else if (e.key === 'Escape') {
+			search.value = '';
+			render();
+			refocus();
+		}
+	});
+	// chips are buttons: give the keyboard back to the game after a click
+	groupsBox.addEventListener('click', (e) => {
+		if (e.target.closest('.chip')) {
+			canvas.focus();
+		}
+	});
+	window.tptPage.elementPanel = { open: setPanel, refresh: () => setPanel(!panel.hidden) };
+
+	function initPanel() {
+		$('btn-elements').disabled = false;
+		const saved = storageGet(PANEL_KEY);
+		setPanel(saved === null ? window.innerWidth >= 1000 : saved === '1');
+	}
+
 	// ------------------------------------------------------------------ loading
 	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
 	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by
@@ -342,6 +524,7 @@
 				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen']) {
 					$(id).disabled = false;
 				}
+				initPanel();
 				fit();
 				canvas.focus();
 			},

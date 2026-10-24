@@ -439,6 +439,10 @@ void GameSave::readOPS(const std::vector<char> &data)
 	// Use unique_ptr with a custom deleter to ensure that bson_destroy is called even when an exception is thrown
 	std::unique_ptr<bson, decltype(bson_deleter)> b_ptr(&b, bson_deleter);
 
+	// set by saves of this game that contain heat pipes, whose flag shares PIPE's tmp low byte with
+	// leftovers of the pre-93 format (TPT itself marks such saves with save version 100)
+	bool heatPipeFlags = false;
+
 	//Block sizes
 	blockX = 0;
 	blockY = 0;
@@ -523,6 +527,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
 		CheckBsonFieldBool(iter, "stress_enable", &stressEnable);
+		CheckBsonFieldBool(iter, "heatPipes", &heatPipeFlags);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
@@ -1184,6 +1189,11 @@ void GameSave::readOPS(const std::vector<char> &data)
 								particles[newIndex].tmp |= 0x00020000; //PFLAG_INITIALIZING
 							particles[newIndex].tmp |= (particles[newIndex].ctype - 1) << 18;
 							particles[newIndex].ctype = particles[newIndex].tmp & 0xFF;
+						}
+						if (savedVersion < 100 && !heatPipeFlags)
+						{
+							// the low byte held the element before ver. 93 and is now the heat pipe flag: clear it
+							particles[newIndex].tmp &= ~0xFF;
 						}
 						break;
 					case PT_TSNS:
@@ -1883,6 +1893,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 						particles[i - 1].tmp |= 0x00020000; //PFLAG_INITIALIZING
 					particles[i - 1].tmp |= (particles[i - 1].ctype - 1) << 18;
 					particles[i - 1].ctype = particles[i - 1].tmp & 0xFF;
+					particles[i - 1].tmp &= ~0xFF; // now the heat pipe flag
 				}
 				else if (particles[i - 1].type == PT_HSWC || particles[i - 1].type == PT_PUMP)
 				{
@@ -1950,6 +1961,7 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	// when building, this number may be increased depending on what elements are used
 	// or what properties are detected
 	int minimumMajorVersion = 90, minimumMinorVersion = 2;
+	bool heatPipeFlags = false;
 
 	//Get coords in blocks
 	blockX = 0;//orig_x0/CELL;
@@ -2306,6 +2318,8 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 				else if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
 				{
 					RESTRICTVERSION(93, 0);
+					if (particles[i].tmp & Simulation::PFLAG_CAN_CONDUCT)
+						heatPipeFlags = true;
 				}
 				if (particles[i].type == PT_TSNS || particles[i].type == PT_PSNS
 					|| particles[i].type == PT_HSWC || particles[i].type == PT_PUMP)
@@ -2469,6 +2483,8 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
 	bson_append_bool(&b, "stress_enable", stressEnable);
+	if (heatPipeFlags)
+		bson_append_bool(&b, "heatPipes", true);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);

@@ -51,8 +51,7 @@ static int update(UPDATE_FUNC_ARGS) {
 		if (BOUNDS_CHECK && (rx || ry)) {
 			r = pmap[y + ry][x + rx];
 			if (!r)	continue;
-			if ((TYP(r) != PT_C6 && parts[ID(r)].temp > 373.15f && sim->elements[TYP(r)].HeatConduct &&
-					(TYP(r) != PT_HSWC || parts[ID(r)].life == 10)) || TYP(r) == PT_PLSM ||
+			if ((TYP(r) != PT_C6 && parts[ID(r)].temp > 373.15f && !sim->IsHeatInsulator(parts[ID(r)])) || TYP(r) == PT_PLSM ||
 					 TYP(r) == PT_FIRE || TYP(r) == PT_DFLM)
 			{
 				if (RNG::Ref().chance(1, 6)) {

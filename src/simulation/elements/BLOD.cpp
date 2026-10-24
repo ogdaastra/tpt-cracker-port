@@ -10,7 +10,7 @@ void Element::Element_BLOD() {
 	Name = "BLOD";
 	Colour = PIXPACK(0xEB1515);
 	MenuVisible = 1;
-	MenuSection = SC_LIQUID; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_LIQUID before the menu split
 	Enabled = 1;
 
 	Advection = 0.6f;

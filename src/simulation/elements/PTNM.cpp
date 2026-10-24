@@ -10,7 +10,7 @@ void Element::Element_PTNM()
 	Name = "PTNM";
 	Colour = PIXPACK(0xD5E0EB);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

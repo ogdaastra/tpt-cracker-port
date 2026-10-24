@@ -1074,9 +1074,11 @@ int GameController::GetNumMenus(bool onlyEnabled)
 	int count = 0;
 	if (onlyEnabled)
 	{
+		// Only the classic side-bar column: scripts use this number to put their own buttons above the
+		// menu buttons (manager.lua, tptmp.lua), and the menus from SC_ORGANIC on are in a second column.
 		std::vector<Menu*> menuList = gameModel->GetMenuList();
-		for (std::vector<Menu*>::iterator it = menuList.begin(), end = menuList.end(); it != end; ++it)
-			if ((*it)->GetVisible())
+		for (int i = 0; i < (int)menuList.size() && i < SC_ORGANIC; i++)
+			if (menuList[i]->GetVisible())
 				count++;
 	}
 	else

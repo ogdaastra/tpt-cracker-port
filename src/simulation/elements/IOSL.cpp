@@ -7,7 +7,7 @@ void Element::Element_IOSL() {
 	Name = "IOSL";
 	Colour = PIXPACK(0x4150E8);
 	MenuVisible = 1;
-	MenuSection = SC_ELEC; // SC_ELECTROMAG in TPT Ultimata
+	MenuSection = SC_CIRCUITS; // SC_ELECTROMAG in TPT Ultimata; SC_ELEC before the menu split
 	Enabled = 1;
 
 	Advection = 0.6f;

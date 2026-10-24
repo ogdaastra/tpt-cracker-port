@@ -1208,7 +1208,7 @@ if jacobsmod and tpt.oldmenu and tpt.oldmenu()==1 then
 elseif tpt.num_menus then
 	ypos = 390-16*tpt.num_menus()-(not jacobsmod and 16 or 0)
 end
-sidebutton = ui_button.new(gfx.WIDTH-16,ypos,14,15,ui_button.sidepressed,'')
+sidebutton = ui_button.new(sim.XRES+1,ypos,14,15,ui_button.sidepressed,'') -- classic side bar column (the window has a second one)
 
 local function gen_buttons_local()
 	local count = 0

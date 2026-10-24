@@ -8,7 +8,7 @@ void Element::Element_ALMN() {
 	Name = "ALMN";
 	Colour = PIXPACK(0xC0C0C0);
 	MenuVisible = 1;
-	MenuSection = SC_SOLIDS;
+	MenuSection = SC_METALS; // SC_SOLIDS before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

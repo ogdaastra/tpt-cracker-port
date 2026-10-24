@@ -8,7 +8,7 @@ void Element::Element_SUN()
 	Name = "SUN";
 	Colour = PIXPACK(0xFF4500);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_SPACE; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

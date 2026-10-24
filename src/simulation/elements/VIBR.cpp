@@ -105,7 +105,7 @@ int Element_VIBR_update(UPDATE_FUNC_ARGS)
 			if(BOUNDS_CHECK)
 			{
 				r = pmap[y+ry][x+rx];
-				if (TYP(r) && TYP(r)!=PT_VIBR  && TYP(r)!=PT_BVBR && sim->elements[TYP(r)].HeatConduct && (TYP(r)!=PT_HSWC||parts[ID(r)].life==10))
+				if (TYP(r) && TYP(r)!=PT_VIBR  && TYP(r)!=PT_BVBR && !sim->IsHeatInsulator(parts[ID(r)]))
 				{
 					parts[ID(r)].temp += parts[i].tmp*3;
 					parts[i].tmp = 0;

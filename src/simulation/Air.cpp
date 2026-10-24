@@ -76,7 +76,7 @@ void Air::update_airh(void)
 		for (x=0; x<XRES/CELL; x++)
 		{
 			// Apply time dilation: (negative = loop every n frames)
-			if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
+			if (sim.anyTimeDilation && sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
 				continue;
 			int count = 0;
 			air_cell_update_begin:
@@ -137,7 +137,7 @@ void Air::update_airh(void)
 
 			// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
 			++count;
-			if (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
+			if (sim.anyTimeDilation && sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
 				goto air_cell_update_begin;
 		}
 	}
@@ -231,7 +231,7 @@ void Air::update_air(void)
 			for (x=0; x<XRES/CELL; x++)
 			{
 				// Apply time dilation: (negative = loop every n frames)
-				if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
+				if (sim.anyTimeDilation && sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
 					continue;
 				int count = 0;
 				air_cell_update_begin:
@@ -359,7 +359,7 @@ void Air::update_air(void)
 
 				// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
 				++count;
-				if (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
+				if (sim.anyTimeDilation && sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
 					goto air_cell_update_begin;
 			}
 		memcpy(vx, ovx, sizeof(vx));
@@ -401,7 +401,7 @@ void Air::RecalculateBlockAirMaps()
 			}
 		}
 		// mostly accurate insulator blocking, besides checking GEL
-		else if ((type == PT_HSWC && sim.parts[i].life != 10) || sim.elements[type].HeatConduct <= (random_gen()%250))
+		else if (sim.IsHeatInsulator(sim.parts[i]) || sim.elements[type].HeatConduct <= (random_gen()%250))
 		{
 			int x = ((int)(sim.parts[i].x+0.5f))/CELL, y = ((int)(sim.parts[i].y+0.5f))/CELL;
 			if (sim.InBounds(x, y) && !(bmap_blockairh[y][x]&0x8))

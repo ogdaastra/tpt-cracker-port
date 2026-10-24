@@ -8,7 +8,7 @@ void Element::Element_STAR() {
 	Name = "STAR";
 	Colour = PIXPACK(0xFFFF00);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_SPACE in TPT Ultimata
+	MenuSection = SC_SPACE; // SC_SPACE in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.00f;

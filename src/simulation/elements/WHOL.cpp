@@ -6,7 +6,7 @@ void Element::Element_WHOL()
 	Name = "VENT";
 	Colour = PIXPACK(0xEFEFEF);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_SPACE; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

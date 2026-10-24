@@ -63,7 +63,7 @@ static int update(UPDATE_FUNC_ARGS) {
 				parts[i].tmp = 1;
 
 				// Instantly heat non-insulators
-				if (sim->elements[rt].HeatConduct)
+				if (!sim->IsHeatInsulator(parts[ID(r)]))
 					parts[ID(r)].temp = MAX_TEMP;
 
 				// Chance to kill non-indestructible elements

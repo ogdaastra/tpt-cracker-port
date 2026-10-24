@@ -7,7 +7,7 @@ void Element::Element_BOWR() {
 	Name = "BOWR";
 	Colour = PIXPACK(0xF5B400);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_CRACKER2 in TPT Ultimata
+	MenuSection = SC_SPACE; // SC_CRACKER2 in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.0f;

@@ -1326,7 +1326,7 @@ void Renderer::draw_grav()
 }
 
 void Renderer::draw_time_dilation() {
-	if (!timeDilationFieldEnabled)
+	if (!timeDilationFieldEnabled || !sim->anyTimeDilation)
 		return;
 	
 	int x, y, i, j, r, g, b;

@@ -23,7 +23,7 @@ void Element::Element_HRSE() {
 	Name = "HRSE";
 	Colour = PIXPACK(0xC27536);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.01f;

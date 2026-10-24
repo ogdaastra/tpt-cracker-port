@@ -7,7 +7,7 @@ void Element::Element_FISH() {
 	Name = "FISH";
 	Colour = PIXPACK(0x8DAFBA);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL; // SC_ORGANIC in TPT Ultimata
+	MenuSection = SC_ORGANIC; // SC_ORGANIC in TPT Ultimata; SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.1f;

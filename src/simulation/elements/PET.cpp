@@ -10,7 +10,7 @@ void Element::Element_PET()
 	Name = "PET";
 	Colour = PIXPACK(0x8A8AFF);
 	MenuVisible = 1;
-	MenuSection = SC_SPECIAL;
+	MenuSection = SC_CHARACTERS; // SC_SPECIAL before the menu split
 	Enabled = 1;
 
 	Advection = 0.4f;

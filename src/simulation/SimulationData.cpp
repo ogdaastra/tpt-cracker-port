@@ -116,6 +116,11 @@ std::vector<menu_section> LoadMenus()
 		{0xE064, String("Decoration tools"), 0, 1},
 		{0xE048, String("Cracker"), 0, 0},
 		{0xE048, String("Cracker!"), 0, 0},
+		{0xE068, String("Life and Nature"), 0, 1},
+		{0xE04F, String("Space and Gravity"), 0, 1},
+		{0xE00A, String("Characters and Vehicles"), 0, 1},
+		{0xE05C, String("Circuits (voltage simulation)"), 0, 1},
+		{0xE066, String("Metals"), 0, 1},
 	};
 }
 

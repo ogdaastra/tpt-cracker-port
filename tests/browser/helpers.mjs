@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect } from '@playwright/test';
 
-export const GAME_W = 629; // WINDOWW = XRES + BARSIZE
+export const GAME_W = 646; // WINDOWW = XRES + BARSIZE + EXTRABARSIZE
 export const GAME_H = 424; // WINDOWH = YRES + MENUSIZE
 export const DATA_DIR = '/libsdl/The Powder Toy';
 // Page to open relative to the base URL; index.html when testing a file:// copy of the site.
