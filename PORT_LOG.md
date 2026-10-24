@@ -231,3 +231,11 @@ offline ZIP + file:// tests, uploads dist/, offline ZIP, logs/screenshots/report
 1. Add `VERCEL_TOKEN` (and decide on Deployment Protection), then deploy a preview, run the suite against
    it (CI does this automatically), check it in Edge, promote to production when happy.
 2. Optional: run the suite with `TPT_BROWSER_CHANNEL=msedge` on a Windows machine with Edge.
+
+## 12. Deployed
+- Production: https://tpt-cracker-port-96z6vdz5n7-9854.vercel.app/ (deployment dpl_FT8RqdNr5X7wTnFjqQz65DkHn7p5,
+  commit 983e136), via CI run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40105591059:
+  preview deployed, 13/13 browser tests against the preview, then production.
+- Verified from this session: production URL returns 200, no Vercel toolbar script, full suite 13/13.
+- Changes made on Vercel at the owner's request: Vercel Authentication disabled (site public); preview and
+  production feedback toolbar disabled (it intercepted keys and reloaded the page, breaking the game in tests).

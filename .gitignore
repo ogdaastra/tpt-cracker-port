@@ -11,3 +11,5 @@
 /artifacts/playwright-*/output/
 /artifacts/playwright-preview/
 /artifacts/browser-preview/
+/artifacts/browser-production/
+/artifacts/playwright-production/
