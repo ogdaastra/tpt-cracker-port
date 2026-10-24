@@ -355,11 +355,35 @@ test('performance: time to interactive and simulation frame rate, Newtonian grav
 	await h.expectNoUnexplainedErrors(log);
 });
 
+test('saves survive leaving the page while the game starts (IndexedDB load race regression)', async ({ page }) => {
+	test.setTimeout(240_000);
+	// Before the fix in wasm/pre.js, leaving during the IndexedDB load (~200-300 ms in) deleted saves.
+	await h.openGame(page);
+	await page.evaluate((dir) => {
+		const FS = window.tptPage.module.FS;
+		try { FS.mkdir(dir + '/Saves'); } catch (e) {}
+		for (let i = 0; i < 40; i++) FS.writeFile(`${dir}/Saves/file${i}.cps`, new Uint8Array(20000).fill(i));
+	}, h.DATA_DIR);
+	await page.waitForTimeout(1500);
+	const counts = [];
+	for (const delay of [0, 5, 10, 20, 30, 50, 80, 120, 200, 300, 0, 10, 20, 40, 60, 100]) {
+		await page.reload({ waitUntil: 'commit' });
+		await page.waitForTimeout(delay); // leave mid-startup
+		await page.goto(h.START);
+		await page.waitForFunction(() => window.tptPage && window.tptPage.state === 'running' && window.tptPage.module, null, { timeout: 60_000 });
+		const n = await page.evaluate((dir) => { try { return window.tptPage.module.FS.readdir(dir + '/Saves').length - 2; } catch (e) { return -1; } }, h.DATA_DIR);
+		counts.push(`${delay}ms:${n}`);
+		await page.waitForTimeout(800);
+	}
+	results.interruptedStartups = counts.join(' ');
+	expect(counts.every((c) => c.endsWith(':40'))).toBe(true);
+});
+
 test('readable failure state when JSPI is missing', async ({ page }) => {
 	await page.addInitScript(() => {
 		delete WebAssembly.Suspending;
 	});
-	await page.goto('./');
+	await page.goto(h.START);
 	await expect(page.locator('#failure')).toBeVisible();
 	await expect(page.locator('#failure-message')).toContainText('JavaScript Promise Integration');
 	await h.saveScreenshot(page, '08-failure-no-jspi');
@@ -367,7 +391,7 @@ test('readable failure state when JSPI is missing', async ({ page }) => {
 
 test('readable failure state when powder.wasm cannot be downloaded', async ({ page }) => {
 	await page.route('**/powder.wasm', (route) => route.fulfill({ status: 404, body: 'not found' }));
-	await page.goto('./');
+	await page.goto(h.START);
 	await expect(page.locator('#failure')).toBeVisible();
 	await expect(page.locator('#failure-message')).toContainText('powder.wasm');
 	await h.saveScreenshot(page, '09-failure-no-wasm');

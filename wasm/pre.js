@@ -7,9 +7,19 @@
 Module['preRun'] = [].concat(Module['preRun'] || []);
 Module['preRun'].push(() => {
 	FS.mkdir('/libsdl');
-	FS.mount(IDBFS, { autoPersist: true }, '/libsdl');
+	const root = FS.mount(IDBFS, { autoPersist: true }, '/libsdl');
+	const mount = root.mount;
+	// Loading from IndexedDB creates every file locally, and with autoPersist each creation queues a
+	// persist. That persist snapshots the local tree immediately, while the load is still filling it,
+	// and then removes whatever it did not see from IndexedDB; if the page is closed or reloaded before
+	// the follow-up persist re-adds them, those saves are gone for good (reproduced by reloading while
+	// the game starts). Writes made by the load are already in IndexedDB, so ignore them: while
+	// idbPersistState is neither 0 (idle) nor 'idb' (persisting), IDBFS.queuePersist does nothing.
+	// (Emscripten 4.0.23 src/lib/libidbfs.js; re-check when updating emsdk.)
+	mount.idbPersistState = 'loading';
 	addRunDependency('tpt-idbfs-load');
 	FS.syncfs(true, (error) => {
+		mount.idbPersistState = 0;
 		if (error) {
 			// Not fatal: the game still runs, it just starts with an empty data directory.
 			err('Could not load saved data from IndexedDB: ' + error);

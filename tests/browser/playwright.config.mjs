@@ -20,6 +20,11 @@ export default defineConfig({
 	],
 	use: {
 		baseURL,
+		// Vercel deployments behind Deployment Protection: "Protection Bypass for Automation" secret
+		extraHTTPHeaders: process.env.VERCEL_AUTOMATION_BYPASS_SECRET ? {
+			'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+			'x-vercel-set-bypass-cookie': 'true',
+		} : undefined,
 		viewport: { width: 1280, height: 800 },
 		acceptDownloads: true,
 		trace: 'retain-on-failure',

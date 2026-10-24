@@ -248,8 +248,46 @@
 	});
 
 	// ------------------------------------------------------------------ loading
+	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
+	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by
+	// wasm/make-offline-zip.sh).
+	function loadWasmFromScript() {
+		return new Promise((resolve, reject) => {
+			setStatus('Loading game from disk…');
+			const script = document.createElement('script');
+			script.src = 'powder-wasm.js';
+			script.onload = () => {
+				const b64 = window.TPT_WASM_BASE64;
+				delete window.TPT_WASM_BASE64;
+				if (typeof b64 !== 'string') {
+					reject(new Error('powder-wasm.js did not define the game binary'));
+					return;
+				}
+				const bin = atob(b64);
+				const bytes = new Uint8Array(bin.length);
+				for (let i = 0; i < bin.length; i++) {
+					bytes[i] = bin.charCodeAt(i);
+				}
+				resolve(bytes);
+			};
+			script.onerror = () => reject(new Error('powder-wasm.js is missing. Opening index.html directly ' +
+				'only works with the offline bundle; otherwise serve this folder over HTTP.'));
+			document.head.append(script);
+		});
+	}
+
 	function instantiateWithProgress(imports, receiveInstance) {
 		const total = buildInfo.wasmBytes || 0;
+		if (location.protocol === 'file:') {
+			loadWasmFromScript()
+				.then((bytes) => WebAssembly.instantiate(bytes, imports))
+				.then(({ instance, module }) => {
+					window.tptPage.timings.instantiated = performance.now();
+					receiveInstance(instance, module);
+				})
+				.catch((e) => fail('Could not load the game (powder.wasm).', e && e.stack || e));
+			return {};
+		}
 		(async () => {
 			const response = await fetch('powder.wasm');
 			if (!response.ok) {
@@ -340,7 +378,10 @@
 		return;
 	}
 
-	fetch('build-info.json').then((r) => r.ok ? r.json() : {}).catch(() => ({})).then((info) => {
+	// build-info.json is optional (download size for the progress bar); fetch() cannot read file:// URLs
+	const buildInfoRequest = location.protocol === 'file:' ? Promise.resolve({})
+		: fetch('build-info.json').then((r) => r.ok ? r.json() : {}).catch(() => ({}));
+	buildInfoRequest.then((info) => {
 		buildInfo = info || {};
 		window.tptPage.buildInfo = buildInfo;
 		const script = document.createElement('script');

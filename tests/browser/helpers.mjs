@@ -8,6 +8,8 @@ import { expect } from '@playwright/test';
 export const GAME_W = 629; // WINDOWW = XRES + BARSIZE
 export const GAME_H = 424; // WINDOWH = YRES + MENUSIZE
 export const DATA_DIR = '/libsdl/The Powder Toy';
+// Page to open relative to the base URL; index.html when testing a file:// copy of the site.
+export const START = process.env.TPT_START_PATH || './';
 export const ARTIFACTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../artifacts/browser');
 fs.mkdirSync(ARTIFACTS, { recursive: true });
 
@@ -40,7 +42,7 @@ export function collect(page) {
 }
 
 export async function openGame(page, { dismissIntro = true } = {}) {
-	await page.goto('./');
+	await page.goto(START);
 	// 'running' is set when the game has presented its first frame (SDL input listeners exist by then)
 	await page.waitForFunction(() => window.tptPage && ((window.tptPage.state === 'running' && window.tptPage.module) || window.tptPage.state === 'failed'), null, { timeout: 60_000 });
 	const state = await page.evaluate(() => window.tptPage.state);
