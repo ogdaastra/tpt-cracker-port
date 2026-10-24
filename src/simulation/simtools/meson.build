@@ -10,6 +10,12 @@ simulation_tool_ids = [
 	[ 'AMBM', 8 ],
 	[ 'AMBP', 9 ],
 	[ 'RSET', 10 ],
+	# TPT Ultimata (Bowserinator), GPL-3.0
+	[ 'DECO', 11 ],
+	[ 'NORM', 12 ],
+	[ 'ERODE', 13 ],
+	[ 'SLOW', 14 ],
+	[ 'FAST', 15 ],
 ]
 
 simulation_tool_src = []

@@ -44,7 +44,24 @@ const BuiltinGOL builtinGol[NGOL] = {
 	{ "FRG2", GT_FRG2, 0x20816, PIXPACK(0x006432), PIXPACK(0x00FF5A), NGT_FRG2, String("Like Frogs rule: B3/S124/3") },
 	{ "STAR", GT_STAR, 0x98478, PIXPACK(0x000040), PIXPACK(0x0000E6), NGT_STAR, String("Like Star Wars rule: B278/S3456/6") },
 	{ "FROG", GT_FROG, 0x21806, PIXPACK(0x006400), PIXPACK(0x00FF00), NGT_FROG, String("Frogs: B34/S12/3") },
-	{ "BRAN", GT_BRAN, 0x25440, PIXPACK(0xFFFF00), PIXPACK(0x969600), NGT_BRAN, String("Brian 6: B246/S6/3" )}
+	{ "BRAN", GT_BRAN, 0x25440, PIXPACK(0xFFFF00), PIXPACK(0x969600), NGT_BRAN, String("Brian 6: B246/S6/3" )},
+
+	// TPT Ultimata rules; they never existed as separate elements, so they have no old type ID (-1)
+	// Bits B 87654321  Bits S 876543210
+	{"LWDH", -1, 0b00000100111111111, PIXPACK(0xEE5BF2), PIXPACK(0xEE5BF2), NGT_LWDH, String("Life Without Death: B3/S012345678")},
+	{"SERV", -1, 0b00001110000000000, PIXPACK(0x37b129), PIXPACK(0x37b129), NGT_SERV, String("Serviettes: B234/S")},
+	{"VT45", -1, 0b11101000111101000, PIXPACK(0x7a8ad1), PIXPACK(0x7a8ad1), NGT_VT45, String("Vote 4/5: B4678/S35678")},
+	{"FMZE", -1, 0b00001010000011110, PIXPACK(0x9db51f), PIXPACK(0x9db51f), NGT_FMZE, String("Flashing Maze: B24/S1234")},
+	{"LFOD", -1, 0b00000010000000001, PIXPACK(0x59bfec), PIXPACK(0x59bfec), NGT_LFOD, String("Live Free or Die: B2/S0")},
+	{"ANTI", -1, 0b11001111111011111, PIXPACK(0x7425f7), PIXPACK(0x7425f7), NGT_ANTI, String("Anti Life: B0123478/S01234678")},
+	{"INVL", -1, 0b11111111111011000, PIXPACK(0x9f18c3), PIXPACK(0x9f18c3), NGT_INVL, String("Inverse Life: B012345678/S34678")},
+	{"HTRE", -1, 0b00000001111111111, PIXPACK(0xcdf071), PIXPACK(0xcdf071), NGT_HTRE, String("H-Trees: B1/S012345678")},
+	{"IBAL", -1, 0b11110010111100000, PIXPACK(0xc9fcda), PIXPACK(0xc9fcda), NGT_IBAL, String("Iceballs: B25678/S5678")},
+	{"RULH", -1, 0b00000010000011000, PIXPACK(0x7d066c), PIXPACK(0x7d066c), NGT_RULH, String("Rule H: B2/S34")},
+	{"CRCF", -1, 0b00000100000010110, PIXPACK(0x5ac667), PIXPACK(0x5ac667), NGT_CRCF, String("Corrosion of Conformity: B3/S124")},
+	{"GEMS", -1, 0b01011100101110000, PIXPACK(0xce523d), PIXPACK(0xce523d), NGT_GEMS, String("Gems: B3457/S4568")},
+	{"PLIF", -1, 0b00001100000001100, PIXPACK(0xae180f), PIXPACK(0xae180f), NGT_PLIF, String("Pseudo GOL 2: B34/S23")},
+	{"DOTS", -1, 0b00000100000001101, PIXPACK(0x7bf916), PIXPACK(0x7bf916), NGT_DOTS, String("DotLife: B3/S023")}
 };
 
 std::vector<wall_type> LoadWalls()
@@ -70,7 +87,10 @@ std::vector<wall_type> LoadWalls()
 		{PIXPACK(0xDCDCDC), PIXPACK(0x000000), 1, Renderer::WallIcon, String("AIRBLOCK WALL"),   "DEFAULT_WL_NOAIR",  String("Allows all particles, but blocks air.")},
 		{PIXPACK(0x808080), PIXPACK(0x000000), 0, Renderer::WallIcon, String("ERASEALL"),        "DEFAULT_WL_ERASEA", String("Erases walls, particles, and signs.")},
 		{PIXPACK(0x800080), PIXPACK(0x000000), 0, Renderer::WallIcon, String("STASIS WALL"),     "DEFAULT_WL_STASIS", String("Freezes particles inside the wall in place until powered.")},
-		{PIXPACK(0x171717), PIXPACK(0x343434), 0, Renderer::WallIcon, String("ZHOLE"),           "DEFAULT_WL_ZHOLE", String("Z-Hole, modified version of EHOLE that's not affected by SPRK")}
+		{PIXPACK(0x171717), PIXPACK(0x343434), 0, Renderer::WallIcon, String("ZHOLE"),           "DEFAULT_WL_ZHOLE", String("Z-Hole, modified version of EHOLE that's not affected by SPRK")},
+		{PIXPACK(0x40A832), PIXPACK(0x000000), 4, Renderer::WallIcon, String("I-WALL"),          "DEFAULT_WL_INDESTRUCTIBLE", String("Prevents particles inside from being destroyed.")},
+		{PIXPACK(0x006387), PIXPACK(0x000000), 2, Renderer::WallIcon, String("FARADAY WALL"),    "DEFAULT_WL_FARADAY", String("Blocks WIFI, ETRD, EMP, and portals inside a box of this wall.")},
+		{PIXPACK(0x008717), PIXPACK(0x000000), 1, Renderer::WallIcon, String("ONE WAY WALL"),    "DEFAULT_WL_ONEWAY", String("One way wall, use line tool to set direction.")}
 	};
 }
 

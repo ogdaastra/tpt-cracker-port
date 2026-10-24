@@ -294,6 +294,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 		{"set_clipboard", &platform_clipboardPaste},
 		{"setdrawcap", &luatpt_setdrawcap},
 		{"perfectCircleBrush", &luatpt_perfectCircle},
+		{"play_sound", &luatpt_play_sound},
 		{NULL,NULL}
 	};
 
@@ -1031,6 +1032,14 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, DECO_MULTIPLY);
 	SETCONST(l, DECO_DIVIDE);
 	SETCONST(l, DECO_SMUDGE);
+	SETCONST(l, DECO_NOISE);
+	SETCONST(l, DECO_OVERLAY);
+	SETCONST(l, DECO_DODGE);
+	SETCONST(l, DECO_BURN);
+	SETCONST(l, DECO_SPONGE);
+	SETCONST(l, DECO_SATURATE);
+	SETCONST(l, DECO_MULTIPLY2);
+	SETCONST(l, DECO_SCREEN);
 
 	SETCONST(l, PMAPBITS);
 	SETCONST(l, PMAPMASK);
@@ -2927,6 +2936,11 @@ void LuaScriptInterface::initElementsAPI()
 	SETCONST(l, PROP_NOAMBHEAT);
 	lua_pushinteger(l, 0); lua_setfield(l, -2, "PROP_DRAWONCTYPE");
 	SETCONST(l, PROP_NOCTYPEDRAW);
+	SETCONST(l, PROP_VEHICLE);
+	SETCONST(l, PROP_NO_TIME);
+	SETCONST(l, PROP_WATER);
+	SETCONST(l, PROP_INDESTRUCTIBLE);
+	SETCONST(l, PROP_EDIBLE);
 	SETCONST(l, FLAG_STAGNANT);
 	SETCONST(l, FLAG_SKIPMOVE);
 	SETCONST(l, FLAG_MOVABLE);

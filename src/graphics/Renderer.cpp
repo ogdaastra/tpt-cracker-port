@@ -18,6 +18,8 @@
 #include "simulation/ElementGraphics.h"
 #include "simulation/Air.h"
 #include "simulation/Gravity.h"
+#include "simulation/magnetics/magnetics.h"
+#include "simulation/stress/stress.h"
 #include "simulation/ElementClasses.h"
 
 #ifdef LUACONSOLE
@@ -47,8 +49,12 @@ void Renderer::RenderBegin()
 #ifndef FONTEDITOR
 	draw_air();
 	draw_grav();
+	draw_time_dilation();
+	draw_magnetic_field();
+	draw_electric_field();
 	DrawWalls();
 	render_parts();
+	draw_stress_field();
 	
 	if(display_mode & DISPLAY_PERS)
 	{
@@ -1184,7 +1190,8 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTI)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTI
+								&& TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_CBMB && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_TIME)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}
@@ -1201,7 +1208,8 @@ void Renderer::render_parts()
 						drad = (M_PI * ((float)orbl[r]) / 180.0f)*1.41f;
 						nxo = (int)(ddist*cos(drad));
 						nyo = (int)(ddist*sin(drad));
-						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTO)
+						if (ny+nyo>0 && ny+nyo<YRES && nx+nxo>0 && nx+nxo<XRES && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_PRTO
+								&& TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_CBMB && TYP(sim->pmap[ny+nyo][nx+nxo]) != PT_TIME)
 							addpixel(nx+nxo, ny+nyo, colr, colg, colb, 255-orbd[r]);
 					}
 				}
@@ -1210,7 +1218,7 @@ void Renderer::render_parts()
 					// draw lines connecting wifi/portal channels
 					if (mousePos.X == nx && mousePos.Y == ny && i == ID(sim->pmap[ny][nx]) && debugLines)
 					{
-						int type = parts[i].type, tmp = (int)((parts[i].temp-73.15f)/100+1), othertmp;
+						int type = parts[i].type, tmp = sim->faraday_map[ny / CELL][nx / CELL] * CHANNELS + (int)((parts[i].temp-73.15f)/100+1), othertmp;
 						if (type == PT_PRTI)
 							type = PT_PRTO;
 						else if (type == PT_PRTO)
@@ -1219,7 +1227,7 @@ void Renderer::render_parts()
 						{
 							if (parts[z].type == type)
 							{
-								othertmp = (int)((parts[z].temp-73.15f)/100+1);
+								othertmp = sim->faraday_map[(int)(parts[z].y+0.5f) / CELL][(int)(parts[z].x+0.5f) / CELL] * CHANNELS + (int)((parts[z].temp-73.15f)/100+1);
 								if (tmp == othertmp)
 									xor_line(nx,ny,(int)(parts[z].x+0.5f),(int)(parts[z].y+0.5f));
 							}
@@ -1316,6 +1324,131 @@ void Renderer::draw_grav()
 		}
 	}
 }
+
+void Renderer::draw_time_dilation() {
+	if (!timeDilationFieldEnabled)
+		return;
+	
+	int x, y, i, j, r, g, b;
+	float strength;
+	for (y = 0; y < YRES / CELL; y++) {
+		for (x = 0; x < XRES / CELL; x++) {
+			if (!sim->time_dilation[y][x])
+				continue;
+			strength = sim->time_dilation[y][x];
+			strength = strength < 0.0f ?
+				clamp_flt(-strength, 0.0f, -sim->MIN_TIME_DILATION) :
+				clamp_flt(strength, 0.0f, sim->MAX_TIME_DILATION);
+
+			// Slow is green, speedup is magenta
+			if (sim->time_dilation[y][x] < 0) {
+				r = 73, g = 216, b = 151; // Green
+			} else {
+				r = 182, g = 39, b = 104; // Magenta
+			}
+
+			for (j = 0; j < CELL; j++) // Draws the colors
+				for (i = 0; i < CELL; i++) {
+					if (!sim->pmap[y * CELL + j][x * CELL + i]) {
+						float m = 0.5f + 0.5f * (1 - (abs(CELL / 2 - j) + abs(CELL / 2 - i)) / (float)CELL);
+						addpixel(x * CELL + i, y * CELL + j, r, g, b, (int)(m * strength * 0.9f));
+					}
+				}
+		}
+	}
+}
+
+void Renderer::draw_magnetic_field() {
+	if (!magneticFieldEnabled || !sim->emfield->isEnabled)
+		return;
+	
+	int x, y, i, j, r, g, b;
+	float strength;
+	for (y = 0; y < YRES / EMCELL; y++) {
+		for (x = 0; x < XRES / EMCELL; x++) {
+			if (!sim->emfield->magnetic[sim->emfield->XY(x, y)])
+				continue;
+
+			strength = sim->emfield->magnetic[sim->emfield->XY(x, y)];
+			strength = strength < 0.0f ?
+				-clamp_flt(-strength, 0.0f, 256.0f) :
+				clamp_flt(strength, 0.0f, 256.0f);
+
+			// Gold is positive, blue is negative
+			if (strength > 0) { r = 255, g = 165, b = 10; } // Gold
+			else              { r = 0, g = 70, b = 250;   } // Blue
+
+			for (j = 0; j < EMCELL; j++) // Draws the colors
+				for (i = 0; i < EMCELL; i++) {
+					if (!sim->pmap[y * EMCELL + j][x * EMCELL + i]) {
+						// float m = 0.5f + 0.5f * (1 - (abs(EMCELL / 2 - j) + abs(EMCELL / 2 - i)) / (float)EMCELL);
+						addpixel(x * EMCELL + i, y * EMCELL + j, r, g, b, abs(strength)); // (int)(m * strength * 0.9f));
+					}
+				}
+		}
+	}
+}
+
+void Renderer::draw_electric_field() {
+	if (!electricFieldEnabled || !sim->emfield->isEnabled)
+		return;
+	
+	int x, y, i, j, r, g, b;
+	float strength;
+	for (y = 0; y < YRES / EMCELL; y++) {
+		for (x = 0; x < XRES / EMCELL; x++) {
+			if (!sim->emfield->electric[sim->emfield->XY(x, y)])
+				continue;
+
+			strength = sim->emfield->electric[sim->emfield->XY(x, y)];
+
+			// Slow is green, speedup is magenta
+			if (strength < 0) {
+				r = 182, g = 39, b = 104; // Magenta
+			} else {
+				r = 73, g = 216, b = 151; // Green
+			}
+
+			strength = strength < 0.0f ?
+				clamp_flt(-strength, 0.0f, 512.0f) :
+				clamp_flt(strength, 0.0f, 512.0f);
+
+			for (j = 0; j < EMCELL; j++) // Draws the colors
+				for (i = 0; i < EMCELL; i++) {
+					// if (!sim->pmap[y * EMCELL + j][x * EMCELL + i]) {
+						float m = 0.5f + 0.5f * (1 - (abs(EMCELL / 2 - j) + abs(EMCELL / 2 - i)) / (float)EMCELL);
+						int s = (int)abs(m * strength * 0.9f);
+						if (s > 255) s = 255;
+						addpixel(x * EMCELL + i, y * EMCELL + j, r, g, b, s);
+					// }
+				}
+		}
+	}
+}
+
+void Renderer::draw_stress_field() {
+	if (!stressFieldEnabled || !sim->stressField->enabled)
+		return;
+	
+	for (int y = 0; y < YRES; y++)
+	for (int x = 0; x < XRES; x++) {
+		if (!sim->stressField->stress_map[y][x])
+			continue;
+		
+		const float max_stress = sim->stressField->max_stress;
+		if (sim->stressField->stress_map[y][x] < max_stress / 2) { // Green to yellow
+			drawrect(x, y, 1, 1,
+				clamp_flt(sim->stressField->stress_map[y][x], 0.0f, max_stress / 2), 255,
+				0, 200);
+		}
+		else { // Yellow to red
+			drawrect(x, y, 1, 1, 
+				255, 255 - clamp_flt(sim->stressField->stress_map[y][x] - max_stress / 2, 0.0f, max_stress / 2),
+				0, 200);
+		}
+	}
+}
+
 
 int HeatToColour(float temp)
 {
@@ -1510,6 +1643,10 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	display_mode(0),
 	gravityZonesEnabled(false),
 	gravityFieldEnabled(false),
+	timeDilationFieldEnabled(false),
+	magneticFieldEnabled(false),
+	electricFieldEnabled(false),
+	stressFieldEnabled(false),
 	decorations_enable(1),
 	blackDecorations(false),
 	debugLines(false),
@@ -1528,6 +1665,7 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 
 	this->g = g;
 	this->sim = sim;
+	this->sim->ren = this;
 	vid = g->vid;
 	persistentVid = new pixel[VIDXRES*YRES];
 	warpVid = new pixel[VIDXRES*VIDYRES];

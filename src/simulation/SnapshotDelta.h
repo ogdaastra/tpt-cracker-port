@@ -63,8 +63,14 @@ struct SnapshotDelta
 	HunkVector<float> FanVelocityY;
 
 
-	HunkVector<uint32_t> PortalParticles;
-	HunkVector<int> WirelessData;
+	// TPT Ultimata state
+	HunkVector<short> OneWayDir;
+	HunkVector<unsigned short> FaradayMap;
+	HunkVector<char> TimeDilation;
+	SingleDiff<unsigned int> timer;
+
+	SingleDiff<std::vector<PortalBuffers::Entry>> PortalParticles; // sparse, usually tiny
+	HunkVector<unsigned char> WirelessData;
 	HunkVector<uint32_t> stickmen;
 	SingleDiff<std::vector<sign>> signs;
 

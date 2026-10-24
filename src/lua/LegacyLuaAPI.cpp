@@ -30,6 +30,7 @@
 #include "gui/game/GameController.h"
 #include "gui/game/GameModel.h"
 #include "gui/interface/Engine.h"
+#include "music/music.h"
 #include "gui/interface/Keys.h"
 
 std::map<ByteString, StructProperty> legacyPropNames;
@@ -1351,6 +1352,33 @@ int luatpt_record(lua_State* l)
 	bool record = lua_toboolean(l, -1);
 	int recordingFolder = luacon_controller->Record(record);
 	lua_pushinteger(l, recordingFolder);
+	return 1;
+}
+
+// tpt.play_sound(note, [length], [instrument], [interpret]) from TPT Ultimata: plays a tone (the same
+// synthesiser as the NOTE element); with interpret > 0, note is a piano key (49 = A4) instead of Hz
+int luatpt_play_sound(lua_State* l)
+{
+	int note = luaL_checkint(l, 1);
+	int length = luaL_optint(l, 2, 30);
+	int instrument = luaL_optint(l, 3, 0);
+	int interpret = luaL_optint(l, 4, 0);
+	float freq = float(note);
+	if (interpret > 0)
+		freq = NOTE::get_frequency_from_key(note);
+	if (freq <= 0)
+		return luaL_error(l, "Note index invalid");
+	if (length < 1)
+		return luaL_error(l, "Length of note too small (must > 0)");
+	if (instrument < 0 || instrument > 4)
+		return luaL_error(l, "Invalid instrument (must be 0-4)");
+	if (!NOTE::enabled)
+	{
+		lua_pushboolean(l, false);
+		return 1;
+	}
+	NOTE::get_sound()->add_sound(freq, length, instrument);
+	lua_pushboolean(l, true);
 	return 1;
 }
 

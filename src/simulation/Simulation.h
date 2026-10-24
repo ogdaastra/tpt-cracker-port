@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstddef>
 #include <vector>
+#include <set>
 #include <array>
 #include <memory>
 
@@ -15,11 +16,18 @@
 #include "ElementDefs.h"
 #include "BuiltinGOL.h"
 #include "MenuSection.h"
+#include "Stasis.h"
+#include "PortalBuffers.h"
+
 #include "CoordStack.h"
 
 #include "Element.h"
 
 #define CHANNELS ((int)(MAX_TEMP-73)/100+2)
+#define MAX_FARADAY_DIVISIONS 100
+#define MAX_TMP2_CHANNELS 100
+#define FARADAY_CHANNELS (MAX_FARADAY_DIVISIONS + MAX_TMP2_CHANNELS)
+#define DENSITY_CELL 4
 
 class Snapshot;
 class SimTool;
@@ -28,11 +36,15 @@ class SimulationSample;
 struct matrix2d;
 struct vector2d;
 
+class GameModel;
 class Simulation;
 class Renderer;
 class Gravity;
 class Air;
+// Class Stasis defined in Stasis.h
+class EMField;
 class GameSave;
+class StressField;
 
 class Simulation
 {
@@ -40,6 +52,8 @@ public:
 
 	Gravity * grav;
 	Air * air;
+	EMField * emfield;
+	Stasis * stasis;
 
 	std::vector<sign> signs;
 	std::array<Element, PT_NUM> elements;
@@ -65,6 +79,7 @@ public:
 	bool force_stacking_check;
 	int emp_decor;
 	int emp_trigger_count;
+	std::set<int> emp_faraday_channels;
 	bool etrd_count_valid;
 	int etrd_life0_count;
 	int lightningRecreate;
@@ -74,11 +89,20 @@ public:
 	playerst fighters[MAX_FIGHTERS]; //Defined in Stickman.h
 	unsigned char fighcount; //Contains the number of fighters
 	bool gravWallChanged;
+	//Vehicles (cybertruck)
+	int vehicle_p1 = -1, vehicle_p2 = -1;
+	std::vector<int> vehicles;
+	const unsigned char MAX_VEHICLES = 100;
 	//Portals and Wifi
-	Particle portalp[CHANNELS][8][80];
+	PortalBuffers portalp; // indexed by FARADAY_CHANNELS * CHANNELS channels
 	int portal_rx[8];
 	int portal_ry[8];
-	int wireless[CHANNELS][2];
+	unsigned char wireless[FARADAY_CHANNELS][CHANNELS];
+	unsigned short faraday_map[YRES / CELL][XRES / CELL];
+	bool faraday_updated = false;
+
+	//Stress sim
+	StressField * stressField;
 	//Gol sim
 	int CGOL;
 	int GSPEED;
@@ -93,16 +117,22 @@ public:
 	float *gravy;//gravy[(YRES/CELL) * (XRES/CELL)];
 	float *gravp;//gravp[(YRES/CELL) * (XRES/CELL)];
 	float *gravmap;//gravmap[(YRES/CELL) * (XRES/CELL)];
+	// Time dilation, smaller = more updates
+	char time_dilation[YRES / CELL][XRES / CELL];
+	const char MAX_TIME_DILATION = 8;
+	const char MIN_TIME_DILATION = -16;
 	//Walls
 	unsigned char bmap[YRES/CELL][XRES/CELL];
 	unsigned char emap[YRES/CELL][XRES/CELL];
 	float fvx[YRES/CELL][XRES/CELL];
 	float fvy[YRES/CELL][XRES/CELL];
+	short oneWayDir[YRES/CELL][XRES/CELL]; // 0 = nothing, 1 = up, 2 = left, 3 = down, 4 = right
 	//Particles
 	Particle parts[NPART];
 	int pmap[YRES][XRES];
 	int photons[YRES][XRES];
 	unsigned int pmap_count[YRES][XRES];
+	short density_map[YRES / DENSITY_CELL][XRES / DENSITY_CELL];
 	//Simulation Settings
 	int edgeMode;
 	int gravityMode;
@@ -117,6 +147,8 @@ public:
 	int sandcolour;
 	int sandcolour_frame;
 	int deco_space;
+	// Timer
+	unsigned int timer = 0;
 
 	int Load(const GameSave * save, bool includePressure);
 	int Load(const GameSave * save, bool includePressure, int x, int y);
@@ -147,11 +179,12 @@ public:
 	}
 	void create_cherenkov_photon(int pp);
 	void create_gain_photon(int pp);
-	void kill_part(int i);
+	void kill_part(int i, bool ignore_iwall=false);
 	bool FloodFillPmapCheck(int x, int y, int type);
 	int flood_prop(int x, int y, size_t propoffset, PropertyValue propvalue, StructProperty::PropertyType proptype);
 	bool flood_water(int x, int y, int i);
-	int FloodINST(int x, int y);
+	int FloodINST(int x, int y, int INSTType=-1);
+	void RecalculateFaraday();
 	void detach(int i);
 	bool part_change_type(int i, int x, int y, int t);
 	//int InCurrentBrush(int i, int j, int rx, int ry);
@@ -224,6 +257,15 @@ public:
 	// These don't really belong anywhere at the moment, so go here for loop edge mode
 	static int remainder_p(int x, int y);
 	static float remainder_p(float x, float y);
+
+	GameModel *model = nullptr;
+	Renderer *ren = nullptr;
+	GameModel *getModel();
+
+	// Circuits, quantum states and moving solids (TPT Ultimata) live in globals shared by every
+	// Simulation; only the one the game runs (set by GameModel) may reset them, not save thumbnails.
+	bool ownsGlobalElementState = false;
+	void ResetGlobalElementState();
 
 	String ElementResolve(int type, int ctype) const;
 	String BasicParticleInfo(Particle const &sample_part) const;

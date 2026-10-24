@@ -1,6 +1,7 @@
 #include "simulation/ElementCommon.h"
 
 static int update(UPDATE_FUNC_ARGS);
+static int graphics(GRAPHICS_FUNC_ARGS);
 
 void Element::Element_SNOW()
 {
@@ -45,11 +46,22 @@ void Element::Element_SNOW()
 	HighTemperatureTransition = ST;
 
 	Update = &update;
+	Graphics = &graphics;
 }
 
 static int update(UPDATE_FUNC_ARGS)
 {
 	int r, rx, ry;
+
+	// Fix for liquid melting, also update in ICEI
+	if (parts[i].ctype > 0 && parts[i].ctype < PT_NUM) {
+		if (sim->elements[parts[i].ctype].LowTemperatureTransition == PT_LQUD &&
+			parts[i].temp > sim->elements[parts[i].ctype].MeltingPoint) {
+			sim->part_change_type(i, x, y, PT_LQUD);
+			return 1;
+		}
+	}
+
 	if (parts[i].ctype==PT_FRZW)//get colder if it is from FRZW
 	{
 		parts[i].temp = restrict_flt(parts[i].temp-1.0f, MIN_TEMP, MAX_TEMP);
@@ -67,5 +79,14 @@ static int update(UPDATE_FUNC_ARGS)
 					sim->part_change_type(ID(r),x+rx,y+ry,PT_SLTW);
 				}
 			}
+	return 0;
+}
+
+static int graphics(GRAPHICS_FUNC_ARGS) {
+	// Element has custom frozen graphics function
+	if (cpart->ctype > 0 && cpart->ctype < PT_NUM && ren->sim->elements[cpart->ctype].FrozenGraphics) {
+		return ren->sim->elements[cpart->ctype].FrozenGraphics(ren, cpart, nx, ny, pixel_mode,
+			cola, colr, colg, colb, firea, firer, fireg, fireb);
+	}
 	return 0;
 }

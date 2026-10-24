@@ -1,9 +1,9 @@
 #include "simulation/ElementCommon.h"
 
-static int graphics(GRAPHICS_FUNC_ARGS);
-static void create(ELEMENT_CREATE_FUNC_ARGS);
-int Element_FILT_interactWavelengths(Particle* cpart, int origWl);
-int Element_FILT_getWavelengths(Particle* cpart);
+int  Element_FILT_graphics(GRAPHICS_FUNC_ARGS);
+void Element_FILT_create(ELEMENT_CREATE_FUNC_ARGS);
+int  Element_FILT_interactWavelengths(Particle* cpart, int origWl);
+int  Element_FILT_getWavelengths(Particle* cpart);
 
 void Element::Element_FILT()
 {
@@ -45,11 +45,11 @@ void Element::Element_FILT()
 	HighTemperature = ITH;
 	HighTemperatureTransition = NT;
 
-	Graphics = &graphics;
-	Create = &create;
+	Graphics = &Element_FILT_graphics;
+	Create = &Element_FILT_create;
 }
 
-static int graphics(GRAPHICS_FUNC_ARGS)
+int Element_FILT_graphics(GRAPHICS_FUNC_ARGS)
 {
 	int x, wl = Element_FILT_getWavelengths(cpart);
 	*colg = 0;
@@ -74,7 +74,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	return 0;
 }
 
-static void create(ELEMENT_CREATE_FUNC_ARGS)
+void Element_FILT_create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	sim->parts[i].tmp = v;
 }

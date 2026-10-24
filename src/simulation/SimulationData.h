@@ -64,9 +64,12 @@
 #define WL_ERASEALL		17
 #define WL_STASIS		18
 #define WL_ZHOLE		19
+#define WL_INDESTRUCTIBLE 20
+#define WL_FARADAY      21
+#define WL_ONEWAY       22
 #define WL_FLOODHELPER	255
 
-#define UI_WALLCOUNT 20
+#define UI_WALLCOUNT 23
 
 #define OLD_SPC_AIR 236
 #define SPC_AIR 256
@@ -78,6 +81,15 @@
 #define DECO_MULTIPLY	4
 #define DECO_DIVIDE	5
 #define DECO_SMUDGE 6
+
+#define DECO_NOISE 7
+#define DECO_OVERLAY 8
+#define DECO_DODGE 9
+#define DECO_BURN 10
+#define DECO_SPONGE 11
+#define DECO_SATURATE 12
+#define DECO_MULTIPLY2 13
+#define DECO_SCREEN 14
 
 //Old IDs for GOL types
 #define GT_GOL 78
@@ -130,6 +142,21 @@
 #define NGT_STAR 21
 #define NGT_FROG 22
 #define NGT_BRAN 23
+// Mod GOL
+#define NGT_LWDH 24
+#define NGT_SERV 25
+#define NGT_VT45 26
+#define NGT_FMZE 27
+#define NGT_LFOD 28
+#define NGT_ANTI 29
+#define NGT_INVL 30
+#define NGT_HTRE 31
+#define NGT_IBAL 32
+#define NGT_RULH 33
+#define NGT_CRCF 34
+#define NGT_GEMS 35
+#define NGT_PLIF 36
+#define NGT_DOTS 37
 
 //replace mode / specific delete flags
 #define REPLACE_MODE 0x1

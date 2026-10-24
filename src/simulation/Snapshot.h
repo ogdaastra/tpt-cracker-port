@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Particle.h"
+#include "PortalBuffers.h"
 #include "Sign.h"
 #include "Stickman.h"
 #include <json/json.h>
@@ -28,9 +29,14 @@ public:
 	std::vector<float> FanVelocityX;
 	std::vector<float> FanVelocityY;
 
+	// TPT Ultimata state
+	std::vector<short> OneWayDir;
+	std::vector<unsigned short> FaradayMap;
+	std::vector<char> TimeDilation;
+	unsigned int timer = 0;
 
-	std::vector<Particle> PortalParticles;
-	std::vector<int> WirelessData;
+	std::vector<PortalBuffers::Entry> PortalParticles;
+	std::vector<unsigned char> WirelessData;
 	std::vector<playerst> stickmen;
 	std::vector<sign> signs;
 

@@ -53,6 +53,12 @@ void Element::Element_LAVA()
 
 static int graphics(GRAPHICS_FUNC_ARGS)
 {
+	// Element has custom molten graphics function
+	if (cpart->ctype > 0 && cpart->ctype < PT_NUM && ren->sim->elements[cpart->ctype].MoltenGraphics) {
+		return ren->sim->elements[cpart->ctype].MoltenGraphics(ren, cpart, nx, ny, pixel_mode,
+			cola, colr, colg, colb, firea, firer, fireg, fireb);
+	}
+
 	*colr = cpart->life * 2 + 0xE0;
 	*colg = cpart->life * 1 + 0x50;
 	*colb = cpart->life / 2 + 0x10;

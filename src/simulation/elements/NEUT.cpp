@@ -3,7 +3,7 @@
 int Element_FIRE_update(UPDATE_FUNC_ARGS);
 static int update(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
-static void create(ELEMENT_CREATE_FUNC_ARGS);
+void Element_NEUT_create(ELEMENT_CREATE_FUNC_ARGS);
 static int DeutExplosion(Simulation * sim, int n, int x, int y, float temp, int t);
 
 void Element::Element_NEUT()
@@ -49,7 +49,7 @@ void Element::Element_NEUT()
 
 	Update = &update;
 	Graphics = &graphics;
-	Create = &create;
+	Create = &Element_NEUT_create;
 }
 
 static int update(UPDATE_FUNC_ARGS)
@@ -180,6 +180,28 @@ static int update(UPDATE_FUNC_ARGS)
 					else
 						sim->create_part(ID(r), x+rx, y+ry, PT_CAUS);
 					break;
+				case PT_SUFR:
+					if (RNG::Ref().chance(1, 20))
+						sim->part_change_type(ID(r), x+rx, y+ry, PT_PHSP);
+					break;
+				case PT_RSSS:
+					if (!rx && !ry)
+					{
+						int ct_under = parts[ID(r)].ctype;
+						int tmp_under = parts[ID(r)].tmp;
+						// liquefy into the ctype set by CLNE, else back to RSST
+						if (ct_under > 0 && ct_under < PT_NUM)
+						{
+							sim->create_part(ID(r), x, y, ct_under);
+							if (tmp_under > 0 && tmp_under < PT_NUM)
+								parts[ID(r)].ctype = tmp_under;
+						}
+						else
+							sim->part_change_type(ID(r), x, y, PT_RSST);
+						sim->kill_part(i);
+						return 1;
+					}
+					break;
 				default:
 					break;
 				}
@@ -198,7 +220,7 @@ static int graphics(GRAPHICS_FUNC_ARGS)
 	return 1;
 }
 
-static void create(ELEMENT_CREATE_FUNC_ARGS)
+void Element_NEUT_create(ELEMENT_CREATE_FUNC_ARGS)
 {
 	float r = RNG::Ref().between(128, 255) / 127.0f;
 	float a = RNG::Ref().between(0, 359) * 3.14159f / 180.0f;

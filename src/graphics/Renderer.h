@@ -53,6 +53,10 @@ public:
 	//
 	bool gravityZonesEnabled;
 	bool gravityFieldEnabled;
+	bool timeDilationFieldEnabled;
+	bool magneticFieldEnabled;
+	bool electricFieldEnabled;
+	bool stressFieldEnabled;
 	int decorations_enable;
 	bool blackDecorations;
 	bool debugLines;
@@ -85,6 +89,10 @@ public:
 	void draw_grav_zones();
 	void draw_air();
 	void draw_grav();
+	void draw_time_dilation();
+	void draw_magnetic_field();
+	void draw_electric_field();
+	void draw_stress_field();
 	void draw_other();
 	void FinaliseParts();
 

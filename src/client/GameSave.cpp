@@ -91,6 +91,7 @@ void GameSave::setSize(int newWidth, int newHeight)
 	blockMap = Plane<unsigned char>(blockWidth, blockHeight, 0);
 	fanVelX = Plane<float>(blockWidth, blockHeight, 0.0f);
 	fanVelY = Plane<float>(blockWidth, blockHeight, 0.0f);
+	oneWay = Plane<float>(blockWidth, blockHeight, 0.0f);
 	pressure = Plane<float>(blockWidth, blockHeight, 0.0f);
 	velocityX = Plane<float>(blockWidth, blockHeight, 0.0f);
 	velocityY = Plane<float>(blockWidth, blockHeight, 0.0f);
@@ -225,6 +226,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate, vector2d transl
 	Plane<unsigned char> blockMapNew(newBlockWidth, newBlockHeight, 0);
 	Plane<float> fanVelXNew(newBlockWidth, newBlockHeight, 0.0f);
 	Plane<float> fanVelYNew(newBlockWidth, newBlockHeight, 0.0f);
+	Plane<float> oneWayNew(newBlockWidth, newBlockHeight, 0.0f);
 	Plane<float> pressureNew(newBlockWidth, newBlockHeight, 0.0f);
 	Plane<float> velocityXNew(newBlockWidth, newBlockHeight, 0.0f);
 	Plane<float> velocityYNew(newBlockWidth, newBlockHeight, 0.0f);
@@ -322,6 +324,18 @@ void GameSave::Transform(matrix2d transform, vector2d translate, vector2d transl
 					fanVelXNew[ny][nx] = vel.x;
 					fanVelYNew[ny][nx] = vel.y;
 				}
+				else if (blockMap[y][x] == WL_ONEWAY && oneWay[y][x] >= 1 && oneWay[y][x] <= 4)
+				{
+					// 1 = up, 2 = left, 3 = down, 4 = right; rotate the direction with the stamp
+					static const float dirX[] = { 0, 0, -1, 0, 1 };
+					static const float dirY[] = { 0, -1, 0, 1, 0 };
+					int dir = int(oneWay[y][x]);
+					vel = m2d_multiply_v2d(transform, v2d_new(dirX[dir], dirY[dir]));
+					if (std::abs(vel.x) > std::abs(vel.y))
+						oneWayNew[ny][nx] = vel.x < 0 ? 2 : 4;
+					else
+						oneWayNew[ny][nx] = vel.y < 0 ? 1 : 3;
+				}
 			}
 			pressureNew[ny][nx] = pressure[y][x];
 			velocityXNew[ny][nx] = velocityX[y][x];
@@ -336,6 +350,7 @@ void GameSave::Transform(matrix2d transform, vector2d translate, vector2d transl
 	blockMap = blockMapNew;
 	fanVelX = fanVelXNew;
 	fanVelY = fanVelYNew;
+	oneWay = oneWayNew;
 	pressure = pressureNew;
 	velocityX = velocityXNew;
 	velocityY = velocityYNew;
@@ -406,9 +421,9 @@ void GameSave::readOPS(const std::vector<char> &data)
 {
 	Renderer::PopulateTables();
 
-	unsigned char *inputData = (unsigned char*)&data[0], *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *wallData = NULL, *soapLinkData = NULL;
+	unsigned char *inputData = (unsigned char*)&data[0], *partsData = NULL, *partsPosData = NULL, *fanData = NULL, *oneWayData = NULL, *wallData = NULL, *soapLinkData = NULL;
 	unsigned char *pressData = NULL, *vxData = NULL, *vyData = NULL, *ambientData = NULL;
-	unsigned int inputDataLen = data.size(), bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, wallDataLen, soapLinkDataLen;
+	unsigned int inputDataLen = data.size(), bsonDataLen = 0, partsDataLen, partsPosDataLen, fanDataLen, oneWayDataLen, wallDataLen, soapLinkDataLen;
 	unsigned int pressDataLen, vxDataLen, vyDataLen, ambientDataLen;
 	unsigned partsCount = 0;
 	unsigned int blockX, blockY, blockW, blockH, fullX, fullY, fullW, fullH;
@@ -502,10 +517,12 @@ void GameSave::readOPS(const std::vector<char> &data)
 		CheckBsonFieldUser(iter, "vyMap", &vyData, &vyDataLen);
 		CheckBsonFieldUser(iter, "ambientMap", &ambientData, &ambientDataLen);
 		CheckBsonFieldUser(iter, "fanMap", &fanData, &fanDataLen);
+		CheckBsonFieldUser(iter, "oneWayMap", &oneWayData, &oneWayDataLen);
 		CheckBsonFieldUser(iter, "soapLinks", &soapLinkData, &soapLinkDataLen);
 		CheckBsonFieldBool(iter, "legacyEnable", &legacyEnable);
 		CheckBsonFieldBool(iter, "gravityEnable", &gravityEnable);
 		CheckBsonFieldBool(iter, "aheat_enable", &aheatEnable);
+		CheckBsonFieldBool(iter, "stress_enable", &stressEnable);
 		CheckBsonFieldBool(iter, "waterEEnabled", &waterEEnabled);
 		CheckBsonFieldBool(iter, "paused", &paused);
 		CheckBsonFieldInt(iter, "gravityMode", &gravityMode);
@@ -715,7 +732,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 	//Read wall and fan data
 	if (wallData)
 	{
-		unsigned int j = 0;
+		unsigned int j = 0, k = 0;
 		if (blockW * blockH > wallDataLen)
 			throw ParseException(ParseException::Corrupt, "Not enough wall data");
 		for (unsigned int x = 0; x < blockW; x++)
@@ -766,6 +783,17 @@ void GameSave::readOPS(const std::vector<char> &data)
 					}
 					fanVelX[blockY + y][blockX + x] = (fanData[j++] - 127.0f) / 64.0f;
 					fanVelY[blockY + y][blockX + x] = (fanData[j++] - 127.0f) / 64.0f;
+				}
+				if (blockMap[y][x] == WL_ONEWAY && oneWayData)
+				{
+					if (k < oneWayDataLen)
+					{
+						oneWay[blockY + y][blockX + x] = oneWayData[k++];
+					}
+					else
+					{
+						fprintf(stderr, "Not enough one way wall data\n");
+					}
 				}
 
 				if (blockMap[y][x] >= UI_WALLCOUNT)
@@ -1941,11 +1969,12 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	std::vector<unsigned char> wallData(blockWidth*blockHeight);
 	bool hasWallData = false;
 	std::vector<unsigned char> fanData(blockWidth*blockHeight * 2);
+	std::vector<unsigned char> oneWayData(blockWidth*blockHeight);
 	std::vector<unsigned char> pressData(blockWidth*blockHeight * 2);
 	std::vector<unsigned char> vxData(blockWidth*blockHeight * 2);
 	std::vector<unsigned char> vyData(blockWidth*blockHeight * 2);
 	std::vector<unsigned char> ambientData(blockWidth*blockHeight * 2, 0);
-	unsigned int wallDataLen = blockWidth * blockHeight, fanDataLen = 0, pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
+	unsigned int wallDataLen = blockWidth * blockHeight, fanDataLen = 0, oneWayDataLen = 0, pressDataLen = 0, vxDataLen = 0, vyDataLen = 0, ambientDataLen = 0;
 
 	for (x = blockX; x < blockX + blockW; x++)
 	{
@@ -1988,6 +2017,9 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 				if (i < 0) i = 0;
 				if (i > 255) i = 255;
 				fanData[fanDataLen++] = i;
+			}
+			else if (blockMap[y][x] == WL_ONEWAY) {
+				oneWayData[oneWayDataLen++] = oneWay[y][x];
 			}
 			else if (blockMap[y][x] == WL_STASIS)
 			{
@@ -2436,6 +2468,7 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	bson_append_bool(&b, "legacyEnable", legacyEnable);
 	bson_append_bool(&b, "gravityEnable", gravityEnable);
 	bson_append_bool(&b, "aheat_enable", aheatEnable);
+	bson_append_bool(&b, "stress_enable", stressEnable);
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
@@ -2496,6 +2529,8 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 		bson_append_binary(&b, "wallMap", (char)BSON_BIN_USER, (const char *)&wallData[0], wallDataLen);
 	if (fanDataLen)
 		bson_append_binary(&b, "fanMap", (char)BSON_BIN_USER, (const char *)&fanData[0], fanDataLen);
+	if (oneWayDataLen)
+		bson_append_binary(&b, "oneWayMap", (char)BSON_BIN_USER, (const char *)&oneWayData[0], oneWayDataLen);
 	if (hasPressure && pressDataLen)
 		bson_append_binary(&b, "pressMap", (char)BSON_BIN_USER, (const char*)&pressData[0], pressDataLen);
 	if (hasPressure && vxDataLen)

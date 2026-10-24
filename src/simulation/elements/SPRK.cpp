@@ -62,12 +62,25 @@ static int update(UPDATE_FUNC_ARGS)
 			ct = PT_METL;
 		parts[i].ctype = PT_NONE;
 		parts[i].life = 4;
-		if (ct == PT_WATR)
+		if (ct == PT_BRKN) // Broken change back into broken form
+			parts[i].ctype = parts[i].tmp;
+		else if (ct == PT_WATR || ct == PT_THOR || ct == PT_RSTR)
 			parts[i].life = 64;
 		else if (ct == PT_SLTW)
 			parts[i].life = 54;
+		else if (ct == PT_INDC)
+			parts[i].life = 100;
 		else if (ct == PT_SWCH)
 			parts[i].life = 14;
+		else if (ct == PT_NEON)
+			parts[i].life = 54;
+		else if (ct == PT_LEAD)
+			parts[i].life = 16;
+		else if (ct == PT_RSST) // RSST disappears at the end of its spark cycle
+		{
+			sim->kill_part(i);
+			return 1;
+		}
 		if (sim->part_change_type(i,x,y,ct))
 			return 1;
 		return 0;
@@ -169,9 +182,50 @@ static int update(UPDATE_FUNC_ARGS)
 		if(parts[i].temp < 3595.0){
 			parts[i].temp += RNG::Ref().between(-4, 15);
 		}
+		break;
+	case PT_SICN:
+		for (rx=-1; rx<2; rx++)
+		for (ry=-1; ry<2; ry++)
+			if (BOUNDS_CHECK && (rx || ry)) {
+				r = pmap[y + ry][x + rx];
+				if (!r) continue;
+				
+				// Activate powered stuff
+				bool is_powered = TYP(r) == PT_SWCH || sim->elements[TYP(r)].MenuSection == SC_POWERED;
+				if (is_powered && parts[i].life > 0 && parts[ID(r)].life == 0) {
+					PropertyValue value;
+					value.Integer = 10;
+					sim->flood_prop(x + rx, y + ry, offsetof(Particle, life), value, StructProperty::Integer);
+
+					// LCRY needs tmp & tmp2 for some reason
+					if (TYP(r) == PT_LCRY) {
+						value.Integer = 3;
+						sim->flood_prop(x + rx, y + ry, offsetof(Particle, tmp), value, StructProperty::Integer);
+						value.Integer = 10;
+						sim->flood_prop(x + rx, y + ry, offsetof(Particle, tmp2), value, StructProperty::Integer);
+					}
+				}
+			}
+		break;
+	case PT_IRDM:
+		// Produce sparks (embr) and FIRE
+		for (rx = -1; rx <= 1; rx++)
+		for (ry = -1; ry <= 1; ry++)
+			if (BOUNDS_CHECK && (rx || ry)) {
+				r = pmap[y + ry][x + rx];
+				if (!r) {
+					int j = sim->create_part(-1, x + rx, y + ry, RNG::Ref().chance(1, 2) ? PT_EMBR : PT_FIRE);
+					if (j >= 0) {
+						parts[j].life = RNG::Ref().between(10, 100);
+						parts[j].temp = parts[i].temp;
+					}
+				}
+			}
+		break;
 	default:
 		break;
 	}
+
 	for (rx=-2; rx<3; rx++)
 		for (ry=-2; ry<3; ry++)
 			if (BOUNDS_CHECK && (rx || ry))
@@ -199,6 +253,21 @@ static int update(UPDATE_FUNC_ARGS)
 							parts[ID(r)].life = 9;
 						}
 					}
+					break;
+				case PT_NICH: { // NICH only conducts 1 pixel at a time
+					if (pavg != PT_INSL && parts[i].life < 4) {
+						if (abs(rx) > 1 || abs(ry) > 1)
+							continue;
+					}
+					break;
+				}
+				case PT_SICN: // Don't conduct diagonals
+					if (rx != 0 && ry != 0)
+						continue;
+					break;
+				case PT_JUNC: // Only conduct of opposite direction has a SPRK, no diagonals
+					if (TYP(pmap[y - ry][x - rx]) != PT_SPRK || !(rx == 0 || ry == 0) || abs(rx) > 1 || abs(ry) > 1)
+						continue;
 					break;
 				case PT_SPRK:
 					if (pavg!=PT_INSL && parts[i].life<4)
@@ -301,6 +370,7 @@ static int update(UPDATE_FUNC_ARGS)
 				case PT_EMP:
 					if (!parts[ID(r)].life && parts[i].life > 0 && parts[i].life < 4)
 					{
+						sim->emp_faraday_channels.insert(sim->faraday_map[(y + ry) / CELL][(x + rx) / CELL]);
 						sim->emp_trigger_count++;
 						sim->emp_decor += 3;
 						if (sim->emp_decor > 40)
@@ -308,9 +378,15 @@ static int update(UPDATE_FUNC_ARGS)
 						parts[ID(r)].life = 220;
 					}
 					continue;
+				case PT_ALUM:
+					if (parts[ID(r)].ctype != PT_NONE)
+					{
+						continue;
+					}
+					break;
 				}
 
-				if (pavg == PT_INSL) continue; //Insulation blocks everything past here
+				if (pavg == PT_INSL) continue; //Insulation blocks everything past here (parts_avg reports RSSS as INSL)
 				if (!((sim->elements[receiver].Properties&PROP_CONDUCTS)||receiver==PT_INST||receiver==PT_QRTZ)) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
 				if (abs(rx)+abs(ry)>=4 &&sender!=PT_SWCH&&receiver!=PT_SWCH) continue; //Only switch conducts really far
 				if (receiver==sender && receiver!=PT_INST && receiver!=PT_QRTZ) goto conduct; //Everything conducts to itself, except INST.
@@ -319,7 +395,7 @@ static int update(UPDATE_FUNC_ARGS)
 				switch (sender)
 				{
 				case PT_INST:
-					if (receiver==PT_NSCN)
+					if (receiver == PT_SICN || receiver == PT_NSCN)
 						goto conduct;
 					continue;
 				case PT_SWCH:
@@ -332,18 +408,30 @@ static int update(UPDATE_FUNC_ARGS)
 					continue;
 				case PT_NTCT:
 				case PT_FNTC:
-					if (receiver==PT_PSCN || (receiver==PT_NSCN && parts[i].temp>373.0f))
+					if (receiver==PT_SICN || receiver==PT_PSCN || (receiver==PT_NSCN && parts[i].temp>373.0f))
 						goto conduct;
 					continue;
 				case PT_PTCT:
 				case PT_FPTC:
-					if (receiver==PT_PSCN || (receiver==PT_NSCN && parts[i].temp<373.0f))
+					if (receiver==PT_SICN || receiver==PT_PSCN || (receiver==PT_NSCN && parts[i].temp<373.0f))
 						goto conduct;
 					continue;
 				case PT_INWR:
-					if (receiver==PT_NSCN || receiver==PT_PSCN)
+					if (receiver==PT_SICN || receiver==PT_NSCN || receiver==PT_PSCN)
 						goto conduct;
 					continue;
+				case PT_LEAD:
+					if (receiver == PT_SICN || receiver == PT_PSCN)
+						goto conduct;
+					continue;
+				case PT_JUNC: // Only conduct of opposite direction has a SPRK, no diagonals
+					if (TYP(pmap[y - ry][x - rx]) != PT_SPRK || !(rx == 0 || ry == 0) || abs(rx) > 1 || abs(ry) > 1)
+						continue;
+					break;
+				case PT_IRDM: // Don't conduct to PSCN
+					if (receiver == PT_PSCN)
+						continue;
+					break;
 				default:
 					break;
 				}
@@ -351,25 +439,25 @@ static int update(UPDATE_FUNC_ARGS)
 				switch (receiver)
 				{
 				case PT_QRTZ:
-					if ((sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ) && (parts[ID(r)].temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
+					if ((sender == PT_SICN || sender==PT_NSCN||sender==PT_METL||sender==PT_PSCN||sender==PT_QRTZ) && (parts[ID(r)].temp<173.15||sim->pv[(y+ry)/CELL][(x+rx)/CELL]>8))
 						goto conduct;
 					continue;
 				case PT_NTCT:
 				case PT_FNTC:
-					if (sender==PT_NSCN || (sender==PT_PSCN&&parts[ID(r)].temp>373.0f))
+					if (sender==PT_SICN || sender==PT_NSCN || (sender==PT_PSCN&&parts[ID(r)].temp>373.0f))
 						goto conduct;
 					continue;
 				case PT_PTCT:
 				case PT_FPTC:
-					if (sender==PT_NSCN || (sender==PT_PSCN&&parts[ID(r)].temp<373.0f))
+					if (sender==PT_SICN || sender==PT_NSCN || (sender==PT_PSCN&&parts[ID(r)].temp<373.0f))
 						goto conduct;
 					continue;
 				case PT_INWR:
-					if (sender==PT_NSCN || sender==PT_PSCN)
+					if (sender == PT_SICN || sender==PT_NSCN || sender==PT_PSCN)
 						goto conduct;
 					continue;
 				case PT_INST:
-					if (sender==PT_PSCN)
+					if (sender == PT_SICN || sender==PT_PSCN)
 						goto conduct;
 					continue;
 				case PT_NBLE:
@@ -380,16 +468,20 @@ static int update(UPDATE_FUNC_ARGS)
 					if (sender!=PT_NSCN)
 						goto conduct;
 					continue;
+				case PT_LEAD:
+					if (sender!=PT_PSCN)
+						goto conduct;
+					continue;
 				default:
 					break;
 				}
 			conduct:
 				//Yay, passed normal conduction rules, check a few last things and change receiver to spark
-				if (receiver==PT_WATR||receiver==PT_SLTW) {
+				if (receiver==PT_WATR||receiver==PT_SLTW||receiver == PT_THOR||receiver == PT_RSTR) {
 					if (parts[ID(r)].life==0 && parts[i].life<3)
 					{
 						sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
-						if (receiver==PT_WATR) parts[ID(r)].life = 6;
+						if (receiver==PT_WATR || receiver==PT_THOR) parts[ID(r)].life = 6;
 						else parts[ID(r)].life = 5;
 						parts[ID(r)].ctype = receiver;
 					}
@@ -398,6 +490,14 @@ static int update(UPDATE_FUNC_ARGS)
 					if (parts[ID(r)].life==0 && parts[i].life<4)
 					{
 						sim->FloodINST(x+rx,y+ry);//spark the wire
+					}
+				}
+				else if (receiver==PT_RSST) {
+					if (parts[ID(r)].life==0 && parts[i].life<4)
+					{
+						sim->part_change_type(ID(r),x+rx,y+ry,PT_SPRK);
+						parts[ID(r)].life = 5;
+						parts[ID(r)].ctype = receiver;
 					}
 				}
 				else if (parts[ID(r)].life==0 && parts[i].life<4) {

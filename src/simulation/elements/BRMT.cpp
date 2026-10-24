@@ -60,7 +60,7 @@ static int update(UPDATE_FUNC_ARGS)
 					r = pmap[y+ry][x+rx];
 					if (!r)
 						continue;
-					if (TYP(r)==PT_BREC && RNG::Ref().chance(1, tempFactor))
+					if ((TYP(r)==PT_BREC || TYP(r)==PT_ALMP) && RNG::Ref().chance(1, tempFactor))
 					{
 						if (RNG::Ref().chance(1, 2))
 						{

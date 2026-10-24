@@ -1,7 +1,11 @@
 #include "Sign.h"
 
 #include "graphics/Graphics.h"
+#include "simulation/ElementCommon.h"
 #include "simulation/Simulation.h"
+
+#include "simulation/circuits/format_circuits.h"
+#include "simulation/circuits/resistance.h"
 
 sign::sign(String text_, int x_, int y_, Justification justification_):
 	x(x_),
@@ -106,6 +110,45 @@ String sign::getDisplayText(Simulation *sim, int &x0, int &y0, int &w, int &h, b
 						formatted_text << (part ? part->tmp2 : 0);
 						if (v95)
 							*v95 = true;
+					}
+					else if (between_curlies == "vx") {
+						formatted_text << (part ? part->vx : 0);
+					}
+					else if (between_curlies == "vy") {
+						formatted_text << (part ? part->vy : 0);
+					}
+					else if (between_curlies == "mod") {
+						formatted_text << "TPT Ultimata";
+					}
+					else if (between_curlies == "gen") {
+						if (part && part->temp)
+							formatted_text << "Generation: " << (int)(9000.0f - part->temp);
+						else
+							formatted_text << "Generation: 0";
+					}
+					else if (between_curlies == "v" || between_curlies == "volt") {
+						if (part && part->type == PT_RSPK)
+							formatted_text << format_value(part->tmp3, "V");
+						else
+							formatted_text << "0.0 V";
+					}
+					else if (between_curlies == "i" || between_curlies == "current") {
+						if (part && part->type == PT_RSPK)
+							formatted_text << format_value(part->tmp4, "A");
+						else
+							formatted_text << "0.0 A";
+					}
+					else if (between_curlies == "res" || between_curlies == "resistance") {
+						formatted_text <<
+							format_value(get_effective_resistance(TYP(sim->pmap[y][x]), sim->parts, ID(sim->pmap[y][x]), sim), "ohms");
+					}
+					else if (between_curlies == "pow" || between_curlies == "power") {
+						if (part && part->type == PT_RSPK) {
+							double res = get_effective_resistance(TYP(sim->pmap[y][x]), sim->parts, ID(sim->pmap[y][x]), sim);
+							formatted_text << format_value(part->tmp4 * part->tmp4 * res, "W");
+						}
+						else
+							formatted_text << "0.0 W";
 					}
 					else
 					{

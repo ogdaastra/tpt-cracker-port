@@ -186,6 +186,11 @@ static int update(UPDATE_FUNC_ARGS)
 
 static bool create_LIGH(Simulation * sim, int x, int y, int c, float temp, int life, int tmp, int tmp2, bool last, int i)
 {
+	// Force fields and anti-spark powder block LIGH
+	if (x >= 0 && x < XRES && y >= 0 && y < YRES &&
+			(TYP(sim->pmap[y][x]) == PT_ASPK || sim->parts[ID(sim->photons[y][x])].type == PT_FFLD))
+		return true;
+
 	int p = sim->create_part(-1, x, y,c);
 	if (p != -1)
 	{
@@ -216,7 +221,7 @@ static bool create_LIGH(Simulation * sim, int x, int y, int c, float temp, int l
 	else if (x >= 0 && x < XRES && y >= 0 && y < YRES)
 	{
 		int r = sim->pmap[y][x];
-		if (((TYP(r)==PT_VOID || (TYP(r)==PT_PVOD && sim->parts[ID(r)].life >= 10)) && (!sim->parts[ID(r)].ctype || (sim->parts[ID(r)].ctype==c)!=(sim->parts[ID(r)].tmp&1))) || TYP(r)==PT_BHOL || TYP(r)==PT_NBHL) // VOID, PVOD, VACU, and BHOL eat LIGH here
+		if (((TYP(r)==PT_VOID || (TYP(r)==PT_PVOD && sim->parts[ID(r)].life >= 10)) && (!sim->parts[ID(r)].ctype || (sim->parts[ID(r)].ctype==c)!=(sim->parts[ID(r)].tmp&1))) || TYP(r)==PT_BHOL || TYP(r)==PT_NBHL) // VOID, FFLD, PVOD, VACU, and BHOL eat LIGH here
 			return true;
 	}
 	else return true;

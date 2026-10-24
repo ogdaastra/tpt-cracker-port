@@ -80,6 +80,16 @@ static int update(UPDATE_FUNC_ARGS)
 								sim->part_change_type(ID(r), x+rx, y+ry, PT_SALT);
 						}
 						break;
+					case PT_SWTR:
+						if (parts[i].life<limit && RNG::Ref().chance(50, absorbChanceDenom))
+						{
+							parts[i].life++;
+							if (RNG::Ref().chance(3, 4))
+								sim->kill_part(ID(r));
+							else
+								sim->part_change_type(ID(r), x+rx, y+ry, PT_SUGR);
+						}
+						break;
 					case PT_CBNW:
 						if (parts[i].life<limit && RNG::Ref().chance(100, absorbChanceDenom))
 						{
