@@ -1,27 +1,27 @@
 {
   "load": {
-    "msToRunning": 921,
+    "msToRunning": 1074,
     "pageTimings": {
-      "start": 24.700000000186265,
-      "instantiated": 104.70000000018626,
-      "runtimeReady": 334.79999999981374,
-      "firstFrame": 353.20000000018626
+      "start": 26.799999999813735,
+      "instantiated": 135.60000000009313,
+      "runtimeReady": 411.6999999997206,
+      "firstFrame": 431.1999999997206
     },
-    "wasmBytes": 4942854,
-    "commit": "27025a15aa3b72253dcd99c4c59afbb13aec3538"
+    "wasmBytes": 5212108,
+    "commit": "ecbda86b5f6dfd1b864059b4220d943414b41607"
   },
   "input": {
-    "particlesAfterDraw": 1962,
+    "particlesAfterDraw": 1944,
     "particlesAfterErase": 0
   },
   "roundTrip": {
-    "rubrParticles": 4476,
-    "totalParticles": 4476,
-    "saveBytes": 579
+    "rubrParticles": 4503,
+    "totalParticles": 4503,
+    "saveBytes": 586
   },
   "modElements": {
     "placedParticles": 51,
-    "ticksIn5s": 310
+    "ticksIn5s": 312
   },
   "resize": [
     {
@@ -30,7 +30,7 @@
         1000
       ],
       "canvas": [
-        1258,
+        1292,
         848
       ]
     },
@@ -40,8 +40,8 @@
         640
       ],
       "canvas": [
-        758,
-        511
+        388,
+        255
       ]
     },
     {
@@ -50,23 +50,23 @@
         520
       ],
       "canvas": [
-        538,
-        362
+        365,
+        240
       ]
     }
   ],
   "performance": {
-    "msToInteractive": 951,
+    "msToInteractive": 1074,
     "pageTimingsMs": {
-      "start": 23.5,
-      "instantiated": 93.20000000018626,
-      "runtimeReady": 326.30000000074506,
-      "firstFrame": 346.6000000005588
+      "start": 24.799999999813735,
+      "instantiated": 110.89999999990687,
+      "runtimeReady": 387.89999999990687,
+      "firstFrame": 412.89999999990687
     },
-    "idleTicksPerSecond": 53.9,
-    "busyTicksPerSecond": 53.6,
-    "busyWithNewtonianGravityTicksPerSecond": 53.6,
-    "busyParticles": 28968,
+    "idleTicksPerSecond": 54.2,
+    "busyTicksPerSecond": 48.5,
+    "busyWithNewtonianGravityTicksPerSecond": 54,
+    "busyParticles": 34970,
     "gravityField5CellsFromBlackHole": 0.0026691998355091,
     "note": "fps cap is 60; headless Chromium, software WebGL (SwiftShader), 4 vCPU container"
   },
