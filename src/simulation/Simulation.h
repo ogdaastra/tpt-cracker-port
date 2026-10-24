@@ -171,6 +171,11 @@ public:
 	int eval_move(int pt, int nx, int ny, unsigned *rr);
 	void init_can_move();
 	bool IsWallBlocking(int x, int y, int type);
+	// PIPE/PPIP tmp flag: the pipe formed next to HEAC and conducts heat (heat pipe, as in TPT 100)
+	static constexpr int PFLAG_CAN_CONDUCT = 0x00000001;
+	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
+	// not heat pipes
+	bool IsHeatInsulator(const Particle &p) const;
 	bool IsElement(int type) const {
 		return (type > 0 && type < PT_NUM && elements[type].Enabled);
 	}

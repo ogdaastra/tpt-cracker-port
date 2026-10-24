@@ -4,5 +4,20 @@
     "notPlaceable": [],
     "particles": 1284,
     "ticksIn8s": 492
+  },
+  "stamp": {
+    "before": 143,
+    "after": 143,
+    "distinctTypes": 143
+  },
+  "undo": "100 50 100 true true 22",
+  "circuit": {
+    "rspk": 68
+  },
+  "voltBlock": {
+    "ticksIn4s": 252
+  },
+  "portals": {
+    "dustThroughPortal": 31
   }
 }

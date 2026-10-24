@@ -1,0 +1,38 @@
+{
+  "afterGeneration": {
+    "heat": {
+      "n": 41,
+      "flagged": 41,
+      "farTemp": 290.95390625
+    },
+    "plain": {
+      "n": 41,
+      "flagged": 0,
+      "farTemp": 273.14999389648
+    }
+  },
+  "afterHeating": {
+    "heat": {
+      "n": 41,
+      "flagged": 41,
+      "farTemp": 952.58837890625
+    },
+    "plain": {
+      "n": 41,
+      "flagged": 0,
+      "farTemp": 273.14999389648
+    }
+  },
+  "afterStamp": {
+    "heat": {
+      "n": 41,
+      "flagged": 41,
+      "farTemp": 985.1
+    },
+    "plain": {
+      "n": 41,
+      "flagged": 0,
+      "farTemp": 273.14999389648
+    }
+  }
+}

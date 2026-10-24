@@ -36,7 +36,7 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
 screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
-`categories.spec.mjs` the split menus and the page's element browser. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 `PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
 times simulation and render frames inside the game (`tpt_benchmark`), writing `artifacts/browser/perf.json`.

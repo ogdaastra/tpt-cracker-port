@@ -7,6 +7,7 @@ static void transfer_part_to_pipe(Particle *part, Particle *pipe);
 static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR);
 static void pushParticle(Simulation * sim, int i, int count, int original);
 void Element_SOAP_detach(Simulation * sim, int i);
+void Element_PPIP_flood_trigger(Simulation * sim, int x, int y, int sparkedBy);
 
 void Element::Element_PIPE()
 {
@@ -35,8 +36,8 @@ void Element::Element_PIPE()
 	Weight = 100;
 
 	DefaultProperties.temp = 273.15f;
-	HeatConduct = 0;
-	Description = "PIPE, moves particles around. Once the BRCK generates, erase some for the exit. Then the PIPE generates and is usable.";
+	HeatConduct = 251; // only heat pipes conduct, see Simulation::IsHeatInsulator
+	Description = "PIPE, moves particles around. Once the BRCK generates, erase some for the exit. Then the PIPE generates and is usable. HEAC touching it as it generates makes a heat pipe.";
 
 	Properties = TYPE_SOLID|PROP_LIFE_DEC;
 
@@ -55,7 +56,7 @@ void Element::Element_PIPE()
 	Graphics = &Element_PIPE_graphics;
 }
 
-// 0x000000FF element
+// 0x00000001 heat pipe (Simulation::PFLAG_CAN_CONDUCT)
 // 0x00000100 is single pixel pipe
 // 0x00000200 will transfer like a single pixel pipe when in forward mode
 // 0x00001C00 forward single pixel pipe direction
@@ -203,6 +204,7 @@ int Element_PIPE_update(UPDATE_FUNC_ARGS)
 			int lastneighbor = -1;
 			int neighborcount = 0;
 			int count = 0;
+			bool heatPipe = false;
 			// make automatic pipe pattern
 			for (rx=-1; rx<2; rx++)
 				for (ry=-1; ry<2; ry++)
@@ -212,6 +214,11 @@ int Element_PIPE_update(UPDATE_FUNC_ARGS)
 						r = pmap[y+ry][x+rx];
 						if (!r)
 							continue;
+						if (TYP(r) == PT_HEAC)
+						{
+							heatPipe = true;
+							continue;
+						}
 						if (TYP(r) != PT_PIPE && TYP(r) != PT_PPIP)
 							continue;
 						unsigned int next = nextColor(parts[i].tmp);
@@ -242,6 +249,8 @@ int Element_PIPE_update(UPDATE_FUNC_ARGS)
 					}
 			if (neighborcount == 1)
 				parts[lastneighbor].tmp |= 0x100;
+			if (heatPipe)
+				Element_PPIP_flood_trigger(sim, x, y, PT_HEAC);
 		}
 		else
 		{
@@ -455,10 +464,15 @@ void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Partic
 	part->dcolour = 0;
 }
 
+// A heat pipe keeps its own temperature: what it carries mixes with it (equal weights; this version of
+// the game has no per-element heat capacity). Other pipes just carry the particle's temperature.
 static void transfer_part_to_pipe(Particle *part, Particle *pipe)
 {
 	pipe->ctype = part->type;
-	pipe->temp = part->temp;
+	if (pipe->tmp & Simulation::PFLAG_CAN_CONDUCT)
+		pipe->temp = (part->temp + pipe->temp) / 2;
+	else
+		pipe->temp = part->temp;
 	pipe->tmp2 = part->life;
 	pipe->tmp3 = part->tmp;
 	pipe->tmp4 = part->ctype;
@@ -477,7 +491,10 @@ static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
 		dest->ctype = src->ctype;
 		src->ctype = 0;
 	}
-	dest->temp = src->temp;
+	if (dest->tmp & Simulation::PFLAG_CAN_CONDUCT)
+		dest->temp = (src->temp + dest->temp) / 2;
+	else
+		dest->temp = src->temp;
 	dest->tmp2 = src->tmp2;
 	dest->tmp3 = src->tmp3;
 	dest->tmp4 = src->tmp4;

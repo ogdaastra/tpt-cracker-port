@@ -392,3 +392,27 @@ stopped before SDL's window listeners see them.
 - Browser tests, Chromium headless: 24 tests over HTTP (new `categories.spec.mjs`: menu contents, side-bar
   hover positions, panel search/select/keyboard isolation/Lua elements/remembered state, 375 px layout without
   horizontal scrolling), 22 from the offline ZIP opened as file://; the PERF benchmark is skipped by default.
+
+## 15. Heat pipes (PIPE and PPIP, from The Powder Toy 100)
+
+Upstream TPT added heat pipes after the version this mod is based on; ported here.
+- A PIPE or PPIP that has HEAC next to it while its pattern generates gets the flag `0x1` in `tmp`
+  (`Simulation::PFLAG_CAN_CONDUCT`), flood-filled over the whole pipe (`Element_PPIP_flood_trigger`, now also
+  for PIPE, with HEAC as trigger). Recipe: draw PIPE, wait for the BRCK border, replace a border brick with
+  HEAC, open an end as usual.
+- PIPE and PPIP have HeatConduct 251, but `Simulation::IsHeatInsulator` (as upstream: HeatConduct 0, HSWC
+  while off, pipes without the flag) keeps ordinary pipes insulators. It replaces the separate HeatConduct/HSWC
+  checks in the heat transfer code, PHOT conduction, HEAC, the air heat blocking (Air.cpp), C5, C6, VIBR,
+  STKM, LIGH, LASR and DEST. LIGH, LASR and DEST thereby also stop heating HSWC that is off, as upstream.
+- A heat pipe keeps its own temperature: a particle entering it, or moving on to the next heat pipe pixel,
+  mixes with the pipe's temperature. Upstream weights by heat capacity; this version of the game has no
+  per-element heat capacity, so the two count equally. Ordinary pipes carry the particle's temperature as before.
+- Saves: the flag shares tmp's low byte with leftovers of the pre-93 PIPE format. Upstream clears that byte
+  for saves older than version 100 and saves heat pipes as version 100. This game writes version 97, so it
+  writes `heatPipes: true` into saves that contain heat pipes and clears the byte only in older saves without
+  that marker (and always in the pre-93 conversions).
+- Verified: `tests/browser/heat-pipe.spec.mjs` builds a 41-pixel pipe with HEAC and one without. Afterwards all
+  41 pixels of the first are flagged and none of the second; heating the left 5 pixels to 1000 C for 3 s brings
+  the far end of the heat pipe from 291 K to 951 K while the ordinary pipe stays at 273.15 K; a stamp round
+  trip keeps both. Full suite 25/25 over HTTP; ASan+UBSan runs report nothing in changed code (C5's signed
+  shifts and the STKM leg read are in unchanged original code).

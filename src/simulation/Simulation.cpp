@@ -2825,7 +2825,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			if (rt == PT_COAL || rt == PT_BCOL)
 				parts[ID(r)].temp = parts[i].temp;
 
-			if (rt < PT_NUM && elements[rt].HeatConduct && (rt!=PT_HSWC||parts[ID(r)].life==10) && rt!=PT_FILT && rt != PT_PFLT)
+			if (rt < PT_NUM && !IsHeatInsulator(parts[ID(r)]) && rt!=PT_FILT && rt != PT_PFLT)
 				parts[i].temp = parts[ID(r)].temp = restrict_flt((parts[ID(r)].temp+parts[i].temp)/2, MIN_TEMP, MAX_TEMP);
 		}
 		else if ((parts[i].type==PT_NEUT || parts[i].type==PT_ELEC || parts[i].type==PT_POSI) && (rt==PT_CLNE || rt==PT_PCLN || rt==PT_BCLN || rt==PT_PBCN))
@@ -4089,9 +4089,9 @@ void Simulation::UpdateParticles(int start, int end)
 				//heat transfer code
 				h_count = 0;
 #ifdef REALISTIC
-				if (t&&(t!=PT_HSWC||parts[i].life==10)&&(elements[t].HeatConduct*gel_scale))
+				if (t&&!IsHeatInsulator(parts[i])&&(elements[t].HeatConduct*gel_scale))
 #else
-				if (t && (t!=PT_HSWC||parts[i].life==10) && RNG::Ref().chance(int(elements[t].HeatConduct*gel_scale), 250))
+				if (t && !IsHeatInsulator(parts[i]) && RNG::Ref().chance(int(elements[t].HeatConduct*gel_scale), 250))
 #endif
 				{
 					if (aheat_enable && !(elements[t].Properties&PROP_NOAMBHEAT))
@@ -4123,7 +4123,7 @@ void Simulation::UpdateParticles(int start, int end)
 						if (!r)
 							continue;
 						rt = TYP(r);
-						if (rt && elements[rt].HeatConduct && (rt!=PT_HSWC||parts[ID(r)].life==10)
+						if (rt && !IsHeatInsulator(parts[ID(r)])
 						        && (t!=PT_FILT||(rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
 						        && (rt!=PT_FILT||(t!=PT_BRAY&&t!=PT_PHOT&&t!=PT_BIZR&&t!=PT_BIZRG))
 								&& (t!=PT_PFLT||(rt!=PT_BRAY&&rt!=PT_BIZR&&rt!=PT_BIZRG))
@@ -5182,6 +5182,12 @@ movedone:
 	//'f' was pressed (single frame)
 	if (framerender)
 		framerender--;
+}
+
+bool Simulation::IsHeatInsulator(const Particle &p) const
+{
+	return elements[p.type].HeatConduct == 0 || (p.type == PT_HSWC && p.life != 10) ||
+		((p.type == PT_PIPE || p.type == PT_PPIP) && !(p.tmp & PFLAG_CAN_CONDUCT));
 }
 
 int Simulation::GetParticleType(ByteString type)

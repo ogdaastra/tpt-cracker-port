@@ -10,6 +10,12 @@ white holes, space-ship parts), **Characters and Vehicles** (stickmen, fighters,
 which Lua scripts use. On the web page, the **Elements** button opens a searchable list of every menu; the
 in-game search button finds any element by name too.
 
+## Heat pipes (The Powder Toy 100)
+
+PIPE and PPIP that form with HEAC touching them become heat pipes: they conduct heat, and what they carry
+mixes with their temperature. Draw PIPE, wait for the brick border, swap one border brick for HEAC, then open
+an end as usual. Ordinary pipes still insulate. Details in `PORT_LOG.md`, section 15.
+
 ## TPT Ultimata (133 elements)
 
 Source: https://github.com/Bowserinator/TPT-Ultimata-Mod
