@@ -9,3 +9,5 @@
 /artifacts/offline/
 /artifacts/playwright/output/
 /artifacts/playwright-*/output/
+/artifacts/playwright-preview/
+/artifacts/browser-preview/
