@@ -627,7 +627,7 @@ elseif tonumber(crackversion) == tonumber(updatever) then
 errtext = "URS Updater: Your mod is up to date."
 end
 else
-if code2 == 602 then
+if code2 == 602 or code2 == 604 then -- 604 "Network Not Available": builds without HTTP (browser)
 errtext ="URS updater: offline"
 else
 onlinestatus = 3 --Something went wrong
@@ -2759,7 +2759,7 @@ end
 end
 
 function keyclicky(key)
-if (key == 106) and TPTMP.chatHidden == true and shrtv == "1" then
+if (key == 106) and (not TPTMP or TPTMP.chatHidden == true) and shrtv == "1" then -- TPTMP is absent when multiplayer is unavailable (browser build)
 open()
 end
 end

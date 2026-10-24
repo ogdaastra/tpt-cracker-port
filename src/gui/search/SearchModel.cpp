@@ -87,12 +87,22 @@ bool SearchModel::UpdateSaveList(int pageNumber, String query)
 		{
 			updateTagListFinished = false;
 			updateTagListWorking = true;
+#ifdef __EMSCRIPTEN__
+			// No threads in the WebAssembly build; without HTTP these return immediately with an error,
+			// which Update() then reports like any other failed request.
+			updateTagListT();
+#else
 			std::thread([this]() { updateTagListT(); }).detach();
+#endif
 		}
 
 		updateSaveListFinished = false;
 		updateSaveListWorking = true;
+#ifdef __EMSCRIPTEN__
+		updateSaveListT();
+#else
 		std::thread([this]() { updateSaveListT(); }).detach();
+#endif
 		return true;
 	}
 	return false;

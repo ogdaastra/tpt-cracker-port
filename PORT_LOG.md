@@ -1,0 +1,241 @@
+# WebAssembly port log — Cracker1000's Mod v55.1
+
+Running log of decisions, commands, errors/root causes, verification state and next steps.
+If context resets: re-read this file first.
+
+## 0. Inputs and layout
+
+- Inputs (never modified, never shipped):
+  - `The-Powder-Toy-master.zip` sha256 `283e3ed201d64cdb32c6cf4f8c1c5913944b4bc80243e80ddbb36a0e546c59dd`
+  - `powder.exe` sha256 `aed14755af9edc72a20153a39e3a0b160cd275e39cc5021295fb32aa8ee3913b` (behavioural reference only)
+  - `wasm-port-status.md` was **not supplied** in this session (only the zip and the exe were uploaded).
+    Every "established fact" from the prompt is therefore re-verified against the source below.
+- Layout deviation from the prompt: this session runs in a pre-created, empty git repo
+  (`ogdaastra/tpt-cracker-port`) whose working branch is fixed by the session to
+  `claude/festive-einstein-70qgap`. The repo root plays the role of `tpt-mod/` and that branch plays the
+  role of `wasm-port`. The first commit (`3cb0ce9`) is the pristine, unmodified extraction of the zip.
+
+## 1. Environment (section 3)
+
+| Item | Value |
+|---|---|
+| OS | Ubuntu 24.04.5 LTS, x86_64, Linux 6.18 (cloud container, not Windows) |
+| CPU / RAM / disk | 4 cores, 15 GiB RAM, ~30 GiB free |
+| git / python3 / node / npm | 2.43.0 / 3.13.17 / 22.22.0 / 10.9.4 |
+| gcc / g++ / clang / cmake / ninja / make | 13.3.0 / 13.3.0 / 18.1.3 / 3.28.3 / 1.11.1 / 4.3 |
+| meson | not installed -> venv `/root/tools/venv`, **meson 1.6.1** |
+| Emscripten | not installed -> emsdk at `/root/tools/emsdk`, **pinned 4.0.23** (`7a5d93b5`, clang 22) |
+| wasm-validate | wabt 1.0.34 from apt |
+| vercel CLI | not installed; Vercel **MCP connector is authenticated** (hobby plan, personal scope, no teams) |
+| GitHub | GitHub MCP authenticated as `ogdaastra`; `gh` CLI present but GitHub access goes via MCP |
+| Playwright | Playwright MCP present; Chromium + `playwright` npm preinstalled (`/opt/pw-browsers`) |
+
+Why emsdk 4.0.23 and not the newest 6.0.13: it is the final release of the 4.0 line (2026-01-09), mature,
+and its SDL2 port / IDBFS / Asyncify behaviour is well understood. Pinned in `wasm/emsdk-version.txt`.
+
+Network notes (sandbox-specific): HTTPS goes via an egress proxy. `git clone` of public GitHub repos
+works, but HTTP downloads of `github.com/<repo>/archive/...` return 403 for repos not attached to the
+session. Emscripten's ports (SDL2, zlib, bzip2) normally download GitHub archives, so
+`TPT_SEED_PORTS=1 ./wasm/build-deps.sh` pre-seeds Emscripten's port cache (unpacked source + the
+`.emscripten_url` marker emcc checks) from the same versions: git tags pinned by commit id, or the
+sha256-checked zlib.net tarball. CI does not need this and uses the normal, hash-checked downloads.
+lua.org, fftw.org, zlib.net, storage.googleapis.com, registry.npmjs.org are reachable.
+
+## 2. Facts re-verified from the source
+
+- Meson >= 0.61, C99/C++17, RTTI off: confirmed (`meson.build`). No Emscripten support upstream:
+  confirmed (cross files: android, macaa64, mingw only).
+- Lua: default `auto` -> LuaJIT. `-Dlua=lua5.1` looks for pkg-config `lua5.1-c++` (Lua compiled as C++).
+  Headers are included inside `extern "C"` (`src/lua/LuaCompat.h`), `LuaCompat.c` is C.
+- Built-in scripts (`src/lua/LuaScriptInterface.cpp` ~L445): eventcompat (fatal on error), then unless
+  `deleteme.txt`: manager.lua, tptmp.lua (unless a downloaded TPTMP exists), then unless `debugmode.txt`:
+  crackerk.lua and failsafe.lua. **Load errors of the last four are silently ignored.**
+  failsafe.lua shows "Fail safe: Uh oh something went wrong" if crackerk.lua did not reach its last line.
+- `MIST` and `PLNE`: `elem.allocate("CR1K", ...)` at crackerk.lua L10 / L150. `RUBR` is C++
+  (`src/simulation/elements/RUBR.cpp`). `SPSH`/`MOVS`: see section 6.
+- Threads: `std::thread` in Task.cpp, SearchModel.cpp, RequestManager.cpp **and Gravity.cpp** (Newtonian
+  gravity worker, not mentioned in the prompt).
+- `NOHTTP` is a first-class upstream config (Android). With `-Dhttp=false` requests finish immediately
+  with status 604 "Network Not Available"; `http.get` in Lua returns such a request.
+- Reference exe: embeds `crackversion = 61.0`; the supplied source has `crackversion = 55.0`
+  ("Next version: 55.1") and its changelog says v55.1 is current. **The exe is a later release than the
+  source**, so it is only a loose behavioural reference.
+
+## 3. Key decisions
+
+### 3.1 Async model: JSPI (`-sJSPI`) + native Wasm exceptions — not Asyncify, not a refactor
+- The game blocks in `EngineProcess()` and re-enters it from `ConfirmPrompt::Blocking`,
+  `ErrorMessage::Blocking`, `TextPrompt::Blocking` (12 call sites, incl. Lua `tpt.input`/`tpt.confirm`/
+  `tpt.throw_error` and the "script not responding" prompt). Refactoring to callbacks would change the
+  synchronous Lua API the mod uses (e.g. crackerk.lua calls `tpt.confirm`). So keep the blocking code and
+  suspend the C++ stack instead.
+- Probe (`em++` 4.0.23, Chromium 153): JSPI+`-fwasm-exceptions`, ASYNCIFY+`-fwasm-exceptions`,
+  ASYNCIFY+`-fexceptions` all passed a nested-loop + throw/catch-across-sleep probe, but emcc warns
+  "ASYNCIFY=1 is not compatible with -fwasm-exceptions", and the game sleeps inside try blocks
+  (`wrapWithBluescreen`). ASYNCIFY+JS exceptions routes every call in a try region through JS `invoke_*`
+  trampolines and instruments the Lua VM and simulation (indirect calls), i.e. slow and large.
+- JSPI: no code instrumentation, smallest binary, native EH, nested loops work unchanged.
+  Cost: needs JSPI (Chromium/Edge >= 137; target is Edge). The page detects missing JSPI and shows a
+  readable message. Emscripten still labels JSPI "experimental" (link warning).
+- SDL2's `SDL_Delay` already calls `emscripten_sleep` when Asyncify/JSPI is on; `EngineProcess` adds
+  `SDL_Delay(0)` when there is no fps cap so it always yields.
+
+### 3.2 Threads: none (no `-pthread`, no SharedArrayBuffer, no COOP/COEP)
+- `meson.build`: `threads_dep = []` on emscripten (Meson would add `-pthread`).
+- Task::Start runs the work synchronously (AbandonableTask's wait predicate is already true).
+- Gravity: `start_grav_async` does the worker's start-up work, `gravity_update_async` runs one
+  `update_grav()` per hand-off then swaps buffers exactly like the threaded path (same 1-frame latency).
+- SearchModel: online search runs synchronously (returns 604 immediately without HTTP).
+- Benefit: plain static hosting, no cross-origin isolation headers.
+
+### 3.3 Networking / updater
+- `-Dhttp=false`: libcurl not linked; `http.get` returns status 604 immediately (no hang).
+- crackerk.lua's URS updater sees 604. Originally that showed "URS error code: 604" and the Mod Settings
+  status "Report the error!" (it only knew 602 = offline); 604 is now treated like 602, so it reports
+  "URS updater: offline" / status "Offline". It never downloads executables.
+- `-Dignore_updates=true`: no C++ update check.
+- Raw TCP (tptmp.lua multiplayer): unavailable; TPTMP now prints
+  "Cannot load: no TCP socket support in this build (e.g. the browser version)".
+
+### 3.4 Dependencies
+- Emscripten ports: SDL2 2.32.8, zlib 1.3.1, libpng 1.6.39 (wasm sjlj variant), bzip2 1.0.6.
+- From source: Lua 5.1.5 compiled **as C++** (errors are C++ exceptions, as `lua5.1-c++` intends) with the
+  public API patched to `extern "C"` under C++ (one `luaconf.h` edit in build-deps.sh); jsoncpp 1.9.5;
+  fftw 3.3.10 `--enable-float` (gravity FFT stays enabled).
+
+## 4. Errors and root causes (chronological)
+
+| # | Symptom | Root cause | Fix |
+|---|---|---|---|
+| 1 | `embuilder build sdl2` -> HTTP 403 | sandbox egress blocks `github.com/.../archive/*` | `TPT_SEED_PORTS=1`: seed port cache from pinned git tags / sha256-checked tarballs |
+| 2 | `EMSDK_VERSION: unbound variable` | `emsdk_env.sh` unsets a variable with that name | renamed to `TPT_EMSDK_VERSION` |
+| 3 | `tar: Cannot open: [build-deps] downloading ...` | log() wrote to stdout inside `$(...)` | log to stderr |
+| 4 | fftw configure: `system emscripten not recognized` | 2021 config.sub | drop `--host`, emconfigure handles it |
+| 5 | Game ran but red "Fail safe" banner | manager.lua: `if not socket then error("TPT version not supported")`; socket table only registered with HTTP | compile LuaTCPSocket.cpp (already NOHTTP-aware) on emscripten, guard its unguarded `CURL*` prototype |
+| 6 | `crackerk.lua:277: MANAGER.getsetting nil` | manager.lua then failed on `platform.exeName()` == "" (`realpath(/proc/self/exe)`) | ExecutableName returns `/powder` on emscripten |
+| 7 | (latent) `J` shortcut would error | crackerk.lua indexes `TPTMP.chatHidden`, TPTMP absent | `(not TPTMP or TPTMP.chatHidden == true)` |
+| 8 | JS full of `createExportWrapper`, wasm 4.9 MB | Meson passes `-O3` only when compiling; emcc linked at `-O0` (no wasm-opt, assertions on) | pass `-O<level>` (and `-g` for debug) to the emscripten link (`meson.build`); 4.19 MB wasm, 192 KB JS |
+| 9 | Test keys lost right after "running" | the module's ready promise resolves before `main()` creates the SDL window and its input listeners | main loop reports its first presented frame (`Module.tptOnFirstFrame`); page/tests use that |
+| 10 | Long console commands silently did nothing | `Textbox.cpp:495` drops typed characters once the line is wider than the box -> truncated Lua | tests keep console lines < 90 chars via two tiny helper functions |
+| 11 | Page froze for minutes when Newtonian gravity was switched on | `FFTW_MEASURE` without a cycle counter: 10 ms timing batches x hundreds of candidates (plan > 300 s, measured in node) | `FFTW_ESTIMATE` on emscripten (plan 6 ms, ~1 ms per transform) |
+| 12 | Native build fails: `uint32_t does not name a type` | pre-existing: `FontReader.cpp` lacks `<cstdint>` (GCC 13 libstdc++) | add the include; native Linux build (LuaJIT, curl, fftw, threads) then compiles 422/422 and runs headless |
+| 13 | Vercel deployment `git_info_fail` | Vercel account has no GitHub connection; MCP `upload_file` needs file content in the call (5.6 MB base64 for the wasm) | blocked on credentials, see section 7 |
+| 14 | Saves gone after reload (intermittent, file:// test) | IDBFS `autoPersist` + startup load: each node created by `syncfs(true)` queues a persist that snapshots the half-loaded tree and deletes the rest from IndexedDB; leaving during startup made it permanent | `wasm/pre.js` holds `idbPersistState` non-idle during the load; A/B: old 3/3 lost saves, fixed 0/5; regression test |
+
+First full compile of the tree (before any source change) had **0 errors**; the 11 warnings are
+pre-existing code-quality warnings in the mod sources (unused variables etc.) and were left alone.
+
+If Emscripten's cache gets cleared in a sandbox that needs seeding (happened once here, cause not
+identified; emcc re-ran its sanity check and started from an empty cache), rerun
+`TPT_SEED_PORTS=1 ./wasm/build-deps.sh`.
+
+## 5. Verification
+
+### 5.1 Build
+- Clean build from scratch, local (Emscripten cache cleared, build dirs removed):
+  `TPT_SEED_PORTS=1 ./wasm/build-deps.sh` 2m34s, `./wasm/build.sh` 2m03s, exit 0
+  (`artifacts/logs/clean-build-*.log`).
+- Clean build from scratch on GitHub Actions (ubuntu-24.04, normal port downloads, no caches):
+  run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40093530610 - success
+  (deps 2m20s, game 3m00s, wasm-validate ok, 11/11 browser tests at that commit).
+  Final code commit 3b0b2be: run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40098015865 -
+  success: build, wasm-validate, 13/13 browser tests over HTTP, offline ZIP built and 11/11 tests on
+  file://; artifacts `dist`, `offline-zip`, `test-artifacts` uploaded; `deploy` job skipped (no token).
+- Native Linux build (LuaJIT, libcurl, fftw, threads) of the same tree: 422/422 targets, runs headless
+  (SDL dummy driver), writes powder.pref.
+- `wasm-validate --enable-all` passes; exports, sizes, sha256 and embedded game/mod strings recorded in
+  `artifacts/validation/wasm-validation.txt`. powder.wasm 4,190,185 bytes, powder.js 191,929 bytes.
+
+### 5.2 Browser tests (`tests/browser/tpt.spec.mjs`, Playwright 1.63.0, Chromium 153 headless)
+All driven through the real UI: mouse/keyboard on the canvas, the game's own Lua console for reading state.
+
+| # | Test | Local HTTP | Offline ZIP via serve.py | Offline ZIP via file:// |
+|---|---|---|---|---|
+| 1 | page loads over HTTP; powder.js/powder.wasm 200 + application/wasm; no unexplained console errors / failed requests | pass | pass | n/a (HTTP-specific) |
+| 2 | canvas non-blank, keeps changing (falling powder) | pass | pass | pass |
+| 3 | left mouse draws DUST, right mouse erases (NONE), Space toggles pause | pass | pass | pass |
+| 4 | crackerk.lua finished (`failsafe == 1`, MANAGER table); MIST and PLNE ("SPSH") exist with the right names/menus; both selected via element search (E) and placed by clicking | pass | pass | pass |
+| 5 | local save via the game's save dialog -> page Export (download, `OPS1` magic, same bytes) -> clear -> page Import -> same particle count; reload -> files still there; game's own save browser (Ctrl+Open) lists and loads them | pass | pass | pass |
+| 6 | mod UI: J and the Cr-Menu button open/close Mod Settings; one particle of each of the 51 mod C++ elements runs 5 s | pass | pass | pass |
+| 7 | nested modal loops: Lua `tpt.confirm`, `tpt.input`, `tpt.throw_error` show dialogs and return | pass | pass | pass |
+| 8 | persistence: powder.pref written; MANAGER setting survives reload | pass | pass | pass |
+| 9 | resize to 1600x1000, 900x640, 640x520: canvas fits, keeps aspect, clicks land on the right cell | pass | pass | pass |
+| 10 | performance + Newtonian gravity field next to a black hole | pass | pass | pass |
+| 11 | 16 navigations during startup keep all 40 saves (regression for root cause 14) | pass | pass | pass |
+| 12 | readable failure page without JSPI | pass | pass | pass |
+| 13 | readable failure page when powder.wasm 404s | pass | pass | n/a |
+
+Measurements (headless Chromium, SwiftShader WebGL, 4 vCPU; `artifacts/browser/measurements.json`):
+navigation to first game frame ~0.33 s page time / ~0.9 s wall incl. test harness; idle 53.8 ticks/s,
+29,886 particles 54.8 ticks/s, same with Newtonian gravity 54.2 ticks/s (fps cap 60); gravity field
+2.7e-3 five cells from a black hole after 60 frames (0 before).
+Screenshots: `artifacts/browser/*.png` (HTTP) and `artifacts/browser-offline-file/` (file://).
+Not tested: real Microsoft Edge on Windows (same Chromium engine, but not run here), touch input,
+HiDPI, audio (the game has none), low-end hardware.
+
+## 6. Mod features (source -> status)
+
+| Feature | Where | Status |
+|---|---|---|
+| MIST (missile target tool, CR1K_PT_MIST, id 255) | crackerk.lua L10 | runtime-tested: exists, selectable, placed |
+| PLNE, shown as "SPSH" (space ship) | crackerk.lua L150 | runtime-tested: exists, selectable, placed |
+| 51 C++ elements FNTC..RUBR (ids 192-242) | src/simulation/elements/*.cpp | all runtime-tested together (placed, 5 s of simulation, no crash); RUBR also saved/loaded |
+| Mod Settings menu (Cr-Menu button, J shortcut) | crackerk.lua L325, L2760 | runtime-tested open/close; individual options present but not exercised |
+| Mod UI theme, HUD, intro text | crackerk.lua, GameView.cpp | visible in screenshots; not asserted beyond that |
+| Settings storage via MANAGER (script manager) | manager.lua | runtime-tested (persists across reload) |
+| URS updater / MOTD | crackerk.lua L432-660 | unavailable (no network); reports "URS updater: offline" |
+| Notifications script (Maticzpl) | crackerk.lua end | loads; needs network, shows its own messages |
+| TPTMP multiplayer | tptmp.lua | unavailable (no TCP sockets); prints why |
+| MOVS | changelog only | not found in the source by name; the changelog describes it as the earlier name of the space ship (now PLNE/"SPSH") - inferred, not traced |
+
+## 7. Deployment status: BLOCKED on credentials
+- Vercel MCP is authenticated (personal hobby account, team `team_Hd1pTA8fuMgOK5kVYAJlPhbd`), but:
+  - its `upload_file` takes the file content inside the tool call: the 4.2 MB wasm would be 5.6 MB of
+    base64 that has to pass through the agent's own output - not feasible;
+  - `create_deployment` from the public GitHub repo fails with `git_info_fail` (no GitHub connection on
+    the Vercel account); a Vercel Sandbox has no deployment credentials either.
+- Created by the probe: Vercel project `tpt-cracker-port` (`prj_HfIKw7K397cl1CqEp6UKmk8AkOsf`), one
+  failed deployment, nothing served. Build settings reset to static defaults afterwards.
+- The project uses the team default protection: Vercel Authentication on `all_except_custom_domains`,
+  i.e. even production `*.vercel.app` URLs require a Vercel login until that is changed.
+- Ready to go: `wasm/deploy-vercel.sh` (preview by default, `--prod` explicit) and the CI `deploy` job
+  (preview -> browser tests against it -> production only on manual run with `production: true`).
+  Needs a `VERCEL_TOKEN` (repository secret for CI, or a secret in this environment for a session).
+
+## 8. Offline bundle
+`./wasm/make-offline-zip.sh` -> `cracker1000-mod-wasm-offline.zip` (20 MB): site, `powder-wasm.js`
+(base64 binary for file://), `serve.py`, `serve.mjs`, `Start Game (Windows).cmd`, `start.sh`,
+README-OFFLINE.txt, LICENSE, sources. No .exe (the script refuses to package one).
+- Tested here: serve.py (13/13) and double-clicking index.html, i.e. file:// in Chromium (11/11).
+- Not tested: the Windows .cmd and Edge/Chrome on Windows (no Windows machine); serve.mjs only
+  syntax-equivalent to the tested test server, not run as a launcher.
+- Saves are per address: http://127.0.0.1:8123/ and file:// keep separate storage (README says so).
+
+## 9. CI
+`.github/workflows/wasm.yml`: pinned emsdk, no caches, build deps + game, wasm-validate, browser tests,
+offline ZIP + file:// tests, uploads dist/, offline ZIP, logs/screenshots/report; optional `deploy` job.
+
+## 10. Limitations
+- JSPI required: Chromium/Edge >= 137. Firefox/Safari get the failure page. A second build variant with
+  ASYNCIFY=1 + JS exceptions would run everywhere but slower and larger; not done.
+- No online features (save browser, login, votes, comments), no multiplayer, no updaters. A realistic
+  path for online saves: powdertoy.co.uk would have to send CORS headers or a proxy would be needed
+  (a proxy has cost/abuse implications - not added, not decided).
+- PUC Lua 5.1 instead of LuaJIT: heavy Lua scripts run slower; LuaJIT-only `ffi` scripts do not work
+  (the built-in scripts do not use it).
+- Single-threaded: gravity and thumbnail rendering share the main thread (measured cost small).
+- Saves live in browser storage; clearing site data deletes them (Export them as .cps files).
+- In-game "Scale"/"Fullscreen" options: the page scales the canvas; use the page's Fullscreen button.
+
+## 11. Next steps
+1. Add `VERCEL_TOKEN` (and decide on Deployment Protection), then deploy a preview, run the suite against
+   it (CI does this automatically), check it in Edge, promote to production when happy.
+2. Optional: run the suite with `TPT_BROWSER_CHANNEL=msedge` on a Windows machine with Edge.
+
+## 12. Deployed
+- Production: https://tpt-cracker-port-96z6vdz5n7-9854.vercel.app/ (deployment dpl_FT8RqdNr5X7wTnFjqQz65DkHn7p5,
+  commit 983e136), via CI run https://github.com/ogdaastra/tpt-cracker-port/actions/runs/40105591059:
+  preview deployed, 13/13 browser tests against the preview, then production.
+- Verified from this session: production URL returns 200, no Vercel toolbar script, full suite 13/13.
+- Changes made on Vercel at the owner's request: Vercel Authentication disabled (site public); preview and
+  production feedback toolbar disabled (it intercepted keys and reloaded the page, breaking the game in tests).

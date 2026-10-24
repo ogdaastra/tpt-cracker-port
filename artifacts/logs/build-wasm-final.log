@@ -1,0 +1,27 @@
+INFO: autodetecting backend as ninja
+INFO: calculating backend command to run: /usr/bin/ninja -C /home/user/tpt-cracker-port/build-wasm
+ninja: Entering directory `/home/user/tpt-cracker-port/build-wasm'
+ninja: no work to do.
+dist ready: /home/user/tpt-cracker-port/dist
+/home/user/tpt-cracker-port/dist:
+total 4388
+drwxr-xr-x  3 root root    4096 Oct 24 13:09 .
+drwxr-xr-x 19 root root    4096 Oct 24 13:09 ..
+-rw-r--r--  1 root root   35147 Oct 24 13:09 LICENSE.txt
+-rw-r--r--  1 root root    1962 Oct 24 13:09 SOURCE.html
+-rw-r--r--  1 root root   21032 Oct 24 13:09 THIRD_PARTY_NOTICES.txt
+-rw-r--r--  1 root root     231 Oct 24 13:09 build-info.json
+-rw-r--r--  1 root root    2576 Oct 24 13:09 index.html
+-rw-r--r--  1 root root  191929 Oct 24 13:09 powder.js
+-rwxr-xr-x  1 root root 4190185 Oct 24 13:09 powder.wasm
+drwxr-xr-x  2 root root    4096 Oct 24 13:09 source
+-rw-r--r--  1 root root    3305 Oct 24 13:09 style.css
+-rw-r--r--  1 root root   13150 Oct 24 13:09 tpt-web.js
+-rw-r--r--  1 root root     761 Oct 24 13:09 vercel.json
+
+/home/user/tpt-cracker-port/dist/source:
+total 16852
+drwxr-xr-x 2 root root     4096 Oct 24 13:09 .
+drwxr-xr-x 3 root root     4096 Oct 24 13:09 ..
+-rw-r--r-- 1 root root  4144100 Oct 24 13:09 fftw-3.3.10.tar.gz
+-rw-r--r-- 1 root root 13099323 Oct 24 13:09 tpt-cracker-port-3523808655db10376634a0e3dfd9ce484f0dac71.tar.gz

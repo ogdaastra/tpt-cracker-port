@@ -79,12 +79,20 @@ void Gravity::grav_fft_init()
 	th_gravxbigt = reinterpret_cast<fftwf_complex*>(fftwf_malloc(fft_tsize * sizeof(fftwf_complex)));
 	th_gravybigt = reinterpret_cast<fftwf_complex*>(fftwf_malloc(fft_tsize * sizeof(fftwf_complex)));
 
+#ifdef __EMSCRIPTEN__
+	// WebAssembly has no cycle counter, so FFTW_MEASURE times every candidate with a coarse clock and
+	// 10 ms minimum batches: planning these 192x306 transforms took over 5 minutes (measured), blocking
+	// the page. FFTW_ESTIMATE plans in milliseconds and executes in about 1 ms per transform here.
+	const unsigned planFlags = FFTW_ESTIMATE;
+#else
+	const unsigned planFlags = FFTW_MEASURE;
+#endif
 	//select best algorithm, could use FFTW_PATIENT or FFTW_EXHAUSTIVE but that increases the time taken to plan, and I don't see much increase in execution speed
-	plan_ptgravx = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravx, th_ptgravxt, FFTW_MEASURE);
-	plan_ptgravy = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravy, th_ptgravyt, FFTW_MEASURE);
-	plan_gravmap = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_gravmapbig, th_gravmapbigt, FFTW_MEASURE);
-	plan_gravx_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravxbigt, th_gravxbig, FFTW_MEASURE);
-	plan_gravy_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravybigt, th_gravybig, FFTW_MEASURE);
+	plan_ptgravx = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravx, th_ptgravxt, planFlags);
+	plan_ptgravy = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_ptgravy, th_ptgravyt, planFlags);
+	plan_gravmap = fftwf_plan_dft_r2c_2d(yblock2, xblock2, th_gravmapbig, th_gravmapbigt, planFlags);
+	plan_gravx_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravxbigt, th_gravxbig, planFlags);
+	plan_gravy_inverse = fftwf_plan_dft_c2r_2d(yblock2, xblock2, th_gravybigt, th_gravybig, planFlags);
 
 	//(XRES/CELL)*(YRES/CELL)*4 is size of data array, scaling needed because FFTW calculates an unnormalized DFT
 	scaleFactor = -float(M_GRAV)/((XRES/CELL)*(YRES/CELL)*4);
@@ -140,6 +148,17 @@ void Gravity::gravity_update_async()
 	int result;
 	if (!enabled)
 		return;
+
+#ifdef __EMSCRIPTEN__
+	// The WebAssembly build has no threads (see meson.build). Do what the gravity thread does after
+	// each hand-off (one update_grav() on the maps it was given), then pick up the result below
+	// exactly as if the thread had just finished.
+	if (!grav_ready)
+	{
+		update_grav();
+		grav_ready = 1;
+	}
+#endif
 
 	bool signal_grav = false;
 
@@ -227,7 +246,24 @@ void Gravity::start_grav_async()
 
 	gravthread_done = 0;
 	grav_ready = 0;
+#ifdef __EMSCRIPTEN__
+	// No gravity thread in the WebAssembly build: do its start-up work (from update_grav_async) here,
+	// gravity_update_async() then runs update_grav() on the main thread.
+	{
+		unsigned int size = (XRES / CELL) * (YRES / CELL);
+		std::fill(&th_ogravmap[0], &th_ogravmap[0] + size, 0.0f);
+		std::fill(&th_gravmap[0], &th_gravmap[0] + size, 0.0f);
+		std::fill(&th_gravy[0], &th_gravy[0] + size, 0.0f);
+		std::fill(&th_gravx[0], &th_gravx[0] + size, 0.0f);
+		std::fill(&th_gravp[0], &th_gravp[0] + size, 0.0f);
+#ifdef GRAVFFT
+		if (!grav_fft_status)
+			grav_fft_init();
+#endif
+	}
+#else
 	gravthread = std::thread([this]() { update_grav_async(); }); //Start asynchronous gravity simulation
+#endif
 	enabled = true;
 
 	unsigned int size = (XRES / CELL) * (YRES / CELL);
@@ -241,12 +277,14 @@ void Gravity::stop_grav_async()
 {
 	if (enabled)
 	{
+#ifndef __EMSCRIPTEN__
 		{
 			std::lock_guard<std::mutex> g(gravmutex);
 			gravthread_done = 1;
 		}
 		gravcv.notify_one();
 		gravthread.join();
+#endif
 		enabled = false;
 	}
 	// Clear the grav velocities

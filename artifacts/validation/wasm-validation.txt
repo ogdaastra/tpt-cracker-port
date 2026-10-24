@@ -1,0 +1,49 @@
+== wasm-validate (wabt 1.0.34)
+valid
+== sizes
+-rw-r--r-- 1 root root  191929 Oct 24 13:09 dist/powder.js
+-rwxr-xr-x 1 root root 4190185 Oct 24 13:09 dist/powder.wasm
+ec6be8102bc6833730b929828a47f4d6dfdf96e9041dd615987cd406394c9b47  dist/powder.wasm
+0230a4ad270eb5676875ec00baabd4cc43cf6aafd6a8513864f9fd753a2fd0dd  dist/powder.js
+== exports
+
+powder.wasm:	file format wasm 0x1
+
+Section Details:
+
+Export[10]:
+ - memory[0] -> "memory"
+ - func[6604] <__wasm_call_ctors> -> "__wasm_call_ctors"
+ - table[0] -> "__indirect_function_table"
+ - func[5275] <__main_argc_argv> -> "__main_argc_argv"
+ - func[3942] <tpt_open_file> -> "tpt_open_file"
+ - func[338] <malloc> -> "malloc"
+ - func[2927] <__trap> -> "__trap"
+ - func[2930] <_emscripten_stack_restore> -> "_emscripten_stack_restore"
+ - func[2929] <_emscripten_stack_alloc> -> "_emscripten_stack_alloc"
+ - func[2928] <emscripten_stack_get_current> -> "emscripten_stack_get_current"
+== imports (count)
+256
+== strings from the game and the mod inside powder.wasm
+					manager.print("minimize the manager before opening TPTMP")
+				TPTMP.disableMultiplayer()
+				TPTMP.enableMultiplayer()
+				help = "/connect [host[:[+]port]]: connects the default TPTMP server or the specified one, add + to connect securely",
+			TPTMP.enableMultiplayer = nil
+			_G.TPTMP = nil
+			if TPTMP.version <= config.version then
+			print("TPTMP " .. config.versionstr .. ": Cannot load: " .. loadtime_error)
+		MANAGER.print("Can't restart on OS X when using game versions less than 91.0, please manually close and reopen The Powder Toy")
+		function TPTMP.disableMultiplayer()
+		function TPTMP.enableMultiplayer()
+		if rawget(_G, "TPTMP") then
+		local TPTMP = {
+		rawset(_G, "TPTMP", TPTMP)
+		setmetatable(TPTMP, { __newindex = function(tbl, key, value)
+== targeted strings
+elem.allocate("CR1K", "MIST")      1 occurrence(s)
+elem.allocate("CR1K", "PLNE")      1 occurrence(s)
+Welcome To The Cracker1000         1 occurrence(s)
+local crackversion = 55.0          1 occurrence(s)
+URS updater: offline               1 occurrence(s)
+Rubber fluid                       1 occurrence(s)

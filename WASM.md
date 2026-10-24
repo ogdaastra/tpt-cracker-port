@@ -1,0 +1,72 @@
+# WebAssembly build of Cracker1000's Mod
+
+The real C++ game (Cracker1000's Mod v55.1, based on The Powder Toy of January 2023) compiled with
+Emscripten and running in the browser. Same simulation, UI, fonts and Lua scripts as the desktop
+game; no rewrite, no streaming. `PORT_LOG.md` records how and why every change was made.
+
+**Browser:** Microsoft Edge or Google Chrome **137 or newer** (needs WebAssembly JSPI).
+Other browsers get a readable message instead of a broken page.
+
+## Build
+
+Linux or WSL2 with git, Python 3, Meson >= 0.61, Ninja, pkg-config, curl, zip and a host C++ compiler
+(for the `toarray` resource generator):
+
+```sh
+./wasm/build-deps.sh     # installs emsdk 4.0.23 (wasm/emsdk-version.txt) and builds Lua, JsonCpp, FFTW
+./wasm/build.sh          # configures build-wasm/, builds powder.js + powder.wasm, assembles dist/
+```
+
+`EMSDK_DIR` picks where emsdk lives (default `.cache/emsdk`). Where `github.com/<repo>/archive/...`
+downloads are blocked, `TPT_SEED_PORTS=1 ./wasm/build-deps.sh` seeds Emscripten's port cache from the
+same versions via `git clone` / checksummed tarballs. The native desktop build is unchanged
+(`meson setup build && ninja -C build`).
+
+## Test
+
+```sh
+cd tests/browser && npm ci && npx playwright install chromium
+npx playwright test                                   # serves dist/ on 127.0.0.1:8765
+TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
+```
+
+The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
+screenshots and measurements to `artifacts/browser/`. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+
+## Deploy (Vercel)
+
+`dist/` is a static site; `dist/vercel.json` sets `application/wasm` and caching (no cross-origin
+isolation needed: the build uses no threads).
+
+```sh
+VERCEL_TOKEN=... ./wasm/deploy-vercel.sh          # preview, prints the URL
+VERCEL_TOKEN=... ./wasm/deploy-vercel.sh --prod   # production
+```
+
+CI (`.github/workflows/wasm.yml`) builds from scratch, validates the binary, runs the browser tests,
+and, when the repository has a `VERCEL_TOKEN` secret, deploys a preview and reruns the tests against
+it. Production only on a manual run with `production: true`.
+
+## Offline
+
+`./wasm/make-offline-zip.sh` makes `artifacts/offline/cracker1000-mod-wasm-offline.zip`: the site, a
+README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `Start Game
+(Windows).cmd`, `start.sh`), and the GPL source archives. Opening `index.html` directly also works.
+
+## What differs from the desktop game
+
+| Area | Browser build |
+|---|---|
+| Online save browser, login, voting, comments | unavailable (no HTTP client; requests end with "Network Not Available") |
+| Multiplayer (TPTMP) | unavailable (no raw TCP in browsers); it reports this in the console |
+| Mod updater (URS), game updater | unavailable; the URS check reports "URS updater: offline" |
+| Lua | PUC Lua 5.1 instead of LuaJIT: same language, slower scripts, no `ffi` |
+| Saves, stamps, settings, scripts | kept in the browser (IndexedDB) per site address; Export/Import buttons move them as `.cps` files |
+| Threads | none: gravity and background tasks run on the main thread |
+| Window | the page scales the canvas; the page's Fullscreen button replaces the in-game one |
+| `platform.restart()` | reloads the page; `platform.openLink()` opens a new tab |
+
+## License
+
+GPL-3.0 (`LICENSE`). The deployed site and the offline ZIP carry the complete corresponding source
+(`source/`), the FFTW source, and the notices of all bundled libraries (`THIRD_PARTY_NOTICES.txt`).

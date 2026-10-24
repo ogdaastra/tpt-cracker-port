@@ -1,0 +1,25 @@
+offline bundle: /home/user/tpt-cracker-port/artifacts/offline/cracker1000-mod-wasm-offline.zip (20M)
+Archive:   
+Length Name  
+--------- ----  
+0 cracker1000-mod-wasm/  
+5586943 cracker1000-mod-wasm/powder-wasm.js  
+570 cracker1000-mod-wasm/Start Game (Windows).cmd
+0 cracker1000-mod-wasm/source/  
+4144100 cracker1000-mod-wasm/source/fftw-3.3.10.tar.gz  
+13099323 cracker1000-mod-wasm/source/tpt-cracker-port-3523808655db10376634a0e3dfd9ce484f0dac71.tar.gz  
+416 cracker1000-mod-wasm/start.sh  
+2121 cracker1000-mod-wasm/serve.mjs  
+3305 cracker1000-mod-wasm/style.css  
+1771 cracker1000-mod-wasm/README-OFFLINE.txt  
+2576 cracker1000-mod-wasm/index.html  
+4190185 cracker1000-mod-wasm/powder.wasm  
+191929 cracker1000-mod-wasm/powder.js  
+231 cracker1000-mod-wasm/build-info.json  
+13150 cracker1000-mod-wasm/tpt-web.js  
+35147 cracker1000-mod-wasm/LICENSE.txt  
+1962 cracker1000-mod-wasm/SOURCE.html  
+21032 cracker1000-mod-wasm/THIRD_PARTY_NOTICES.txt  
+1665 cracker1000-mod-wasm/serve.py  
+---------   
+27296426   

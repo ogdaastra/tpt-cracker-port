@@ -12,7 +12,13 @@ void Task::AddTaskListener(TaskListener * listener)
 void Task::Start()
 {
 	before();
+#ifdef __EMSCRIPTEN__
+	// The WebAssembly build has no threads (see meson.build), so do the work right away. Poll() still
+	// reports progress and completion to the listener from the main loop, as in the threaded case.
+	doWork_wrapper();
+#else
 	std::thread([this]() { doWork_wrapper(); }).detach();
+#endif
 }
 
 int Task::GetProgress()

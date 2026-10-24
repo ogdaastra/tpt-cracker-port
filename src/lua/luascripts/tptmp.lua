@@ -41,6 +41,8 @@ require_preload__["tptmp.client"] = function()
 		loadtime_error = "no http API"
 	elseif not socket then
 		loadtime_error = "no socket API"
+	elseif not socket.tcp then
+		loadtime_error = "no TCP socket support in this build (e.g. the browser version)"
 	elseif socket.bind then
 		loadtime_error = "outdated socket API"
 	elseif tpt.version.jacob1s_mod and not tpt.tab_menu then

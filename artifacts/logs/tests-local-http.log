@@ -1,0 +1,18 @@
+
+Running 13 tests using 1 worker
+
+  ✓   1 [chromium] › tpt.spec.mjs:11:1 › page loads over HTTP, powder.js and powder.wasm initialise, no unexplained errors (3.2s)
+  ✓   2 [chromium] › tpt.spec.mjs:48:1 › canvas is non-blank and keeps updating (5.3s)
+  ✓   3 [chromium] › tpt.spec.mjs:67:1 › mouse draws and erases particles, keyboard shortcuts reach the game (10.1s)
+  ✓   4 [chromium] › tpt.spec.mjs:100:1 › crackerk.lua ran: MIST and PLNE (SPSH) exist, are selectable in the UI and can be placed (13.8s)
+  ✓   5 [chromium] › tpt.spec.mjs:138:1 › save export and import round trip, persistence across reload (17.8s)
+  ✓   6 [chromium] › tpt.spec.mjs:215:1 › mod UI and mod C++ elements: J and the Cr-Menu button open the mod menu, all 51 elements run (15.0s)
+  ✓   7 [chromium] › tpt.spec.mjs:258:1 › blocking dialogs from Lua (tpt.confirm, tpt.input, tpt.throw_error) run nested main loops (9.4s)
+  ✓   8 [chromium] › tpt.spec.mjs:299:1 › settings persist across reload (game prefs and the mod's MANAGER settings) (9.2s)
+  ✓   9 [chromium] › tpt.spec.mjs:320:1 › resizing keeps the viewport usable and mouse mapping correct (7.4s)
+  ✓  10 [chromium] › tpt.spec.mjs:346:1 › performance: time to interactive and simulation frame rate, Newtonian gravity works (28.4s)
+  ✓  11 [chromium] › tpt.spec.mjs:401:1 › saves survive leaving the page while the game starts (IndexedDB load race regression) (28.0s)
+  ✓  12 [chromium] › tpt.spec.mjs:425:1 › readable failure state when JSPI is missing (218ms)
+  ✓  13 [chromium] › tpt.spec.mjs:435:1 › readable failure state when powder.wasm cannot be downloaded (267ms)
+
+  13 passed (2.5m)

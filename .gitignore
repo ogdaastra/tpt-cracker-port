@@ -1,0 +1,15 @@
+# WebAssembly port build outputs
+/build-wasm/
+/build-wasm-deps/
+/.cache/
+/dist/
+/node_modules/
+/tests/browser/node_modules/
+/artifacts/tmp/
+/artifacts/offline/
+/artifacts/playwright/output/
+/artifacts/playwright-*/output/
+/artifacts/playwright-preview/
+/artifacts/browser-preview/
+/artifacts/browser-production/
+/artifacts/playwright-production/

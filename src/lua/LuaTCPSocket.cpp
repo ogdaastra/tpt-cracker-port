@@ -20,7 +20,9 @@
 #include "LuaScriptInterface.h"
 #include "Misc.h"
 
+#ifndef NOHTTP
 void SetupCurlEasyCiphers(CURL *easy);
+#endif
 
 namespace LuaTCPSocket
 {

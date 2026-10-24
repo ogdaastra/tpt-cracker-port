@@ -1,0 +1,168 @@
+name: wasm
+# Builds the WebAssembly version from scratch with the pinned Emscripten SDK and runs the browser tests.
+# No dependency caches: every run proves the sysroot can still be built from the pinned sources.
+on:
+  push:
+    branches:
+      - '**' # branch pushes only; release tags (r*.*) belong to the upstream build.yaml
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      production:
+        description: 'After the preview passes the browser tests, also deploy to production'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install build tools
+        run: |
+          python -m pip install 'meson==1.6.1'
+          sudo apt-get update
+          sudo apt-get install -y ninja-build pkg-config wabt
+
+      - name: Build dependency sysroot (emsdk pinned in wasm/emsdk-version.txt)
+        env:
+          EMSDK_DIR: ${{ runner.temp }}/emsdk
+        run: ./wasm/build-deps.sh 2>&1 | tee build-deps.log
+
+      - name: Build the game and assemble dist/
+        env:
+          EMSDK_DIR: ${{ runner.temp }}/emsdk
+        run: ./wasm/build.sh 2>&1 | tee build-wasm.log
+
+      - name: Validate the WebAssembly binary
+        run: |
+          wasm-validate --enable-all dist/powder.wasm
+          ls -la dist dist/source
+
+      - name: Install Playwright and Chromium
+        working-directory: tests/browser
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        working-directory: tests/browser
+        run: npx playwright test
+
+      - name: Offline ZIP, tested opened straight from disk (file://)
+        run: |
+          ./wasm/make-offline-zip.sh "$RUNNER_TEMP/cracker1000-mod-wasm-offline.zip"
+          mkdir -p "$RUNNER_TEMP/offline" && unzip -q "$RUNNER_TEMP/cracker1000-mod-wasm-offline.zip" -d "$RUNNER_TEMP/offline"
+          cd tests/browser
+          TPT_BASE_URL="file://$RUNNER_TEMP/offline/cracker1000-mod-wasm/" TPT_START_PATH=index.html \
+            TPT_ARTIFACT_DIR=../../artifacts/browser-offline-file TPT_REPORT_DIR=../../artifacts/playwright-offline-file \
+            npx playwright test --grep-invert "page loads over HTTP|powder.wasm cannot be downloaded"
+
+      - name: Upload offline ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-zip
+          path: ${{ runner.temp }}/cracker1000-mod-wasm-offline.zip
+          if-no-files-found: error
+
+      - name: Upload site
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: warn
+
+      - name: Upload logs, screenshots and test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            build-deps.log
+            build-wasm.log
+            build-wasm/meson-logs/
+            artifacts/
+          if-no-files-found: warn
+
+  # Deploys the tested dist/ as a Vercel preview, reruns the browser tests against it and, only when
+  # started manually with production=true, promotes it. Skipped (with a notice) until the repository has
+  # a VERCEL_TOKEN secret. Optional: VERCEL_AUTOMATION_BYPASS_SECRET if Deployment Protection is on.
+  deploy:
+    needs: build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Vercel credentials
+        id: creds
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::notice::No VERCEL_TOKEN secret in this repository; skipping the Vercel deployment."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@v4
+        if: steps.creds.outputs.ok == 'true'
+        with:
+          name: dist
+          path: dist
+
+      - uses: actions/setup-node@v4
+        if: steps.creds.outputs.ok == 'true'
+        with:
+          node-version: '22'
+
+      - name: Deploy preview
+        id: preview
+        if: steps.creds.outputs.ok == 'true'
+        run: |
+          url="$(./wasm/deploy-vercel.sh)"
+          echo "Preview: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Browser tests against the preview
+        if: steps.creds.outputs.ok == 'true'
+        working-directory: tests/browser
+        env:
+          TPT_BASE_URL: ${{ steps.preview.outputs.url }}/
+          TPT_ARTIFACT_DIR: ../../artifacts/browser-preview
+          TPT_REPORT_DIR: ../../artifacts/playwright-preview
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - name: Deploy production
+        if: steps.creds.outputs.ok == 'true' && github.event_name == 'workflow_dispatch' && inputs.production
+        run: |
+          url="$(./wasm/deploy-vercel.sh --prod)"
+          echo "Production: $url"
+
+      - name: Upload preview test report
+        if: always() && steps.creds.outputs.ok == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-test-artifacts
+          path: artifacts/
+          if-no-files-found: warn
