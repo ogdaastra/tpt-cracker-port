@@ -289,12 +289,14 @@ if host_platform == 'emscripten'
 	# wasm/flags.sh). JSPI lets the game's blocking main loop and its nested modal loops
 	# (ConfirmPrompt::Blocking etc.) yield to the browser without instrumenting the code (Asyncify),
 	# and unlike ASYNCIFY=1 it is compatible with -fwasm-exceptions.
-	args_ccomp_em = [ '-fwasm-exceptions' ]
+	# -msimd128: WebAssembly SIMD (every browser with JSPI has it), so -ftree-vectorize can emit vector code.
+	args_ccomp_em = [ '-fwasm-exceptions', '-msimd128' ]
 	project_c_args   += args_ccomp_em
 	project_cpp_args += args_ccomp_em
 	em_pre_js = meson.project_source_root() / 'wasm' / 'pre.js'
 	project_link_args += [
 		'-fwasm-exceptions',
+		'-msimd128',
 		'-sJSPI',
 		'-sENVIRONMENT=web',
 		'-sMODULARIZE=1',

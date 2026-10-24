@@ -336,3 +336,59 @@ THDR ignoring CLUD, FIGH accepting element 0, GLOW+GEL -> RSST (TPT 98), Ultimat
   and runs on integers since TPT 97 (voltages and currents are whole numbers).
 - Ultimata saves were not tested: their elements should load (saves map elements by identifier), but its
   walls 19-21 load as different walls here.
+
+## 14. Speed and menus (after the element additions)
+
+### 14.1 Where the time goes
+Chromium CPU profile (wasm with `--profiling-funcs`) of a 72-82k particle water/sand/fire scene at 4x CPU
+throttle: `Simulation::UpdateParticles` 37%, `do_move` 9%, `render_parts` 9%, `RecalcFreeParticles` 8%,
+`eval_move` 8%, `BeforeSim` 4%. The TPT Ultimata hooks barely register (`StressField::ComputeStress` 0.2%).
+The cost is the core particle engine, so the useful levers were the compiler settings; the Ultimata clean-ups
+are kept because they remove work, not because they measurably speed things up.
+
+### 14.2 Changes
+- `density_map` (Ultimata, kept up to date every frame and on every create/kill) had no reader since its
+  renderer fast path was not ported: removed.
+- EM-field and stress hooks are checked at the call site; a new `anyTimeDilation` flag (set by every writer of
+  `time_dilation`, recomputed by the 4-frame tick-down) skips the per-particle and per-air-cell time dilation
+  checks and the tick-down loop while no cell is dilated.
+- Build: `-msimd128` (meson.build) and link-time optimisation (`-Db_lto=true` in `wasm/build.sh`).
+
+### 14.3 Measurements
+`tests/browser/perf.spec.mjs` (PERF=1) times frames inside the game with the new `tpt_benchmark` export, so
+browser scheduling is not in the number. Same machine, builds alternated, 7 rounds each, ms per frame
+(simulation + particle render), median / best:
+
+| Scene | before (O3) | + SIMD | + SIMD + LTO (shipped) |
+|---|---|---|---|
+| powder bands, 24k particles | 4.30 / 3.40 | 3.65 / 3.43 | 3.77 / 3.66 |
+| water, sand and fire, 72k | 8.91 / 6.12 | 8.70 / 5.48 | 5.99 / 5.21 |
+| powered electronics, 35k | 11.54 / 10.61 | 11.56 / 10.79 | 11.38 / 10.39 |
+
+The container is noisy (single rounds vary by up to 30%); only the water/fire result is clearly outside it
+(about a third less time per frame). powder.wasm grows from 4.95 MB to 5.21 MB (+5.4%). The whole-game tick
+rate with throttling (`PERF_THROTTLES=4`) varied 18-31 ticks/s between identical runs and was not used to
+decide anything.
+
+### 14.4 Menus
+Five menus split off the longest ones (Special had 54 entries, Solids 47, Electronics 45): Life and Nature,
+Space and Gravity, Characters and Vehicles, Circuits, Metals (sections 18-22, after Cracker's hidden 16/17,
+so raw numbers in Lua scripts keep their meaning; constants `elem.SC_ORGANIC` ... `elem.SC_METALS`). They sit
+in a second column of menu buttons: `EXTRABARSIZE` makes the window 646 px wide; the classic column, quick
+options, search and bottom-row buttons are pinned to their old x positions (`CLASSIC_W` in GameView.cpp),
+because crackerk.lua's theme draws frames at fixed coordinates (it now frames the second column too).
+`tpt.num_menus()` counts the classic column only, since manager.lua and tptmp.lua use it to place their side
+buttons; manager.lua's button is placed at `sim.XRES+1` instead of `gfx.WIDTH-16`. Largest element menu
+afterwards: Liquids, 35 (measured from the running game, which includes elements crackerk.lua moves).
+
+The page has an Elements panel (button in the header; open by default on wide screens, remembered in
+localStorage): every menu as a collapsible group, a search box over names, identifiers and descriptions,
+click for the left tool and right-click for the right tool, Enter picks the first match. It reads the menus
+from the running game (`tpt_element_list`), so Lua-made elements appear after a refresh, and selects through
+a queued SDL user event (`tpt_select_tool`) handled in the game loop. Key events in the search box are
+stopped before SDL's window listeners see them.
+
+### 14.5 Verification
+- Browser tests, Chromium headless: 24 tests over HTTP (new `categories.spec.mjs`: menu contents, side-bar
+  hover positions, panel search/select/keyboard isolation/Lua elements/remembered state, 375 px layout without
+  horizontal scrolling), 22 from the offline ZIP opened as file://; the PERF benchmark is skipped by default.

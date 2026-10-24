@@ -10,6 +10,9 @@
 #   BUILDTYPE      meson buildtype (default: release)
 #   RECONFIGURE=1  wipe and reconfigure the build directory
 #   GRAVFFT=0      build without fftw (must match build-deps.sh)
+#
+# Link-time optimisation (b_lto) made a 72k-particle water/fire scene about a third faster per frame
+# (PORT_LOG.md, section 14); an existing build directory keeps its old settings until RECONFIGURE=1.
 set -euo pipefail
 
 # shellcheck source=wasm/env.sh
@@ -37,7 +40,8 @@ if [ ! -f "$BUILD_DIR/build.ninja" ]; then
 		-Dhttp=false \
 		-Dgravfft="$gravfft_opt" \
 		-Dignore_updates=true \
-		-Dworkaround_elusive_bzip2=false
+		-Dworkaround_elusive_bzip2=false \
+		-Db_lto=true
 fi
 
 "$MESON" compile -C "$BUILD_DIR"

@@ -32,6 +32,8 @@ async function startPaused(page) {
 		return 0`);
 }
 
+const SHOWN_SECTIONS = new Set([...Array(16).keys(), 18, 19, 20, 21, 22]);
+
 test('every added element exists, is in a menu, and runs without breaking the simulation', async ({ page }) => {
 	test.setTimeout(240_000);
 	const log = h.collect(page);
@@ -51,7 +53,8 @@ test('every added element exists, is in a menu, and runs without breaking the si
 	expect(new Set(names).size, 'element names are unique').toBe(names.length);
 	for (const e of info) {
 		expect.soft(e.enabled, `${e.name} enabled`).toBe(1);
-		if (e.visible) expect.soft(e.section, `${e.name} is in one of the 16 shown menus`).toBeLessThan(16);
+		// sections 0-15 and the port's 18-22 are shown; 16 and 17 are Cracker's hidden menus
+		if (e.visible) expect.soft(SHOWN_SECTIONS.has(e.section), `${e.name} is in a shown menu (section ${e.section})`).toBe(true);
 	}
 	// names from the element list the user asked for
 	for (const n of ['DFOM', 'DIGS', 'ALUM', 'ALMP', 'RSST', 'RSSS', 'CYTK', 'TANK', 'GNSH', 'VOLT', 'NOTE', 'STAR', 'TIME', 'BCTR', 'ROCK2', 'SLCN2', 'EXPL', 'PWHT', 'BUTN', 'RAZR'])
