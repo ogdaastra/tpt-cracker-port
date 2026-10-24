@@ -35,9 +35,11 @@ and its SDL2 port / IDBFS / Asyncify behaviour is well understood. Pinned in `wa
 
 Network notes (sandbox-specific): HTTPS goes via an egress proxy. `git clone` of public GitHub repos
 works, but HTTP downloads of `github.com/<repo>/archive/...` return 403 for repos not attached to the
-session. Emscripten's ports (SDL2, zlib, libpng) normally download GitHub archives, so the build script
-supports `EMCC_LOCAL_PORTS` with git clones as a fallback. lua.org, fftw.org, sourceware.org,
-storage.googleapis.com, registry.npmjs.org are reachable.
+session. Emscripten's ports (SDL2, zlib, bzip2) normally download GitHub archives, so
+`TPT_SEED_PORTS=1 ./wasm/build-deps.sh` pre-seeds Emscripten's port cache (unpacked source + the
+`.emscripten_url` marker emcc checks) from the same versions: git tags pinned by commit id, or the
+sha256-checked zlib.net tarball. CI does not need this and uses the normal, hash-checked downloads.
+lua.org, fftw.org, zlib.net, storage.googleapis.com, registry.npmjs.org are reachable.
 
 ## 2. Facts re-verified from the source
 
@@ -88,7 +90,9 @@ storage.googleapis.com, registry.npmjs.org are reachable.
 
 ### 3.3 Networking / updater
 - `-Dhttp=false`: libcurl not linked; `http.get` returns status 604 immediately (no hang).
-- crackerk.lua's URS updater sees 604 -> "URS error code: 604" message; it never downloads executables.
+- crackerk.lua's URS updater sees 604. Originally that showed "URS error code: 604" and the Mod Settings
+  status "Report the error!" (it only knew 602 = offline); 604 is now treated like 602, so it reports
+  "URS updater: offline" / status "Offline". It never downloads executables.
 - `-Dignore_updates=true`: no C++ update check.
 - Raw TCP (tptmp.lua multiplayer): unavailable; TPTMP now prints
   "Cannot load: no TCP socket support in this build (e.g. the browser version)".
@@ -110,6 +114,13 @@ storage.googleapis.com, registry.npmjs.org are reachable.
 | 5 | Game ran but red "Fail safe" banner | manager.lua: `if not socket then error("TPT version not supported")`; socket table only registered with HTTP | compile LuaTCPSocket.cpp (already NOHTTP-aware) on emscripten, guard its unguarded `CURL*` prototype |
 | 6 | `crackerk.lua:277: MANAGER.getsetting nil` | manager.lua then failed on `platform.exeName()` == "" (`realpath(/proc/self/exe)`) | ExecutableName returns `/powder` on emscripten |
 | 7 | (latent) `J` shortcut would error | crackerk.lua indexes `TPTMP.chatHidden`, TPTMP absent | `(not TPTMP or TPTMP.chatHidden == true)` |
+| 8 | JS full of `createExportWrapper`, wasm 4.9 MB | Meson passes `-O3` only when compiling; emcc linked at `-O0` (no wasm-opt, assertions on) | pass `-O<level>` (and `-g` for debug) to the emscripten link (`meson.build`); 4.19 MB wasm, 192 KB JS |
+| 9 | Test keys lost right after "running" | the module's ready promise resolves before `main()` creates the SDL window and its input listeners | main loop reports its first presented frame (`Module.tptOnFirstFrame`); page/tests use that |
+| 10 | Long console commands silently did nothing | `Textbox.cpp:495` drops typed characters once the line is wider than the box -> truncated Lua | tests keep console lines < 90 chars via two tiny helper functions |
+| 11 | Page froze for minutes when Newtonian gravity was switched on | `FFTW_MEASURE` without a cycle counter: 10 ms timing batches x hundreds of candidates (plan > 300 s, measured in node) | `FFTW_ESTIMATE` on emscripten (plan 6 ms, ~1 ms per transform) |
+| 12 | Native build fails: `uint32_t does not name a type` | pre-existing: `FontReader.cpp` lacks `<cstdint>` (GCC 13 libstdc++) | add the include; native Linux build (LuaJIT, curl, fftw, threads) then compiles 422/422 and runs headless |
+| 13 | Vercel deployment `git_info_fail` | Vercel account has no GitHub connection; MCP `upload_file` needs file content in the call (5.6 MB base64 for the wasm) | blocked on credentials, see section 7 |
+| 14 | Saves gone after reload (intermittent, file:// test) | IDBFS `autoPersist` + startup load: each node created by `syncfs(true)` queues a persist that snapshots the half-loaded tree and deletes the rest from IndexedDB; leaving during startup made it permanent | `wasm/pre.js` holds `idbPersistState` non-idle during the load; A/B: old 3/3 lost saves, fixed 0/5; regression test |
 
 First full compile of the tree (before any source change) had **0 errors**; the 11 warnings are
 pre-existing code-quality warnings in the mod sources (unused variables etc.) and were left alone.

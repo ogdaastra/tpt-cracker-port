@@ -53,7 +53,7 @@ export async function openGame(page, { dismissIntro = true } = {}) {
 	await waitFrames(page, 30);
 	if (dismissIntro) {
 		await page.keyboard.press('Shift'); // "Press any key" intro of the mod
-		await waitFrames(page, 10);
+		await waitFrames(page, 60); // the intro text fades out over 50 frames
 	}
 }
 
@@ -97,7 +97,7 @@ let luaCounter = 0;
 // (src/gui/interface/Textbox.cpp), so every typed line must stay short.
 const MAX_CONSOLE_LINE = 90;
 
-async function consoleRun(page, line) {
+export async function consoleRun(page, line) {
 	if (line.length > MAX_CONSOLE_LINE) throw new Error(`console line too long (${line.length}): ${line}`);
 	await page.keyboard.press('Backquote');
 	await waitFrames(page, 8);

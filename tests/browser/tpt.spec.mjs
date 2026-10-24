@@ -212,6 +212,49 @@ test('save export and import round trip, persistence across reload', async ({ pa
 	await h.expectNoUnexplainedErrors(log);
 });
 
+test('mod UI and mod C++ elements: J and the Cr-Menu button open the mod menu, all 51 elements run', async ({ page }) => {
+	test.setTimeout(180_000);
+	const log = h.collect(page);
+	await h.openGame(page);
+	await page.keyboard.press('Space'); // pause: compare screens without the simulation moving
+
+	// the mod's own menu (crackerk.lua): J toggles it, so does the Cr-Menu button in the bottom bar
+	const closed = await h.canvasStats(page);
+	await page.keyboard.press('KeyJ');
+	await h.waitFrames(page, 15);
+	const opened = await h.canvasStats(page);
+	await h.saveScreenshot(page, '11-cr-menu-open');
+	expect(Math.abs(opened.lit - closed.lit), 'menu changed the screen').toBeGreaterThan(5000);
+	await page.keyboard.press('KeyJ');
+	await h.waitFrames(page, 15);
+	const reclosed = await h.canvasStats(page);
+	expect(Math.abs(reclosed.lit - closed.lit), 'menu closed again').toBeLessThan(2000);
+	await h.click(page, 444, 415); // "Cr-Menu" button, Button:new(419,408,50,15) in crackerk.lua
+	await h.waitFrames(page, 15);
+	const viaButton = await h.canvasStats(page);
+	expect(Math.abs(viaButton.lit - closed.lit), 'menu opened by its button').toBeGreaterThan(5000);
+	await page.keyboard.press('KeyJ');
+	await h.waitFrames(page, 15);
+
+	// one particle of each element the mod adds in C++ (MOD_ELEMENT_OFFSET 192 .. RUBR 242)
+	await h.lua(page, '0'); // console helpers
+	await h.lua(page, 'event.register(event.tick,function() TK=(TK or 0)+1 end) or 0');
+	expect(await h.lua(page, 'elem.property(192,"Name").." "..elem.property(242,"Name")')).toBe('FNTC RUBR');
+	await h.consoleRun(page, 'for i=0,50 do sim.partCreate(-1,40+i%17*32,80+math.floor(i/17)*60,192+i) end');
+	const placed = Number(await h.lua(page, 'sim.NUM_PARTS'));
+	await h.saveScreenshot(page, '11-mod-elements-placed');
+	await page.keyboard.press('Space'); // run
+	const t0 = Number(await h.lua(page, 'TK'));
+	await page.waitForTimeout(5000);
+	const t1 = Number(await h.lua(page, 'TK'));
+	await h.saveScreenshot(page, '11-mod-elements-after-5s');
+	expect(await page.evaluate(() => window.tptPage.state)).toBe('running');
+	expect(t1 - t0, 'simulation kept ticking with every mod element present').toBeGreaterThan(100);
+	results.modElements = { placedParticles: placed, ticksIn5s: t1 - t0 };
+	expect(placed).toBeGreaterThanOrEqual(45);
+	await h.expectNoUnexplainedErrors(log);
+});
+
 test('blocking dialogs from Lua (tpt.confirm, tpt.input, tpt.throw_error) run nested main loops', async ({ page }) => {
 	const log = h.collect(page);
 	await h.openGame(page);

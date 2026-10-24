@@ -627,7 +627,7 @@ elseif tonumber(crackversion) == tonumber(updatever) then
 errtext = "URS Updater: Your mod is up to date."
 end
 else
-if code2 == 602 then
+if code2 == 602 or code2 == 604 then -- 604 "Network Not Available": builds without HTTP (browser)
 errtext ="URS updater: offline"
 else
 onlinestatus = 3 --Something went wrong
