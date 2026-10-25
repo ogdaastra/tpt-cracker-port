@@ -331,3 +331,16 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 	.challenges-body { flex-direction: column; max-height: none; }
 	#challenge-cats { flex-direction: row; flex-wrap: wrap; flex-basis: auto; }
 }
+
+/* "A new version is ready" (service worker update) */
+#update-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 16px;
+	background: #12324a;
+	border-bottom: 1px solid var(--border);
+}
+#update-bar[hidden] { display: none; }
+#offline-note { color: var(--accent); }

@@ -6,6 +6,10 @@
 <title>Cracker1000's Mod</title>
 <meta name="description" content="Cracker1000's Mod for The Powder Toy (v55.1), compiled to WebAssembly and running in your browser.">
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#171a1f">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body>
 <header class="bar">
@@ -18,8 +22,15 @@
 		<button type="button" id="btn-challenges" disabled title="Puzzles to solve with a limited set of elements">Challenges…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
+		<button type="button" id="btn-install" hidden title="Install the game as an app: its own window and icon, and it works offline">Install app</button>
 	</nav>
 </header>
+
+<section id="update-bar" role="status" hidden>
+	A new version of the game is ready.
+	<button type="button" id="update-reload" title="Save your simulation first: reloading starts a new game">Reload to update</button>
+	<button type="button" id="update-later">Later</button>
+</section>
 
 <section id="challenge-bar" aria-label="Current challenge" aria-live="polite" hidden>
 	<strong id="challenge-title"></strong>
@@ -120,6 +131,7 @@
 		The real C++ game compiled with Emscripten; runs locally in your browser.
 		Online features (save browser, login, multiplayer, updater) are unavailable in this build.
 		Saves and settings are kept in this browser's storage.
+		<span id="offline-note" hidden>This version also works offline now.</span>
 	</p>
 	<p>
 		Licensed under the <a href="LICENSE.txt">GNU GPL v3</a>.

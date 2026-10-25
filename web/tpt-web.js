@@ -970,6 +970,7 @@
 				initPanel();
 				fit();
 				canvas.focus();
+				cacheGameFiles([wasmFile === 'powder-mt.wasm' ? 'powder-mt.js' : 'powder.js', wasmFile]);
 			},
 			// challenge events from the game's Lua (challenge.notify in challenges.lua)
 			tptOnChallenge: (text) => onChallenge(text),
@@ -993,6 +994,105 @@
 			}
 		}, (e) => fail('The game failed to initialise.', e && e.stack || e));
 	}
+
+	// ---------------------------------------------------------------- installable app, offline use
+	// sw.js caches this build's files; the page asks it to keep the game binary it actually loaded. Not on
+	// file:// pages (browsers allow service workers only over HTTP(S)) or with ?sw=0.
+	const appState = { registration: null, installPrompt: null, reloading: false };
+	window.tptPage.app = appState;
+
+	function showUpdate() {
+		$('update-bar').hidden = false;
+	}
+
+	function watchForUpdates(registration) {
+		if (registration.waiting && navigator.serviceWorker.controller) {
+			showUpdate();
+		}
+		registration.addEventListener('updatefound', () => {
+			const worker = registration.installing;
+			worker && worker.addEventListener('statechange', () => {
+				// a second build installed next to the one this page runs: offer the reload
+				if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+					showUpdate();
+				}
+			});
+		});
+		// long sessions: look for a new deployment every hour (the browser also checks on each visit)
+		setInterval(() => registration.update().catch(() => {}), 3600_000);
+	}
+
+	function registerServiceWorker() {
+		if (location.protocol === 'file:' || !('serviceWorker' in navigator) ||
+			new URLSearchParams(location.search).get('sw') === '0') {
+			return;
+		}
+		navigator.serviceWorker.addEventListener('message', (event) => {
+			const msg = event.data || {};
+			if (msg.type === 'game-cached') {
+				appState.offlineReady = msg.version;
+				$('offline-note').hidden = false;
+			}
+		});
+		navigator.serviceWorker.addEventListener('controllerchange', () => {
+			// only after "Reload to update" (the very first install also takes control, without a reload)
+			if (appState.reloading) {
+				location.reload();
+			}
+		});
+		navigator.serviceWorker.register('sw.js').then((registration) => {
+			if (!registration) {
+				return; // service workers switched off (browser policy, test harness)
+			}
+			appState.registration = registration;
+			watchForUpdates(registration);
+		}, (e) => console.warn('service worker not registered:', e));
+	}
+
+	// once the game runs: keep its files for offline use
+	function cacheGameFiles(files) {
+		if (!appState.registration) {
+			return;
+		}
+		navigator.serviceWorker.ready.then((registration) => {
+			registration.active && registration.active.postMessage({ type: 'cache-game', files });
+		});
+	}
+
+	$('update-reload').addEventListener('click', () => {
+		const waiting = appState.registration && appState.registration.waiting;
+		if (!waiting) {
+			location.reload();
+			return;
+		}
+		appState.reloading = true;
+		waiting.postMessage({ type: 'skip-waiting' });
+	});
+	$('update-later').addEventListener('click', () => { $('update-bar').hidden = true; });
+
+	// Chromium browsers offer installing the site; show our own button for it
+	window.addEventListener('beforeinstallprompt', (event) => {
+		event.preventDefault();
+		appState.installPrompt = event;
+		$('btn-install').hidden = false;
+	});
+	window.addEventListener('appinstalled', () => {
+		appState.installPrompt = null;
+		$('btn-install').hidden = true;
+	});
+	$('btn-install').addEventListener('click', async () => {
+		const prompt = appState.installPrompt;
+		if (!prompt) {
+			return;
+		}
+		appState.installPrompt = null;
+		$('btn-install').hidden = true;
+		prompt.prompt();
+		await prompt.userChoice.catch(() => {});
+		refocus();
+	});
+
+	registerServiceWorker();
 
 	window.addEventListener('error', (e) => {
 		if (!mod) {

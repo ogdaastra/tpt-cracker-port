@@ -638,3 +638,22 @@ equivalent edits, each marked with the upstream commit in a comment):
   the frame, add a second renderer to keep pixel-identical, and the CI machines render WebGL in software.
   They would be worth it for new looks (bloom, smooth scaling), not for speed.
 - Full suite: 50 passed, 2 skipped (the PERF benchmarks).
+
+## 25. Installable app, works offline from the website
+
+- `web/manifest.webmanifest` + `web/icons/` (192, 512 and a maskable 512, rendered from the game's own
+  `resources/icon_exe.svg` with Chromium by `wasm/make-icons.mjs`): browsers offer to install the site as an
+  app (own window and icon). Chromium browsers show an **Install app** button in the page header.
+- `web/sw.js`, a service worker: caches the page files when installed, and the game binary the page loaded
+  (single-threaded or threaded, not both: about 6 MB instead of 12) once the game has started. One cache per
+  build, named after the commit by `assemble-dist.sh`, so a cached page always runs its own binary. Cached
+  responses keep the COOP/COEP headers, so offline the page is still cross-origin isolated and threaded.
+- New deployment: its `sw.js` installs next to the running one; the page shows "A new version of the game
+  is ready" with **Reload to update** / **Later** (the reload starts a new game, so it is never automatic).
+  After the reload the old build's cache is deleted. Long sessions check for a new build every hour.
+- Not active on `file://` (browsers don't allow it; the offline ZIP opened from disk is unchanged) or with
+  `?sw=0`. The local launchers in the ZIP serve on localhost, where it works as on the website.
+- Tests (`app.spec.mjs`, the only spec with service workers allowed): manifest and icons; after one visit
+  the game starts with the network off, still isolated and threaded, and dust falls; a simulated new
+  deployment (a private copy of `dist/` whose `sw.js` changes) shows the banner, the reload switches to the
+  new build and only its cache remains. The `file://` copy still passes its tests.

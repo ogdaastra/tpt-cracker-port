@@ -48,7 +48,7 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
 screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
-`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars), `render.spec.mjs` that the display modes draw the same pixels as before the renderer was sped up. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars), `render.spec.mjs` that the display modes draw the same pixels as before the renderer was sped up, `app.spec.mjs` the installable app (manifest, offline start, update banner). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 `PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
 times simulation and render frames inside the game (`tpt_benchmark`), and render frames in every display
@@ -62,8 +62,17 @@ panel sends `challenges.command(...)`, and the game answers through `Module.tptO
 
 ## Deploy (Vercel)
 
-`dist/` is a static site; `dist/vercel.json` sets `application/wasm` and caching (no cross-origin
-isolation needed: the build uses no threads).
+`dist/` is a static site; `dist/vercel.json` sets `application/wasm`, caching and the COOP/COEP headers
+the threaded build needs.
+
+**Installable app and offline use:** `manifest.webmanifest` and `icons/` (rendered from
+`resources/icon_exe.svg` by `wasm/make-icons.mjs`) make the site installable; `sw.js` caches the page and
+the game binary the page actually loaded, in a cache named after the build (`assemble-dist.sh` writes the
+commit into it), so a cached page never meets a binary from another build. Cached responses keep their
+COOP/COEP headers, so the threaded build also runs offline. When a new build is deployed the page shows
+"A new version of the game is ready" and reloads into it on request; the old cache is then deleted. Not
+used on `file://` pages (the offline ZIP opened from disk) or with `?sw=0`. Tests run with service workers
+blocked except `app.spec.mjs`.
 
 ```sh
 VERCEL_TOKEN=... ./wasm/deploy-vercel.sh          # preview, prints the URL
