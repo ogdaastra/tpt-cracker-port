@@ -353,6 +353,8 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 			sign tempSign = save->signs[i];
 			tempSign.x += fullX;
 			tempSign.y += fullY;
+			if (!InBounds(tempSign.x, tempSign.y)) // upstream a2056128
+				continue;
 			signs.push_back(tempSign);
 		}
 	}
@@ -360,6 +362,9 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 	{
 		for(int saveBlockY = 0; saveBlockY < save->blockHeight; saveBlockY++)
 		{
+			// upstream a2056128: a save placed partly outside the simulation must not write past its maps
+			if (saveBlockX + blockX < 0 || saveBlockX + blockX >= XRES/CELL || saveBlockY + blockY < 0 || saveBlockY + blockY >= YRES/CELL)
+				continue;
 			if(save->blockMap[saveBlockY][saveBlockX])
 			{
 				bmap[saveBlockY+blockY][saveBlockX+blockX] = save->blockMap[saveBlockY][saveBlockX];
@@ -958,7 +963,7 @@ bool Simulation::flood_water(int x, int y, int i)
 			}
 			while (x2 < XRES-CELL)
 			{
-				if (elements[TYP(pmap[y][x2 + 1])].Falldown != 2 || bitmap[(y * XRES) + x1 - 1])
+				if (elements[TYP(pmap[y][x2 + 1])].Falldown != 2 || bitmap[(y * XRES) + x2 + 1]) // upstream 9481bf05
 					break;
 				x2++;
 			}
@@ -974,12 +979,10 @@ bool Simulation::flood_water(int x, int y, int i)
 					else if (!eval_move(parts[i].type, x, y - 1, nullptr))
 						continue;
 
+					// upstream 5fc8770e: move() keeps pmap and photons right
 					int oldx = (int)(parts[i].x + 0.5f);
 					int oldy = (int)(parts[i].y + 0.5f);
-					pmap[y - 1][x] = pmap[oldy][oldx];
-					pmap[oldy][oldx] = 0;
-					parts[i].x = float(x);
-					parts[i].y = float(y - 1);
+					move(i, oldx, oldy, float(x), float(y - 1));
 					return true;
 				}
 
@@ -2869,7 +2872,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 				if (!portalp[parts[ID(r)].tmp][count][nnx].type)
 				{
 					portalp[parts[ID(r)].tmp][count][nnx] = parts[i];
-					parts[i].type=PT_NONE;
+					kill_part(i); // upstream 82ec6b27: only clearing .type left it in pmap/photons
 					break;
 				}
 		}
@@ -2886,7 +2889,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			switch (TYP(r))
 			{
 			case PT_GLOW:
-				if (!parts[ID(r)].life && RNG::Ref().chance(29, 30))
+				if (!parts[ID(r)].life && RNG::Ref().chance(1, 30)) // upstream 875f92b2: was 29 in 30
 				{
 					parts[ID(r)].life = 120;
 					create_gain_photon(i);
@@ -2986,7 +2989,7 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 		}
 		case PT_NEUT:
 			if (TYP(r) == PT_GLAS || TYP(r) == PT_BGLA)
-				if (RNG::Ref().chance(9, 10))
+				if (RNG::Ref().chance(1, 10)) // upstream 875f92b2: was 9 in 10
 					create_cherenkov_photon(i);
 			break;
 		case PT_ELEC:
@@ -3141,10 +3144,11 @@ int Simulation::try_move(int i, int x, int y, int nx, int ny)
 			return 1;
 		}
 
-		if (ID(pmap[ny][nx]) == ri)
+		if (pmap[ny][nx] && ID(pmap[ny][nx]) == ri)
 			pmap[ny][nx] = 0;
-		parts[ri].x += float(x - nx);
-		parts[ri].y += float(y - ny);
+		// upstream 76dca483: take i's exact position (adding x - nx stacked particles near powers of 2)
+		parts[ri].x = parts[i].x;
+		parts[ri].y = parts[i].y;
 		int rx = int(parts[ri].x + 0.5f);
 		int ry = int(parts[ri].y + 0.5f);
 		// This check will never fail unless the pmap array has already been corrupted via another bug
@@ -3197,9 +3201,9 @@ bool Simulation::move(int i, int x, int y, float nxf, float nyf)
 	parts[i].y = nyf;
 	if (ny != y || nx != x)
 	{
-		if (ID(pmap[y][x]) == i)
+		if (pmap[y][x] && ID(pmap[y][x]) == i)
 			pmap[y][x] = 0;
-		if (ID(photons[y][x]) == i)
+		if (photons[y][x] && ID(photons[y][x]) == i)
 			photons[y][x] = 0;
 		// kill_part if particle is out of bounds
 		if (nx < CELL || nx >= XRES - CELL || ny < CELL || ny >= YRES - CELL)
@@ -3457,9 +3461,9 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
 
 	if (x >= 0 && y >= 0 && x < XRES && y < YRES)
 	{
-		if (ID(pmap[y][x]) == i)
+		if (pmap[y][x] && ID(pmap[y][x]) == i)
 			pmap[y][x] = 0;
-		else if (ID(photons[y][x]) == i)
+		else if (photons[y][x] && ID(photons[y][x]) == i)
 			photons[y][x] = 0;
 	}
 
@@ -3543,13 +3547,13 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 	if (elements[t].Properties & TYPE_ENERGY)
 	{
 		photons[y][x] = PMAP(i, t);
-		if (ID(pmap[y][x]) == i)
+		if (pmap[y][x] && ID(pmap[y][x]) == i)
 			pmap[y][x] = 0;
 	}
 	else
 	{
 		pmap[y][x] = PMAP(i, t);
-		if (ID(photons[y][x]) == i)
+		if (photons[y][x] && ID(photons[y][x]) == i)
 			photons[y][x] = 0;
 	}
 	return false;
@@ -3654,10 +3658,13 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	{
 		int oldX = (int)(parts[p].x + 0.5f);
 		int oldY = (int)(parts[p].y + 0.5f);
-		if (ID(pmap[oldY][oldX]) == p)
-			pmap[oldY][oldX] = 0;
-		if (ID(photons[oldY][oldX]) == p)
-			photons[oldY][oldX] = 0;
+		if (InBounds(oldX, oldY)) // upstream a5b12b71
+		{
+			if (pmap[oldY][oldX] && ID(pmap[oldY][oldX]) == p)
+				pmap[oldY][oldX] = 0;
+			if (photons[oldY][oldX] && ID(photons[oldY][oldX]) == p)
+				photons[oldY][oldX] = 0;
+		}
 
 		oldType = parts[p].type;
 
@@ -4621,7 +4628,7 @@ killed:
 				continue;
 
 			mv = fmaxf(fabsf(parts[i].vx), fabsf(parts[i].vy));
-			if (mv < ISTP)
+			if (mv < ISTP || std::isnan(mv)) // upstream 51508113: NaN velocity looped forever
 			{
 				clear_x = x;
 				clear_y = y;
@@ -4757,9 +4764,9 @@ killed:
 				}
 				if (ny!=y || nx!=x)
 				{
-					if (ID(pmap[y][x]) == i)
+					if (pmap[y][x] && ID(pmap[y][x]) == i)
 						pmap[y][x] = 0;
-					else if (ID(photons[y][x]) == i)
+					else if (photons[y][x] && ID(photons[y][x]) == i)
 						photons[y][x] = 0;
 					if (nx<CELL || nx>=XRES-CELL || ny<CELL || ny>=YRES-CELL)
 					{
@@ -4920,11 +4927,11 @@ killed:
 					if (fin_x<x-ISTP) fin_x=x-ISTP;
 					if (fin_y>y+ISTP) fin_y=y+ISTP;
 					if (fin_y<y-ISTP) fin_y=y-ISTP;
-					if (do_move(i, x, y, 0.25f+(float)(2*x-fin_x), 0.25f+fin_y))
+					if (do_move(i, x, y, (float)(2*x-fin_x), fin_y)) // upstream d21a2293: the 0.25 bias made gas drift
 					{
 						parts[i].vx *= elements[t].Collision;
 					}
-					else if (do_move(i, x, y, 0.25f+fin_x, 0.25f+(float)(2*y-fin_y)))
+					else if (do_move(i, x, y, fin_x, (float)(2*y-fin_y)))
 					{
 						parts[i].vy *= elements[t].Collision;
 					}

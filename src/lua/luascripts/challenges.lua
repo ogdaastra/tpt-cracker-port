@@ -1427,7 +1427,7 @@ add{
 	end,
 	check = function(C, st) return C.count("PLNT") >= st.plants * 0.6 and 1 or 0 end,
 	solution = function(S)
-		for x = 110, 145 do for y = 330, 371 do
+		for x = 110, 169 do for y = 330, 371 do
 			local id = sim.partID(x, y)
 			if id then sim.partKill(id) end
 		end end

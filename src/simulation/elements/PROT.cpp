@@ -110,7 +110,10 @@ static int update(UPDATE_FUNC_ARGS)
 		if (parts[i].life)
 		{
 			if (!--parts[i].life)
+			{
 				sim->kill_part(i);
+				return 1; // upstream 6433eb04: carrying on after kill_part corrupted pmap
+			}
 		}
 		break;
 	default:

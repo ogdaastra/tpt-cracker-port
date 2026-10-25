@@ -495,3 +495,36 @@ Ported from Ultimata (same TPT base, so nearly unchanged; files in `src/gui/game
   overrode `hidden`).
 - **Page:** Challenges dialog (categories, stars, difficulty, tools, ink, Play), a bar above the game while one
   runs (progress, time, ink, Hint, Restart, Next challenge, Stop); the in-game HUD shows the same.
+
+## 19. Fixes from newer official TPT, batch A (crashes and correctness)
+
+Upstream (The Powder Toy, 98.0 to 100.1 and later master) cloned and its fix commits since January 2023 read
+one by one; the ones whose code exists here were ported by hand (the code bases have diverged, so as small
+equivalent edits, each marked with the upstream commit in a comment):
+- **Simulation core:** NaN velocity no longer loops forever (51508113); a portal-captured particle is killed
+  properly instead of only clearing its type (82ec6b27); every pmap/photons clear checks the entry is non-empty
+  first (2eee738a); `create_part` checks the old position is inside the map (a5b12b71); swapped particles take
+  the other's exact position, so piles no longer stack oddly near power-of-two positions (76dca483); gases lose
+  a 0.25 px bias that pushed them down and right (d21a2293); `flood_water` checks the right span neighbour
+  (9481bf05) and moves particles with `move()` (5fc8770e); placing a save partly outside the simulation no
+  longer writes walls, pressure or signs out of bounds (a2056128); the air advection boundary read one cell too
+  far (3b19f846) and its "far away" step only worked in one direction (2e27cbfd).
+- **Elements:** PROT returns after killing itself (6433eb04); BOMB bounds-checks its outer ring (0d9031bb);
+  ACID eats one particle fewer, as intended (b5872657); MERC clamps its temperature before dividing (d6f66f5c);
+  BOYL stops after turning into water (48df5cda); EMP's sparking area is symmetric (32033af6); SOAP checks its
+  links' indices (ce250e31) and, in loop edge mode only, measures bubbles across the edges (d8da9ecc,
+  7f0bd154); SPRK(TESC) and SPNG cooling stay above 0 K (7623e04e); LITH respects the temperature limits
+  (79f2bbca); FUSE's sparks land around it instead of always at one spot (ca6558bd); GLOW multiplies photons
+  and NEUT makes Cherenkov photons in glass 1 in 30 / 1 in 10 times, not 29 in 30 / 9 in 10 (875f92b2); GLOW's
+  colour uses the right 0 C constant (46730cfc).
+- **Already fine or not applicable here:** DLAY, ETRD, VIBR heat (this code already had the checks); FIRE's
+  missing returns (present); stickman instant death, many-headed stickmen, save size, gravity-wall and
+  "infinite air heat" fixes (they patch upstream's newer code, which this version doesn't have).
+- **Tests** (`tests/browser/upstream-fixes.spec.mjs`, 3): a 60x60 gas cloud in a centred wall box drifts
+  0.4 px / 1.2 px in 10 s (the production build before this: 2.6 px right, 5.8 px down, so the test fails
+  there); a DMND + PRTI + NEUT setup from the upstream report leaves pmap/photons consistent; NaN velocity and
+  MERC at -1.5 K run without hanging. Honest note: the last two do not fail on the old build either (this older
+  engine clamps temperatures and moves NaN particles differently), so they are regression checks only.
+  All 50 challenges re-checked: ASan run 50/50 solutions win, no sanitizer reports in changed code; browser
+  stress 3 solution + 1 do-nothing runs each, after widening Wildfire's firebreak (the unbiased fire spread
+  further).

@@ -260,7 +260,7 @@ void Air::update_air(void)
 
 				tx = x - dx*advDistanceMult;
 				ty = y - dy*advDistanceMult;
-				if ((dx*advDistanceMult>1.0f || dy*advDistanceMult>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
+				if ((std::abs(dx*advDistanceMult)>1.0f || std::abs(dy*advDistanceMult)>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
 				{
 					// Trying to take velocity from far away, check whether there is an intervening wall. Step from current position to desired source location, looking for walls, with either the x or y step size being 1 cell
 					if (std::abs(dx)>std::abs(dy))
@@ -299,8 +299,9 @@ void Air::update_air(void)
 				j = (int)ty;
 				tx -= i;
 				ty -= j;
-				if (!bmap_blockair[y][x] && i>=2 && i<=XRES/CELL-3 &&
-				        j>=2 && j<=YRES/CELL-3)
+				// upstream 3b19f846: <= read one cell too far and made air appear in the lower right corner
+				if (!bmap_blockair[y][x] && i>=2 && i<XRES/CELL-3 &&
+				        j>=2 && j<YRES/CELL-3)
 				{
 					dx *= 1.0f - AIR_VADV;
 					dy *= 1.0f - AIR_VADV;
