@@ -265,7 +265,7 @@ test('portals still carry particles (portal buffers are now allocated per channe
 		sim.createWallBox(360, 120, 363, 203, 8)
 		sim.createWallBox(447, 120, 450, 203, 8)
 		return 0`);
-	await page.evaluate((n) => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [n, 0]), 480);
+	await page.evaluate((n) => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [n, 0]), 240);
 	const moved = Number(await h.luaFile(page, `
 		local n = 0
 		for i in sim.parts() do
@@ -273,6 +273,6 @@ test('portals still carry particles (portal buffers are now allocated per channe
 		end
 		return n`));
 	results.portals = { dustThroughPortal: moved };
-	expect(moved, 'DUST that came out of PRTO (of 451)').toBeGreaterThan(100);
+	expect(moved, 'DUST that came out of PRTO (of 451)').toBeGreaterThan(150); // 235-258 in 6 runs; a broken portal gives about 0
 	await h.expectNoUnexplainedErrors(log);
 });

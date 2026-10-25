@@ -657,3 +657,32 @@ equivalent edits, each marked with the upstream commit in a comment):
   the game starts with the network off, still isolated and threaded, and dust falls; a simulated new
   deployment (a private copy of `dist/` whose `sw.js` changes) shows the banner, the reload switches to the
   new build and only its cache remains. The `file://` copy still passes its tests.
+
+## 26. "My saves" gallery
+
+- The page's **Export saves…** button is now **My saves…**: every save and stamp in the browser's storage as
+  a card with a thumbnail, name (without extension; full name in the tooltip), date and size, and **Open**,
+  **Rename**, **Download**, **Delete** (asks first: Delete / Keep). Saves / Stamps tabs with counts, search
+  by name, sort by newest, oldest, name (numbers in names sort as numbers) or size.
+- Thumbnails are drawn by the game: new export `tpt_save_thumbnail(path, outPath, w, h)` loads the file as a
+  `GameSave`, renders it with `SaveRenderer` and writes a PNG. Same settings as the game's own local save
+  browser (`SaveButton.cpp`: decorations on, fire off). The fire pass draws the particles 15 more times;
+  without it a busy full-screen save takes 48-93 ms instead of 121-148 ms, a small save 21-29 ms (most of
+  that is a fixed cost). The page draws one thumbnail per task between game frames and caches them by
+  path + modification time + size, so a long list never freezes the game: 20 busy saves take 1.2 s and the
+  longest gap between animation frames is 50-67 ms (183 ms with fire).
+- Stamps are not renamed: the game keeps its stamp list (`stamps/stamps.def`) as 10-character names, so a
+  renamed stamp would vanish from the in-game stamp browser. Deleting a stamp goes through the new export
+  `tpt_delete_stamp(name)` (`Client::DeleteStamp`, which also rewrites the list).
+- Renames refuse a name that is taken, keep the extension and replace characters that are not allowed in
+  file names. Changes persist through IDBFS `autoPersist`.
+- Tests (`gallery.spec.mjs`): four saves made from game stamps, every thumbnail renders (and the RUBR one
+  shows RUBR), the four sort orders, search and "Nothing matches.", rename with Enter, cancel with Escape
+  (the dialog stays open), rename onto a taken name, delete with Keep then Delete, all of it still true
+  after a reload, Open loads the save; the stamps tab (no Rename; a deleted stamp is gone from the files and
+  from `stamps.def`); 20 busy thumbnails with the longest frame gap under 500 ms.
+- `added-elements.spec.mjs` "portals still carry particles" was flaky: it waited 4 s of wall time, and the
+  dust that came out of PRTO fell off the bottom of the screen, so the count depended on how many frames
+  ran. A walled cup under PRTO now catches the dust and the test steps a fixed 240 frames with
+  `tpt_benchmark`. Measured over 6 runs: 235-258 of 451 DUST in the cup at 120, 240, 480 and 720 frames
+  alike; the test requires more than 150 (a broken portal gives about 0). Passed 5 of 5 with `--repeat-each 5`.

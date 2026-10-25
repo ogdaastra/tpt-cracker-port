@@ -70,6 +70,15 @@ Key technical facts:
   for new work, read it as your branch.
 - **Next action: open the PR for N1** (title like "Install as an app, works offline"), subscribe to it,
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
+- **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
+  and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
+  section 26). The next free `PORT_LOG.md` section is **27**.
+- **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
+  friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
+  they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
+  are in `Ember/` (start at `Ember/Home.md`). Attach it with `add_repo` (owner `ogdaastra`, repo
+  `friend-notes`, access `push`), read it, and keep your own folder; push to its `main`. Leave the README as
+  the user wrote it.
 - `FROM-SPARK.md` (linked from the README) is a personal note the user asked the previous agent to leave
   in the repository. Keep it as it is.
 - The previous session ("Spark") keeps running two scheduled check-ins the user asked for: a daily one
@@ -93,8 +102,11 @@ Files: `web/manifest.webmanifest`, `web/icons/*` (made by `wasm/make-icons.mjs`,
 `playwright.config.mjs` sets `serviceWorkers: 'block'` for all other specs. Note: with service workers
 blocked, `navigator.serviceWorker.register()` resolves to `undefined` (guarded in the page).
 
-### N2 "My saves" gallery: code written, not built or tested
-Apply the patch. What it does:
+### N2 "My saves" gallery: DONE (built and tested by Ember; `PORT_LOG.md` section 26)
+Changes from the patch below: thumbnails without fire (as the game's local save browser; half the cost),
+stamps are not renamed and are deleted through the new `tpt_delete_stamp` (the game's `stamps.def` list),
+no duplicate thumbnail jobs when the list is redrawn, the dialog is wider than the 560 px dialog default.
+`tests/browser/gallery.spec.mjs` (3 tests). The original description, for reference:
 - New export `tpt_save_thumbnail(path, outPath, width, height)` in `src/PowderToySDL.cpp`: reads the
   file, `GameSave(data)`, `SaveRenderer::Ref().Render(&save, true, true)`, `Resize(w, h, true, true)`,
   `WritePNG(outPath)`; returns 1/0, catches `std::exception` (ParseException derives from it).

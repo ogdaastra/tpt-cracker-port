@@ -1202,9 +1202,10 @@ extern "C"
 		}
 	}
 
-	// Renders the save or stamp file at path (as the game's own save browsers do, decorations and fire on)
-	// into a PNG of at most width x height pixels at outPath, keeping its aspect ratio; for the page's
-	// "My saves" gallery. Returns 1 on success, 0 if the file is missing or not a save.
+	// Renders the save or stamp file at path into a PNG of at most width x height pixels at outPath, keeping
+	// its aspect ratio; for the page's "My saves" gallery. Drawn like the game's own local save browser does
+	// (SaveButton.cpp): decorations on, fire off (the fire pass draws the particles 15 more times, twice the
+	// cost). Returns 1 on success, 0 if the file is missing or not a save.
 	EMSCRIPTEN_KEEPALIVE int tpt_save_thumbnail(const char *path, const char *outPath, int width, int height)
 	{
 		std::vector<char> data;
@@ -1213,7 +1214,7 @@ extern "C"
 		try
 		{
 			GameSave save(data);
-			std::unique_ptr<VideoBuffer> thumb(SaveRenderer::Ref().Render(&save, true, true));
+			std::unique_ptr<VideoBuffer> thumb(SaveRenderer::Ref().Render(&save, true, false));
 			if (!thumb)
 				return 0;
 			thumb->Resize(width, height, true, true);

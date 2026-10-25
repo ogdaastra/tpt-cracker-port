@@ -25,6 +25,7 @@ async function stampScene(page, element, w, hgt) {
 function copyFile(page, from, to, mtimeMs) {
 	return page.evaluate(([a, b, t]) => {
 		const FS = window.tptPage.module.FS;
+		FS.mkdirTree(b.slice(0, b.lastIndexOf('/'))); // a new browser has no Saves/ until the game saves once
 		FS.writeFile(b, FS.readFile(a));
 		FS.utime(b, t, t);
 	}, [from, to, mtimeMs]);

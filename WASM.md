@@ -48,7 +48,7 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
 screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
-`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars), `render.spec.mjs` that the display modes draw the same pixels as before the renderer was sped up, `app.spec.mjs` the installable app (manifest, offline start, update banner). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars), `render.spec.mjs` that the display modes draw the same pixels as before the renderer was sped up, `app.spec.mjs` the installable app (manifest, offline start, update banner), `gallery.spec.mjs` the "My saves" gallery (thumbnails, search, sort, rename, delete, open, stamps, reload). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 `PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
 times simulation and render frames inside the game (`tpt_benchmark`), and render frames in every display
@@ -58,7 +58,8 @@ mode, writing `artifacts/browser/perf.json`.
 The page talks to the game through a few exported functions (`src/PowderToySDL.cpp`): `tpt_open_file`
 (imports), `tpt_element_list` / `tpt_active_tools` / `tpt_select_tool` (the Elements panel; selection is
 queued as an SDL event and handled in the game loop), `tpt_set_frame_callback` (recording), `tpt_lua_command` (runs a Lua line in the game loop; the Challenges
-panel sends `challenges.command(...)`, and the game answers through `Module.tptOnChallenge`) and `tpt_benchmark`.
+panel sends `challenges.command(...)`, and the game answers through `Module.tptOnChallenge`), `tpt_save_thumbnail` /
+`tpt_delete_stamp` (the "My saves" gallery) and `tpt_benchmark`.
 
 ## Deploy (Vercel)
 
@@ -97,7 +98,7 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | Multiplayer (TPTMP) | unavailable (no raw TCP in browsers); it reports this in the console |
 | Mod updater (URS), game updater | unavailable; the URS check reports "URS updater: offline" |
 | Lua | PUC Lua 5.1 instead of LuaJIT: same language, slower scripts, no `ffi` |
-| Saves, stamps, settings, scripts | kept in the browser (IndexedDB) per site address; Export/Import buttons move them as `.cps` files |
+| Saves, stamps, settings, scripts | kept in the browser (IndexedDB) per site address; **My saves…** shows them with thumbnails (open, rename, download, delete); **Import save…** loads `.cps`/`.stm` files |
 | Threads | the threaded build (cross-origin isolated pages) runs Newtonian gravity on its own thread; background tasks and the single-threaded fallback run on the main thread |
 | Window | the page scales the canvas; the page's Fullscreen button replaces the in-game one |
 | Menus | 17 px wider window: a second column of menu buttons holds five menus split off the longest ones (see `ADDED_ELEMENTS.md`); the page adds a searchable Elements panel |
