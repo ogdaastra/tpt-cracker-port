@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges']) {
 			$(id).disabled = true;
 		}
 	}
@@ -429,6 +429,243 @@
 		setPanel(saved === null ? window.innerWidth >= 1000 : saved === '1');
 	}
 
+	// ------------------------------------------------------------------ challenges
+	// The challenges are part of the game (src/lua/luascripts/challenges.lua): it builds the scenes, limits the
+	// tools, checks the goals and saves the stars. The page sends it commands (tpt_lua_command, run by the game
+	// loop) and gets every event back through Module.tptOnChallenge: the catalog, started, progress, hint,
+	// won, lost and stopped.
+	const chal = { catalog: null, current: null, events: [], category: null };
+	window.tptPage.challenges = chal;
+	const chalDialog = $('challenges-dialog');
+	const chalBar = $('challenge-bar');
+	const STAR = '\u2605';
+	const NO_STAR = '\u2606';
+
+	function luaString(text) {
+		return '"' + String(text).replace(/[\\"]/g, '\\$&').replace(/[\r\n]/g, ' ') + '"';
+	}
+
+	function challengeCommand(command) {
+		mod.ccall('tpt_lua_command', null, ['string'], ['challenges.command(' + luaString(command) + ')']);
+	}
+	chal.command = challengeCommand;
+
+	function starText(n) {
+		return STAR.repeat(n) + NO_STAR.repeat(3 - n);
+	}
+
+	function starNodes(n) {
+		const got = document.createElement('span');
+		got.className = 'stars';
+		got.textContent = STAR.repeat(n);
+		const missing = document.createElement('span');
+		missing.className = 'stars-missing';
+		missing.textContent = STAR.repeat(3 - n);
+		const both = document.createElement('span');
+		both.title = `${n} of 3 stars`;
+		both.append(got, missing);
+		return both;
+	}
+
+	function toolName(name) {
+		const [kind, rest] = name.includes(':') ? name.split(':') : [null, name];
+		return kind === 'WALL' ? rest + ' wall' : kind === 'TOOL' ? rest + ' tool' : kind === 'LIFE' ? rest + ' (Life)' : name;
+	}
+
+	function byId(id) {
+		return chal.catalog && chal.catalog.challenges.find((c) => c.id === id);
+	}
+
+	function bestStars(id) {
+		const p = chal.catalog && chal.catalog.progress[id];
+		return p ? p.stars : 0;
+	}
+
+	function nextInCategory(id) {
+		const list = chal.catalog.challenges;
+		const i = list.findIndex((c) => c.id === id);
+		const next = list.slice(i + 1).find((c) => c.category === list[i].category);
+		return next || null;
+	}
+
+	function renderChallenges() {
+		const cats = $('challenge-cats');
+		const list = $('challenge-list');
+		cats.textContent = '';
+		list.textContent = '';
+		if (!chal.catalog) {
+			list.textContent = 'Loading…';
+			return;
+		}
+		const all = chal.catalog.challenges;
+		const total = all.reduce((n, c) => n + bestStars(c.id), 0);
+		$('challenges-score').textContent = `${total} / ${all.length * 3} ${STAR}`;
+		if (!chal.category) {
+			chal.category = chal.catalog.categories[0].id;
+		}
+		for (const cat of chal.catalog.categories) {
+			const mine = all.filter((c) => c.category === cat.id);
+			if (!mine.length) {
+				continue;
+			}
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.dataset.category = cat.id;
+			b.classList.toggle('on', cat.id === chal.category);
+			const stars = document.createElement('span');
+			stars.className = 'stars';
+			stars.textContent = `${mine.reduce((n, c) => n + bestStars(c.id), 0)}/${mine.length * 3}`;
+			b.append(cat.name, stars);
+			b.addEventListener('click', () => {
+				chal.category = cat.id;
+				renderChallenges();
+			});
+			cats.append(b);
+		}
+		for (const c of all.filter((c) => c.category === chal.category)) {
+			const li = document.createElement('li');
+			li.dataset.id = c.id;
+			const h = document.createElement('h3');
+			const stars = starNodes(bestStars(c.id));
+			const diff = document.createElement('span');
+			diff.className = 'diff';
+			diff.textContent = 'difficulty ' + '\u25cf'.repeat(c.difficulty) + '\u25cb'.repeat(5 - c.difficulty);
+			h.append(c.title, stars, diff);
+			const play = document.createElement('button');
+			play.type = 'button';
+			play.className = 'primary';
+			play.textContent = 'Play';
+			play.addEventListener('click', () => {
+				chalDialog.close();
+				challengeCommand('start ' + c.id);
+				refocus();
+			});
+			const text = document.createElement('p');
+			text.textContent = c.text;
+			const meta = document.createElement('p');
+			meta.className = 'meta';
+			meta.textContent = `Tools: ${c.tools.map(toolName).join(', ')}` +
+				(c.ink >= 0 ? ` · ink ${c.ink}` : '') + ` · ${c.time} s`;
+			li.append(play, h, text, meta);
+			list.append(li);
+		}
+	}
+
+	function showBar(c) {
+		chalBar.hidden = !c;
+		if (c) {
+			$('challenge-title').textContent = c.title;
+			$('challenge-text').textContent = c.text;
+		}
+		fit();
+	}
+
+	function setStatus2(text, kind) {
+		const st = $('challenge-status');
+		st.textContent = text;
+		st.className = kind || '';
+	}
+
+	// the game's menus change when a challenge starts or ends; the element panel shows them
+	function refreshPanelSoon() {
+		setTimeout(() => {
+			if (!panel.hidden) {
+				setPanel(true);
+			}
+		}, 150);
+	}
+
+	function onChallenge(text) {
+		let ev;
+		try {
+			ev = JSON.parse(text);
+		} catch (e) {
+			rememberError('challenge event: ' + e);
+			return;
+		}
+		chal.events.push(ev);
+		if (chal.events.length > 200) {
+			chal.events.shift();
+		}
+		if (ev.type === 'catalog') {
+			chal.catalog = ev;
+			if (Array.isArray(ev.progress)) {
+				ev.progress = {}; // the Lua side sends an empty table as []
+			}
+			renderChallenges();
+			return;
+		}
+		const c = ev.id ? byId(ev.id) : null;
+		if (['started', 'won', 'lost', 'stopped'].includes(ev.type)) {
+			refreshPanelSoon();
+		}
+		if (ev.type === 'started') {
+			chal.current = { id: ev.id, state: 'playing' };
+			showBar(c || { title: ev.id, text: '' });
+			setStatus2('Playing');
+			$('challenge-progress').value = 0;
+			$('challenge-hint').disabled = !(c && c.hints.length);
+			$('challenge-next').hidden = true;
+		} else if (ev.type === 'progress') {
+			$('challenge-progress').value = ev.progress;
+			const secs = Math.floor(ev.frames / 60);
+			setStatus2(`${Math.round(ev.progress * 100)}% · ${secs} s` + (c && c.ink >= 0 ? ` · ink ${ev.ink}/${c.ink}` : ''));
+		} else if (ev.type === 'hint') {
+			if (ev.hint) {
+				$('challenge-text').textContent = `Hint ${ev.used}: ${ev.hint}`;
+			}
+			$('challenge-hint').disabled = !c || ev.used >= c.hints.length;
+		} else if (ev.type === 'won') {
+			chal.current = { id: ev.id, state: 'won', stars: ev.stars };
+			$('challenge-progress').value = 1;
+			setStatus2(`${starText(ev.stars)} Complete in ${(ev.frames / 60).toFixed(1)} s with ${ev.ink} particles`, 'won');
+			if (chal.catalog && !ev.solved) {
+				const best = chal.catalog.progress[ev.id];
+				if (!best || ev.stars > best.stars) {
+					chal.catalog.progress[ev.id] = { stars: ev.stars, frames: ev.frames, ink: ev.ink };
+				}
+			}
+			$('challenge-hint').disabled = true;
+			$('challenge-next').hidden = !(chal.catalog && nextInCategory(ev.id));
+		} else if (ev.type === 'lost') {
+			chal.current = { id: ev.id, state: 'lost' };
+			setStatus2(ev.reason === 'time' ? 'Out of time. Try again!' : `Failed: ${ev.reason}`, 'lost');
+			$('challenge-hint').disabled = true;
+		} else if (ev.type === 'stopped') {
+			chal.current = null;
+			showBar(null);
+		}
+	}
+
+	$('btn-challenges').addEventListener('click', () => {
+		renderChallenges();
+		challengeCommand('export'); // fresh list and stars; renders again when it arrives
+		chalDialog.showModal();
+	});
+	chalDialog.addEventListener('close', () => refocus());
+	for (const type of ['keydown', 'keyup', 'keypress']) {
+		chalDialog.addEventListener(type, (e) => e.stopPropagation());
+	}
+	$('challenge-hint').addEventListener('click', () => {
+		challengeCommand('hint');
+		refocus();
+	});
+	$('challenge-restart').addEventListener('click', () => {
+		challengeCommand('restart');
+		refocus();
+	});
+	$('challenge-stop').addEventListener('click', () => {
+		challengeCommand('stop');
+		refocus();
+	});
+	$('challenge-next').addEventListener('click', () => {
+		const next = chal.current && nextInCategory(chal.current.id);
+		if (next) {
+			challengeCommand('start ' + next.id);
+		}
+		refocus();
+	});
+
 	// ------------------------------------------------------------------ recording
 	// Video (MediaRecorder) or GIF (gifenc in a worker) of the game canvas, and PNG screenshots. The game's
 	// canvas is WebGL, so frames are copied from Module.tptOnFrame, which the game calls right after it
@@ -722,13 +959,15 @@
 				window.tptPage.state = 'running';
 				window.tptPage.timings.firstFrame = performance.now();
 				statusBox.hidden = true;
-				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record']) {
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges']) {
 					$(id).disabled = false;
 				}
 				initPanel();
 				fit();
 				canvas.focus();
 			},
+			// challenge events from the game's Lua (challenge.notify in challenges.lua)
+			tptOnChallenge: (text) => onChallenge(text),
 			tptOnQuit: () => {
 				window.tptPage.state = 'quit';
 				statusBox.hidden = false;

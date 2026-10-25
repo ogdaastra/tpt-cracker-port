@@ -176,6 +176,17 @@ public:
 	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
 	// not heat pipes
 	bool IsHeatInsulator(const Particle &p) const;
+	// Challenge mode (Lua challenge.begin): limits on what the player's tools may change. GameController sets
+	// userAction while it applies a tool, so Lua scripts and reactions are never limited.
+	struct ChallengeRules
+	{
+		bool active = false;
+		int inkBudget = -1; // particles the player may place, -1 = no limit
+		int inkUsed = 0;
+		std::vector<std::array<int, 4>> locked; // x0, y0, x1, y1 (inclusive) the player's tools cannot change
+	} challenge;
+	bool userAction = false;
+	bool UserMayChange(int x, int y) const;
 	bool IsElement(int type) const {
 		return (type > 0 && type < PT_NUM && elements[type].Enabled);
 	}

@@ -442,6 +442,23 @@ void GameModel::BuildMenus()
 
 	lastTool = activeTools[0];
 
+	// Challenge mode: menus show only the challenge's tools (the others stay owned by extraElementTools)
+	if (challengeRestricted)
+	{
+		for (auto *menu : menuList)
+		{
+			auto tools = menu->GetToolList();
+			menu->ClearTools();
+			for (auto *tool : tools)
+			{
+				if (ToolAllowed(tool))
+					menu->AddTool(tool);
+				else
+					extraElementTools.push_back(tool);
+			}
+		}
+	}
+
 	//Set default menu
 	activeMenu = SC_POWDERS;
 
@@ -470,7 +487,7 @@ void GameModel::BuildFavoritesMenu()
 	for (size_t i = 0; i < favList.size(); i++)
 	{
 		Tool *tool = GetToolFromIdentifier(favList[i]);
-		if (tool)
+		if (tool && ToolAllowed(tool))
 			menuList[SC_FAVORITES]->AddTool(tool);
 	}
 
@@ -960,8 +977,58 @@ Tool * GameModel::GetActiveTool(int selection)
 
 void GameModel::SetActiveTool(int selection, Tool * tool)
 {
+	if (tool && !ToolAllowed(tool))
+		return; // challenge mode: not one of the challenge's tools
 	activeTools[selection] = tool;
 	notifyActiveToolsChanged();
+}
+
+bool GameModel::ToolAllowed(Tool *tool) const
+{
+	if (!challengeRestricted || !tool)
+		return true;
+	auto id = tool->GetIdentifier();
+	return challengeTools.count(id) || id == "DEFAULT_PT_NONE" || id == "DEFAULT_UI_SAMPLE";
+}
+
+void GameModel::SetChallengeTools(bool restricted, std::set<ByteString> tools)
+{
+	challengeRestricted = restricted;
+	challengeTools = std::move(tools);
+	SetPlaceSave(nullptr);
+	BuildMenus();
+	// make sure the selected tools are ones the challenge allows
+	if (!ToolAllowed(activeTools[0]))
+	{
+		activeTools[0] = GetToolFromIdentifier("DEFAULT_PT_NONE");
+		for (auto *menu : menuList)
+			for (auto *tool : menu->GetToolList())
+				if (activeTools[0]->GetIdentifier() == "DEFAULT_PT_NONE" && challengeTools.count(tool->GetIdentifier()))
+					activeTools[0] = tool;
+	}
+	for (int i = 1; i < 4; i++)
+		if (!ToolAllowed(activeTools[i]))
+			activeTools[i] = GetToolFromIdentifier(i == 2 ? "DEFAULT_UI_SAMPLE" : "DEFAULT_PT_NONE");
+	// open the menu that holds the selected tool, so the allowed tools are on screen
+	if (restricted)
+		for (int i = 0; i < (int)menuList.size(); i++)
+		{
+			auto menuTools = menuList[i]->GetToolList();
+			if (i != SC_FAVORITES && i != SC_DECO && std::find(menuTools.begin(), menuTools.end(), activeTools[0]) != menuTools.end())
+			{
+				SetActiveMenu(i);
+				break;
+			}
+		}
+	notifyActiveToolsChanged();
+	notifyLastToolChanged();
+}
+
+void GameModel::ClearHistory()
+{
+	history.clear();
+	historyCurrent.reset();
+	historyPosition = 0;
 }
 
 std::vector<QuickOption*> GameModel::GetQuickOptions()
@@ -1460,6 +1527,8 @@ void GameModel::ClearSimulation()
 
 void GameModel::SetPlaceSave(GameSave * save)
 {
+	if (save && challengeRestricted)
+		return; // no pasting or stamps during a challenge
 	if (save != placeSave)
 	{
 		delete placeSave;

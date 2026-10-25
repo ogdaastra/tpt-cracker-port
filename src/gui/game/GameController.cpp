@@ -385,7 +385,9 @@ void GameController::DrawRect(int toolSelection, ui::Point point1, ui::Point poi
 	if(!activeTool || !cBrush)
 		return;
 	activeTool->SetStrength(1.0f);
+	sim->userAction = true;
 	activeTool->DrawRect(sim, cBrush, point1, point2);
+	sim->userAction = false;
 }
 
 void GameController::DrawLine(int toolSelection, ui::Point point1, ui::Point point2)
@@ -397,7 +399,9 @@ void GameController::DrawLine(int toolSelection, ui::Point point1, ui::Point poi
 	if(!activeTool || !cBrush)
 		return;
 	activeTool->SetStrength(1.0f);
+	sim->userAction = true;
 	activeTool->DrawLine(sim, cBrush, point1, point2);
+	sim->userAction = false;
 }
 
 void GameController::DrawFill(int toolSelection, ui::Point point)
@@ -409,7 +413,9 @@ void GameController::DrawFill(int toolSelection, ui::Point point)
 	if(!activeTool || !cBrush)
 		return;
 	activeTool->SetStrength(1.0f);
+	sim->userAction = true;
 	activeTool->DrawFill(sim, cBrush, point);
+	sim->userAction = false;
 }
 
 void GameController::DrawPoints(int toolSelection, ui::Point oldPos, ui::Point newPos, bool held)
@@ -424,10 +430,12 @@ void GameController::DrawPoints(int toolSelection, ui::Point oldPos, ui::Point n
 	}
 
 	activeTool->SetStrength(gameModel->GetToolStrength());
+	sim->userAction = true; // challenge rules apply to the player's tools only
 	if (!held)
 		activeTool->Draw(sim, cBrush, newPos);
 	else
 		activeTool->DrawLine(sim, cBrush, oldPos, newPos, true);
+	sim->userAction = false;
 }
 
 bool GameController::LoadClipboard()
@@ -468,7 +476,14 @@ void GameController::ToolClick(int toolSelection, ui::Point point)
 	Brush * cBrush = gameModel->GetBrush();
 	if(!activeTool || !cBrush)
 		return;
+	sim->userAction = true;
 	activeTool->Click(sim, cBrush, point);
+	sim->userAction = false;
+}
+
+void GameController::RunCommand(String command)
+{
+	commandInterface->Command(command);
 }
 
 ByteString GameController::StampRegion(ui::Point point1, ui::Point point2)
@@ -1107,7 +1122,8 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 	gameModel->SetLastTool(tool);
 	for(int i = 0; i < 3; i++)
 	{
-		if(gameModel->GetActiveTool(i) == gameModel->GetMenuList().at(SC_WALL)->GetToolList().at(WL_GRAV))
+		// by identifier: during a challenge the walls menu may not hold every wall
+		if(gameModel->GetActiveTool(i) && gameModel->GetActiveTool(i)->GetIdentifier() == "DEFAULT_WL_GRVTY")
 			gameModel->GetRenderer()->gravityZonesEnabled = true;
 	}
 	if(tool->GetIdentifier() == "DEFAULT_UI_PROPERTY")

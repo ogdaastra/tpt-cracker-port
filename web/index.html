@@ -15,10 +15,24 @@
 		<input type="file" id="file-import" accept=".cps,.stm" hidden>
 		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
 		<button type="button" id="btn-record" disabled title="Record a video or GIF of the game, or take a screenshot">Record…</button>
+		<button type="button" id="btn-challenges" disabled title="Puzzles to solve with a limited set of elements">Challenges…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
 	</nav>
 </header>
+
+<section id="challenge-bar" aria-label="Current challenge" aria-live="polite" hidden>
+	<strong id="challenge-title"></strong>
+	<span id="challenge-status"></span>
+	<progress id="challenge-progress" max="1" value="0"></progress>
+	<span class="challenge-actions">
+		<button type="button" id="challenge-hint" title="Show a hint (costs a star)">Hint</button>
+		<button type="button" id="challenge-restart">Restart</button>
+		<button type="button" id="challenge-next" hidden>Next challenge</button>
+		<button type="button" id="challenge-stop">Stop</button>
+	</span>
+	<p id="challenge-text"></p>
+</section>
 
 <main id="stage">
 	<div id="game">
@@ -57,6 +71,20 @@
 			(you are not logged in, so it saves locally); it then appears here.</p>
 		<ul id="export-list"></ul>
 		<p><button value="close">Close</button></p>
+	</form>
+</dialog>
+
+<dialog id="challenges-dialog" aria-labelledby="challenges-title">
+	<form method="dialog">
+		<h2 id="challenges-title">Challenges <span id="challenges-score" class="hint"></span></h2>
+		<p class="hint">Each challenge gives you a few tools and a goal. Fewer particles (ink) and less time earn more
+			stars; every hint costs one. Your stars are kept in this browser. The same list is in the game:
+			the ★ button at the bottom of the second side-bar column.</p>
+		<div class="challenges-body">
+			<nav id="challenge-cats" aria-label="Categories"></nav>
+			<ul id="challenge-list"></ul>
+		</div>
+		<p class="dialog-buttons"><button value="close">Close</button></p>
 	</form>
 </dialog>
 

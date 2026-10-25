@@ -1468,6 +1468,8 @@ void Simulation::ApplyDecorationFill(Renderer *ren, int x, int y, int colR, int 
 
 int Simulation::Tool(int x, int y, int tool, int brushX, int brushY, float strength)
 {
+	if (!UserMayChange(x, y))
+		return 0;
 	Particle * cpart = NULL;
 	int r;
 	if ((r = pmap[y][x]))
@@ -1583,7 +1585,7 @@ int Simulation::CreateWalls(int x, int y, int rx, int ry, int wall, Brush * cBru
 	{
 		for (int wallY = y; wallY <= y+ry+ry; wallY++)
 		{
-			if (wallX >= 0 && wallX < XRES/CELL && wallY >= 0 && wallY < YRES/CELL)
+			if (wallX >= 0 && wallX < XRES/CELL && wallY >= 0 && wallY < YRES/CELL && UserMayChange(wallX*CELL, wallY*CELL))
 			{
 				if (wall == WL_FAN)
 				{
@@ -1892,6 +1894,16 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	{
 		return 0;
 	}
+	if (!UserMayChange(x, y))
+	{
+		return 0;
+	}
+	// challenge ink: particles the player places with tools; none once the budget is used up
+	bool counted = userAction && challenge.active && c;
+	if (counted && challenge.inkBudget >= 0 && challenge.inkUsed >= challenge.inkBudget)
+	{
+		return 1;
+	}
 
 	if (flags & REPLACE_MODE)
 	{
@@ -1903,7 +1915,10 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 			(photons[y][x] && TYP(photons[y][x]) == replaceModeSelected))
 		{
 			if (c)
-				create_part(photons[y][x] ? ID(photons[y][x]) : ID(pmap[y][x]), x, y, TYP(c), ID(c));
+			{
+				if (create_part(photons[y][x] ? ID(photons[y][x]) : ID(pmap[y][x]), x, y, TYP(c), ID(c)) != -1 && counted)
+					challenge.inkUsed++;
+			}
 			else
 				delete_part(x, y);
 		}
@@ -1929,7 +1944,10 @@ int Simulation::CreatePartFlags(int x, int y, int c, int flags)
 	}
 	else
 	{
-		return (create_part(-2, x, y, TYP(c), ID(c)) == -1);
+		bool failed = create_part(-2, x, y, TYP(c), ID(c)) == -1;
+		if (!failed && counted)
+			challenge.inkUsed++;
+		return failed;
 	}
 
 	// I'm sure at least one compiler exists that would complain if this wasn't here
@@ -5182,6 +5200,16 @@ movedone:
 	//'f' was pressed (single frame)
 	if (framerender)
 		framerender--;
+}
+
+bool Simulation::UserMayChange(int x, int y) const
+{
+	if (!userAction || !challenge.active)
+		return true;
+	for (auto &r : challenge.locked)
+		if (x >= r[0] && x <= r[2] && y >= r[1] && y <= r[3])
+			return false;
+	return true;
 }
 
 bool Simulation::IsHeatInsulator(const Particle &p) const

@@ -90,6 +90,9 @@ plan an ASan pass. TRFM on huge selections can be slow; limit size.
 
 ## 3. Challenge mode (#11): lots of challenges
 
+**Status: built** (50 challenges, see `docs/CHALLENGES.md` and PORT_LOG section 18). The list below was the
+starting plan; some were changed or replaced while writing and testing the reference solutions.
+
 ### What you get
 A **Challenges** button on the page opens a panel: categories, each challenge with a title, a short
 description, difficulty (1-5), your best stars (★ to ★★★), and Play. Playing loads the challenge's scene, limits

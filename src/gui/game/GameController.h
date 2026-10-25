@@ -69,6 +69,7 @@ public:
 	GameController();
 	~GameController();
 	GameModel *GetModel() { return gameModel; }
+	void RunCommand(String command); // as if typed into the console
 	GameView * GetView();
 	int GetSignAt(int x, int y);
 	String GetSignText(int signID);

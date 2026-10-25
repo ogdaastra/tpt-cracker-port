@@ -7,6 +7,11 @@
 #include "LuaScriptInterface.h"
 
 #include <vector>
+#include <set>
+#include <array>
+#ifdef __EMSCRIPTEN__
+# include <emscripten.h>
+#endif
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -71,6 +76,7 @@ extern "C"
 #include "tptmp.lua.h"
 #include "crackerk.lua.h"
 #include "failsafe.lua.h"
+#include "challenges.lua.h"
 
 // idea from mniip, makes things much simpler
 #define SETCONST(L, NAME)\
@@ -230,6 +236,7 @@ LuaScriptInterface::LuaScriptInterface(GameController * c, GameModel * m):
 	initGraphicsAPI();
 	initFileSystemAPI();
 	initPlatformAPI();
+	initChallengeAPI();
 	initEventAPI();
 	initHttpAPI();
 #if !defined(NOHTTP) || defined(__EMSCRIPTEN__)
@@ -490,6 +497,11 @@ tpt.partsdata = nil");
 #endif
 			}
 		}
+	}
+	// challenge mode is part of the game, so it loads even with the optional scripts turned off
+	if (luaL_loadbuffer(l, (const char *)challenges_lua, challenges_lua_size, "@[built-in challenges.lua]") || lua_pcall(l, 0, 0, 0))
+	{
+		std::cerr << "built-in challenges.lua failed: " << lua_tostring(l, -1) << std::endl;
 	}
 }
 void LuaScriptInterface::custom_init_can_move()
@@ -4167,6 +4179,111 @@ int LuaScriptInterface::fileSystem_copy(lua_State * l)
 	std::vector<char> fileData;
 	lua_pushboolean(l, Platform::ReadFile(fileData, filename) && Platform::WriteFile(fileData, newFilename));
 	return 1;
+}
+
+// Challenge mode, used by the built-in challenges.lua: which tools the player may use, how many particles
+// they may place ("ink") and which rectangles their tools cannot change. Lua itself is never limited.
+void LuaScriptInterface::initChallengeAPI()
+{
+	struct luaL_Reg challengeAPIMethods [] = {
+		{"begin", challenge_begin},
+		{"finish", challenge_finish},
+		{"ink", challenge_ink},
+		{"active", challenge_active},
+		{"notify", challenge_notify},
+		{NULL, NULL}
+	};
+	luaL_register(l, "challenge", challengeAPIMethods);
+	lua_pop(l, 1);
+}
+
+// challenge.begin{ tools = { "DEFAULT_PT_BTRY", ... }, ink = 60, locked = { { x0, y0, x1, y1 }, ... } }
+int LuaScriptInterface::challenge_begin(lua_State * l)
+{
+	luaL_checktype(l, 1, LUA_TTABLE);
+	std::set<ByteString> tools;
+	lua_getfield(l, 1, "tools");
+	if (lua_istable(l, -1))
+	{
+		for (int i = 1; ; i++)
+		{
+			lua_rawgeti(l, -1, i);
+			if (lua_isnil(l, -1))
+			{
+				lua_pop(l, 1);
+				break;
+			}
+			tools.insert(tpt_lua_checkByteString(l, -1));
+			lua_pop(l, 1);
+		}
+	}
+	lua_pop(l, 1);
+	auto &rules = luacon_sim->challenge;
+	rules = Simulation::ChallengeRules();
+	rules.active = true;
+	lua_getfield(l, 1, "ink");
+	rules.inkBudget = luaL_optint(l, -1, -1);
+	lua_pop(l, 1);
+	lua_getfield(l, 1, "locked");
+	if (lua_istable(l, -1))
+	{
+		for (int i = 1; ; i++)
+		{
+			lua_rawgeti(l, -1, i);
+			if (!lua_istable(l, -1))
+			{
+				lua_pop(l, 1);
+				break;
+			}
+			std::array<int, 4> r;
+			for (int k = 0; k < 4; k++)
+			{
+				lua_rawgeti(l, -1, k + 1);
+				r[k] = luaL_checkint(l, -1);
+				lua_pop(l, 1);
+			}
+			rules.locked.push_back(r);
+			lua_pop(l, 1);
+		}
+	}
+	lua_pop(l, 1);
+	luacon_model->SetChallengeTools(true, tools);
+	luacon_model->ClearHistory();
+	return 0;
+}
+
+int LuaScriptInterface::challenge_finish(lua_State * l)
+{
+	luacon_sim->challenge = Simulation::ChallengeRules();
+	luacon_model->SetChallengeTools(false, {});
+	return 0;
+}
+
+int LuaScriptInterface::challenge_ink(lua_State * l)
+{
+	lua_pushinteger(l, luacon_sim->challenge.inkUsed);
+	return 1;
+}
+
+int LuaScriptInterface::challenge_active(lua_State * l)
+{
+	lua_pushboolean(l, luacon_sim->challenge.active);
+	return 1;
+}
+
+// Passes a message (JSON text) to the web page's Module.tptOnChallenge; does nothing elsewhere.
+int LuaScriptInterface::challenge_notify(lua_State * l)
+{
+	auto message = tpt_lua_checkByteString(l, 1);
+#ifdef __EMSCRIPTEN__
+	EM_ASM({
+		if (Module['tptOnChallenge'])
+			Module['tptOnChallenge'](UTF8ToString($0));
+	}, message.c_str());
+#else
+	(void)message;
+#endif
+	return 0;
 }
 
 void LuaScriptInterface::initPlatformAPI()

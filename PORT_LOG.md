@@ -454,3 +454,44 @@ Ported from Ultimata (same TPT base, so nearly unchanged; files in `src/gui/game
   channel 5 (473.15 K); Shift+Tab draws a ring with an empty centre and back; EM and stress switches change the
   Lua state, the time-dilation view tints a SLOW field (14,785 pixels); PRP2 sets temp 500 and life 7 together.
   Full suite 36/36.
+
+## 18. Challenge mode
+
+50 challenges in 9 categories (list: `docs/CHALLENGES.md`), playable from the page (Challenges…) or in the game
+(★ button at the bottom of the second side-bar column, a Lua window).
+- **Game side (C++):** a challenge session. `Simulation::challenge` holds the ink budget, the ink used and locked
+  rectangles; `Simulation::userAction` is set by `GameController` around the player's drawing, line, box, flood
+  and tool actions, so only the player's particles count as ink (reactions don't) and locked rectangles refuse
+  only the player (`UserMayChange`, checked in `CreatePartFlags`, `Tool` and `CreateWalls`). `GameModel` keeps
+  the allowed tools: menus, favourites and the page's Elements panel only show those, `SetActiveTool` refuses
+  others (page, Lua, keyboard), placing stamps/saves is refused, undo history is cleared, and the menu of the
+  first allowed tool opens. The eraser and the sample tool always work. Lua: `challenge.begin{tools, ink,
+  locked}`, `challenge.finish()`, `challenge.ink()`, `challenge.active()`, `challenge.notify(json)` (calls
+  `Module.tptOnChallenge` on the page). The page runs Lua in the game loop with `tpt_lua_command`.
+- **Challenges (Lua, built in):** `src/lua/luascripts/challenges.lua`, loaded always (even when the optional
+  scripts are off). Each challenge is one table: scene setup, allowed tools, ink, time, a goal check run after
+  every simulation frame (progress 0..1, or a failure reason), star thresholds, hints (each costs a star) and a
+  **reference solution**. Stars are saved in `challenges-progress.json` in the game's data folder (IndexedDB in
+  the browser). Solution runs (`challenges.command("solve <id>")`) never earn stars.
+- **Every challenge was tuned by running its solution:** a native harness (ASan build, Lua autorun) played every
+  solution and every do-nothing run; designs that didn't hold up were changed or dropped (an air-pressure
+  "big bang" goal that explosions here never reach, a sponge goal the eraser could fake). Found on the way:
+  plasma melts the wires it is meant to heat, glass passes lava heat on to a stickman's feet, stone is a powder,
+  titanium melts below the furnace temperature first chosen, sorting dust from water needs a 5 s hold because
+  dust falls faster.
+- **Reliability:** repeated native runs turned out to be identical (same random seed every start), so they
+  say nothing about luck. In the browser every run is different: a stress script ran every solution 6-8 times
+  and every do-nothing case twice there, and each challenge that ever failed (Crater, Wildfire, Etching, Lava to
+  stone, Desalination) got a wider margin: a stronger reference solution within the ink limit or a slightly
+  easier goal.
+- **Tests** (`tests/browser/challenges.spec.mjs`, 4): all 50 solutions win and all 50 do-nothing runs lose (the
+  page steps the simulation with `tpt_benchmark`, about 2-3 minutes each); "First light" played by hand
+  through the page (only BTRY/METL/PSCN plus eraser and sample offered, WATR refused from the page and PLSM
+  from Lua, the locked LED survives the eraser, ink = particles drawn, win with stars, stars still there after a
+  reload); ink budget stops a big brush at exactly 300, the locked flag survives, hint text, restart clears the
+  scene and ink, the in-game window starts a challenge. They found two real bugs: the game crashed ("vector")
+  when a tool was selected during a challenge, because `GameController::SetActiveTool` looked up the gravity
+  wall by its position in the walls menu (now by identifier), and the challenge bar never hid (CSS `display`
+  overrode `hidden`).
+- **Page:** Challenges dialog (categories, stars, difficulty, tools, ink, Play), a bar above the game while one
+  runs (progress, time, ink, Hint, Restart, Next challenge, Stop); the in-game HUD shows the same.
