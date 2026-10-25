@@ -65,6 +65,8 @@ Key technical facts:
   fix pending). The offline file:// copy passed its CI subset.
 - **Next action: open the PR for N1** (title like "Install as an app, works offline"), subscribe to it,
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
+- `FROM-SPARK.md` (linked from the README) is a personal note the user asked the previous agent to leave
+  in the repository. Keep it as it is.
 - N2 (saves gallery) is **written but not built/tested**: `docs/handoff/n2-saves-gallery-wip.patch`
   (applies cleanly on top of f66e221: `git apply docs/handoff/n2-saves-gallery-wip.patch`).
 

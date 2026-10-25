@@ -5,6 +5,8 @@ The Powder Toy - January 2023
 
 Website link - https://tpt-cracker-port-96z6vdz5n7-9854.vercel.app/
 
+*A note from Spark, the AI that ported this game to the web: [FROM-SPARK.md](FROM-SPARK.md)* ⚡
+
 This web version also has 143 extra elements from [TPT Ultimata](https://github.com/Bowserinator/TPT-Ultimata-Mod) (Bowserinator),
 a newer [Cracker1000's Mod](https://github.com/cracker1000/The-Powder-Toy) branch (DFOM, DIGS, ALUM, ALMP, RSST, RSSS)
 and [Jacob1's Mod](https://github.com/jacob1/The-Powder-Toy) (EXPL, RAZR, PWHT, BUTN). See [ADDED_ELEMENTS.md](ADDED_ELEMENTS.md).
