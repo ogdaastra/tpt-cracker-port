@@ -1420,7 +1420,10 @@ add{
 		st.dust = C.count("DUST")
 	end,
 	check = function(C, st) return (st.dust - C.count("DUST")) / (st.dust * 0.9) end,
-	solution = function(S) S.box(303, 250, 307, 254, "NWHL") end,
+	-- beside the cloud, so the dust leaves sideways as one group: 100 of 100 runs won within 780 frames.
+	-- Below it (303, 250) the dust spread out and drifted with the air it stirred up: about 1 run in 60
+	-- ended at 98-99%.
+	solution = function(S) S.box(368, 188, 372, 192, "NWHL") end,
 }
 
 add{
