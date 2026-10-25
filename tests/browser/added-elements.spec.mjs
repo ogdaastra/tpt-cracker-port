@@ -254,15 +254,18 @@ test('portals still carry particles (portal buffers are now allocated per channe
 	test.setTimeout(120_000);
 	const log = h.collect(page);
 	await startPaused(page);
+	// A walled cup under PRTO catches the DUST that comes out; without it the DUST falls off the bottom of the
+	// screen and the count depends on how many frames ran. A fixed number of frames keeps CPU load out of it.
 	await h.luaFile(page, `
 		sim.clearSim()
 		for x = 100, 110 do sim.partCreate(-1, x, 300, elem.DEFAULT_PT_PRTI) end
 		for x = 400, 410 do sim.partCreate(-1, x, 100, elem.DEFAULT_PT_PRTO) end
 		for x = 100, 110 do for y = 250, 290 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_DUST) end end
+		sim.createWallBox(360, 200, 450, 203, 8)
+		sim.createWallBox(360, 120, 363, 203, 8)
+		sim.createWallBox(447, 120, 450, 203, 8)
 		return 0`);
-	await page.keyboard.press('Space');
-	await page.waitForTimeout(4000);
-	await page.keyboard.press('Space');
+	await page.evaluate((n) => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [n, 0]), 480);
 	const moved = Number(await h.luaFile(page, `
 		local n = 0
 		for i in sim.parts() do
@@ -270,6 +273,6 @@ test('portals still carry particles (portal buffers are now allocated per channe
 		end
 		return n`));
 	results.portals = { dustThroughPortal: moved };
-	expect(moved, 'DUST that came out of PRTO').toBeGreaterThan(20);
+	expect(moved, 'DUST that came out of PRTO (of 451)').toBeGreaterThan(100);
 	await h.expectNoUnexplainedErrors(log);
 });

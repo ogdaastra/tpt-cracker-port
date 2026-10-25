@@ -344,3 +344,46 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 }
 #update-bar[hidden] { display: none; }
 #offline-note { color: var(--accent); }
+
+/* "My saves" gallery */
+.saves-dialog { width: min(920px, 96vw); }
+.saves-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.saves-toolbar input[type=search] { flex: 1; min-width: 160px; }
+#saves-kinds { display: flex; gap: 4px; }
+#saves-kinds button.active { border-color: var(--accent); color: var(--accent); }
+.saves-dialog .hint.message { color: var(--danger); }
+.saves-grid {
+	list-style: none;
+	margin: 8px 0;
+	padding: 0;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+	gap: 10px;
+	max-height: 60vh;
+	overflow-y: auto;
+}
+.saves-grid li {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 6px;
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	min-width: 0;
+}
+.saves-grid li.empty { grid-column: 1 / -1; border-style: dashed; color: var(--muted); }
+.save-thumb {
+	width: 100%;
+	height: auto;
+	aspect-ratio: 204 / 128;
+	background: #000;
+	image-rendering: pixelated;
+	border-radius: 3px;
+}
+.save-thumb.broken { background: repeating-linear-gradient(45deg, #222 0 6px, #2a2a2a 6px 12px); }
+.save-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.save-meta { color: var(--muted); font-size: 12px; }
+.save-actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.save-actions button { padding: 2px 8px; }
+.saves-grid input[type=text] { width: 100%; }

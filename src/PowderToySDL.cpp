@@ -58,6 +58,7 @@
 #include "gui/game/Tool.h"
 #include "graphics/Renderer.h"
 #include "simulation/Simulation.h"
+#include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
 #include "gui/game/GameView.h"
 #include "gui/dialogues/ConfirmPrompt.h"
@@ -1199,6 +1200,38 @@ extern "C"
 		{
 			SDL_free(event.user.data1);
 		}
+	}
+
+	// Renders the save or stamp file at path (as the game's own save browsers do, decorations and fire on)
+	// into a PNG of at most width x height pixels at outPath, keeping its aspect ratio; for the page's
+	// "My saves" gallery. Returns 1 on success, 0 if the file is missing or not a save.
+	EMSCRIPTEN_KEEPALIVE int tpt_save_thumbnail(const char *path, const char *outPath, int width, int height)
+	{
+		std::vector<char> data;
+		if (!Platform::ReadFile(data, path))
+			return 0;
+		try
+		{
+			GameSave save(data);
+			std::unique_ptr<VideoBuffer> thumb(SaveRenderer::Ref().Render(&save, true, true));
+			if (!thumb)
+				return 0;
+			thumb->Resize(width, height, true, true);
+			return thumb->WritePNG(outPath) ? 1 : 0;
+		}
+		catch (const std::exception &e)
+		{
+			std::cerr << "tpt_save_thumbnail: " << path << ": " << e.what() << std::endl;
+			return 0;
+		}
+	}
+
+	// Deletes the stamp with the given name (file name without ".stm") through the game's stamp list, so the
+	// in-game stamp browser stays in step; also removes a stamp file the list doesn't know (e.g. an imported one).
+	EMSCRIPTEN_KEEPALIVE void tpt_delete_stamp(const char *name)
+	{
+		Client::Ref().DeleteStamp(name);
+		remove(ByteString::Build(STAMPS_DIR, PATH_SEP, name, ".stm").c_str());
 	}
 
 	// Runs the simulation (what = 0) or the particle renderer (what = 1) for the given number of frames

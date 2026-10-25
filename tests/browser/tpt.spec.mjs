@@ -168,11 +168,11 @@ test('save export and import round trip, persistence across reload', async ({ pa
 
 	// export through the page
 	await page.click('#btn-export');
-	await expect(page.locator('#export-list')).toContainText('roundtrip.cps');
+	await expect(page.locator('#export-list li[data-name="roundtrip.cps"]')).toBeVisible();
 	await h.saveScreenshot(page, '05-export-dialog');
 	const [download] = await Promise.all([
 		page.waitForEvent('download'),
-		page.locator('#export-list li', { hasText: 'roundtrip.cps' }).locator('button').click(),
+		page.locator('#export-list li[data-name="roundtrip.cps"] button[data-action=download]').click(),
 	]);
 	const exported = path.join(h.ARTIFACTS, 'roundtrip-exported.cps');
 	await download.saveAs(exported);

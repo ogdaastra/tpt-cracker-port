@@ -17,7 +17,7 @@
 	<nav class="actions">
 		<button type="button" id="btn-import" disabled title="Load a .cps or .stm save file from your computer">Import save…</button>
 		<input type="file" id="file-import" accept=".cps,.stm" hidden>
-		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
+		<button type="button" id="btn-export" disabled title="Your saves and stamps: open, rename, download or delete them">My saves…</button>
 		<button type="button" id="btn-record" disabled title="Record a video or GIF of the game, or take a screenshot">Record…</button>
 		<button type="button" id="btn-challenges" disabled title="Puzzles to solve with a limited set of elements">Challenges…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
@@ -75,13 +75,26 @@
 	</div>
 </main>
 
-<dialog id="export-dialog" aria-labelledby="export-title">
+<dialog id="export-dialog" class="saves-dialog" aria-labelledby="export-title">
 	<form method="dialog">
-		<h2 id="export-title">Saves stored in this browser</h2>
-		<p class="hint">Save a simulation in the game with the save button in the bottom bar
-			(you are not logged in, so it saves locally); it then appears here.</p>
-		<ul id="export-list"></ul>
-		<p><button value="close">Close</button></p>
+		<h2 id="export-title">My saves</h2>
+		<div class="saves-toolbar">
+			<nav id="saves-kinds" aria-label="Saves or stamps">
+				<button type="button" data-kind="save" class="active">Saves <span></span></button>
+				<button type="button" data-kind="stamp">Stamps <span></span></button>
+			</nav>
+			<input type="search" id="saves-search" placeholder="Search by name…" aria-label="Search saves" autocomplete="off" spellcheck="false">
+			<select id="saves-sort" aria-label="Sort">
+				<option value="newest">Newest first</option>
+				<option value="oldest">Oldest first</option>
+				<option value="name">Name</option>
+				<option value="size">Size</option>
+			</select>
+		</div>
+		<p class="hint">Saves made in the game with the save button in the bottom bar (you are not logged in, so they
+			save locally), saves you imported, and stamps. They are kept in this browser.</p>
+		<ul id="export-list" class="saves-grid"></ul>
+		<p class="dialog-buttons"><button value="close">Close</button></p>
 	</form>
 </dialog>
 
