@@ -192,14 +192,15 @@ test('new reactions: LITH from molten SLCN + SALT, PTNM from molten gold in a va
 	test.setTimeout(180_000);
 	const log = h.collect(page);
 	await h.openGame(page);
-	// LAVA(SLCN) next to LAVA(SALT) -> LAVA(LITH) (upstream 2d7f5fa2)
+	// LAVA(SLCN) next to LAVA(SALT) -> LAVA(LITH) (upstream 2d7f5fa2), in a closed tank (molten lava runs off a
+	// bare floor) and above silicon's melting point (3538 K; colder silicon freezes and the reaction stops)
 	await h.luaFile(page, `
 		sim.clearSim()
-		sim.createWallBox(200, 300, 420, 307, 8)
+		sim.createWallBox(200, 300, 420, 307, 8) sim.createWallBox(200, 240, 207, 307, 8) sim.createWallBox(413, 240, 420, 307, 8)
 		for x = 220, 400 do for y = 280, 299 do
 			local i = sim.partCreate(-1, x, y, elem.DEFAULT_PT_LAVA)
 			sim.partProperty(i, "ctype", (x + y) % 2 == 0 and elem.DEFAULT_PT_SLCN or elem.DEFAULT_PT_SALT)
-			sim.partProperty(i, "temp", 2500)
+			sim.partProperty(i, "temp", 4000)
 		end end
 		return 0`);
 	await step(page, 300);
@@ -257,7 +258,7 @@ test('new reactions: LITH from molten SLCN + SALT, PTNM from molten gold in a va
 	const stor = await h.luaFile(page, 'return sim.partProperty(sim.partID(300, 200), "tmp")');
 	const photId = await h.luaFile(page, 'return elem.DEFAULT_PT_PHOT');
 	results.reactions = { lith, ptnm, acidicRime, acid, storHolds: stor };
-	expect(lith, 'LAVA(LITH) particles').toBeGreaterThan(5);
+	expect(lith, 'LAVA(LITH) particles (about 1480 of 3620 pairs react in 300 frames)').toBeGreaterThan(500);
 	expect(ptnm, 'LAVA(PTNM) particles').toBeGreaterThan(0);
 	expect(acidicRime, 'RIME with more than 5 GAS soaked up').toBeGreaterThan(20);
 	expect(acid, 'ACID from melted acidic RIME').toBeGreaterThan(20);

@@ -1333,7 +1333,7 @@ add{
 
 add{
 	id = "char-shelter", cat = "characters", diff = 2, title = "Shelter",
-	text = "Lava will rain down soon. Keep the stickman alive for 30 seconds.",
+	text = "Lava will rain down soon. Keep the stickman safe for 30 seconds (badly burned counts as dead).",
 	tools = { "WALL:WALL", "GLAS", "STNE", "INSL" }, ink = 400, survive = 30, failText = "the stickman died",
 	hints = { "Build a roof.", "Walls don't get hot." },
 	setup = function(S)
@@ -1344,9 +1344,22 @@ add{
 	each = function(S, st)
 		if st.frame >= 180 and st.frame < 900 and st.frame % 2 == 0 then
 			for k = 1, 3 do S.part(math.random(240, 371), 5, "LAVA") end
+			-- and a steady drip right above the stickman, so an unsheltered one is always hit
+			if st.frame % 10 == 0 then S.part(300 + (st.frame / 10) % 11, 5, "LAVA") end
 		end
 	end,
-	check = function(C) return C.count("STKM") > 0 and 1 or 0 end,
+	-- the stickman heals, floats up through lava and can respawn between checks, so "is it there" misses
+	-- deaths: a badly burned one (life under 50) counts as dead
+	check = function(C)
+		local alive = false
+		for i in sim.parts() do
+			if sim.partProperty(i, "type") == elem.DEFAULT_PT_STKM then
+				if sim.partProperty(i, "life") < 50 then return 0, "the stickman got badly burned" end
+				alive = true
+			end
+		end
+		return alive and 1 or 0
+	end,
 	solution = function(S)
 		S.walls(232, 280, 379, 283, "WALL")
 	end,

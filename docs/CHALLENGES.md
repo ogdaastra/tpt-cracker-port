@@ -91,7 +91,7 @@ The definitions, each with a reference solution that the browser tests play, are
 | Challenge | Difficulty | Goal | Tools | Ink | Time |
 |---|---|---|---|---|---|
 | Pest control | ●●○○○ | Get rid of the three fighters in the pit. | LAVA, ACID, FIRE, WATR | 700 | 45 s |
-| Shelter | ●●○○○ | Lava will rain down soon. Keep the stickman alive for 30 seconds. | WALL wall, GLAS, STNE, INSL | 400 | 30 s to hold |
+| Shelter | ●●○○○ | Lava will rain down soon. Keep the stickman safe for 30 seconds (badly burned counts as dead). | WALL wall, GLAS, STNE, INSL | 400 | 30 s to hold |
 
 ## Puzzles and records (4)
 

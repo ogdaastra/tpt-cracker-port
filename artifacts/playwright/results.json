@@ -4,7 +4,8 @@
       "/opt/node22/bin/node",
       "/home/user/tpt-cracker-port/tests/browser/node_modules/.bin/playwright",
       "test",
-      "perf.spec.mjs"
+      "challenges.spec.mjs",
+      "upstream-fixes.spec.mjs"
     ],
     "configFile": "/home/user/tpt-cracker-port/tests/browser/playwright.config.mjs",
     "rootDir": "/home/user/tpt-cracker-port/tests/browser",
@@ -78,18 +79,18 @@
   },
   "suites": [
     {
-      "title": "perf.spec.mjs",
-      "file": "perf.spec.mjs",
+      "title": "challenges.spec.mjs",
+      "file": "challenges.spec.mjs",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "cost of one simulation frame and one rendered frame",
+          "title": "every challenge: the reference solution wins",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 600000,
+              "timeout": 900000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -99,16 +100,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 17705,
+                  "duration": 58403,
                   "errors": [],
-                  "stdout": [
-                    {
-                      "text": "frame cost {\"powderBands\":{\"particles\":23982,\"simMsPerFrame\":3.639,\"renderMsPerFrame\":0.234,\"totalMsPerFrame\":3.873},\"liquidsAndFire\":{\"particles\":72085,\"simMsPerFrame\":6.164,\"renderMsPerFrame\":0.366,\"totalMsPerFrame\":6.53},\"powderBandsGravity\":{\"particles\":24012,\"simMsPerFrame\":3.45,\"renderMsPerFrame\":0.236,\"totalMsPerFrame\":3.686},\"electronics\":{\"particles\":34560,\"simMsPerFrame\":8.82,\"renderMsPerFrame\":1.413,\"totalMsPerFrame\":10.233}}\n"
-                    }
-                  ],
+                  "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-25T15:36:12.340Z",
+                  "startTime": "2026-10-25T16:32:47.268Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -116,18 +113,18 @@
               "status": "expected"
             }
           ],
-          "id": "686e6cf7131c11a78911-d5c7525b50939ab8bad9",
-          "file": "perf.spec.mjs",
+          "id": "ee2e7f1bab27b55fbee5-08707c3a9a1fb6767803",
+          "file": "challenges.spec.mjs",
           "line": 57,
           "column": 1
         },
         {
-          "title": "cost of one rendered frame in each display mode",
+          "title": "every challenge: doing nothing does not win",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 600000,
+              "timeout": 900000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -137,16 +134,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 21189,
+                  "duration": 255906,
                   "errors": [],
-                  "stdout": [
-                    {
-                      "text": "render cost by display mode {\"velocity\":2.62,\"pressure\":2.944,\"persistent\":2.637,\"fire\":3.428,\"blob\":3.41,\"heat\":3.738,\"fancy\":6.349,\"nothing\":3.354,\"heatGradient\":3.56,\"lifeGradient\":2.942,\"altVelocity\":2.419}\n"
-                    }
-                  ],
+                  "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-25T15:36:30.158Z",
+                  "startTime": "2026-10-25T16:33:45.812Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -154,9 +147,323 @@
               "status": "expected"
             }
           ],
-          "id": "686e6cf7131c11a78911-d3b4cf0ac73076b18388",
-          "file": "perf.spec.mjs",
+          "id": "ee2e7f1bab27b55fbee5-3dc0cfb817a8db74266d",
+          "file": "challenges.spec.mjs",
+          "line": 85,
+          "column": 1
+        },
+        {
+          "title": "play \"First light\" by hand from the page; the stars are saved",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 15303,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:01.731Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee2e7f1bab27b55fbee5-38a51c319421a92ec0fa",
+          "file": "challenges.spec.mjs",
+          "line": 103,
+          "column": 1
+        },
+        {
+          "title": "ink budget, hints, restart and the in-game challenge window",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 240000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9737,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:17.049Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ee2e7f1bab27b55fbee5-cef39c7b17ff5f815d69",
+          "file": "challenges.spec.mjs",
+          "line": 182,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "upstream-fixes.spec.mjs",
+      "file": "upstream-fixes.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "NaN velocity and sub-zero MERC no longer hang or crash the game",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4650,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:26.836Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-1a6bdd0aefd67ee2c70e",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "a neutron entering a portal through DMND leaves the particle maps consistent",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10161,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:31.498Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-15b8047ce5164122c943",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 53,
+          "column": 1
+        },
+        {
+          "title": "gas spreads evenly instead of drifting down and right",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4653,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:41.671Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-0eb47724fa9d7260457b",
+          "file": "upstream-fixes.spec.mjs",
           "line": 76,
+          "column": 1
+        },
+        {
+          "title": "heat capacity: a block with three times the capacity pulls the shared temperature towards its own",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12601,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:46.335Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-b05f60540b83045d339b",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 109,
+          "column": 1
+        },
+        {
+          "title": "vorticity confinement keeps air swirling, and the setting is saved with the simulation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7966,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:38:58.948Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-d19d07f90802de37b33b",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 144,
+          "column": 1
+        },
+        {
+          "title": "new reactions: LITH from molten SLCN + SALT, PTNM from molten gold in a vacuum, acid from gassy RIME, STOR holds a photon",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 180000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 32922,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:39:06.927Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-889d201d187cff29895d",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 191,
+          "column": 1
+        },
+        {
+          "title": "PROP values can be written in binary (0b...)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7497,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-25T16:39:39.859Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ae4a35c0b49d808d0065-5fcdd26bfd3f03c06faf",
+          "file": "upstream-fixes.spec.mjs",
+          "line": 271,
           "column": 1
         }
       ]
@@ -164,9 +471,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-25T15:36:11.569Z",
-    "duration": 40001.856,
-    "expected": 2,
+    "startTime": "2026-10-25T16:32:46.180Z",
+    "duration": 422201.72,
+    "expected": 11,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
