@@ -1,0 +1,373 @@
+diff --git a/src/PowderToySDL.cpp b/src/PowderToySDL.cpp
+index c270cc8..ecef746 100644
+--- a/src/PowderToySDL.cpp
++++ b/src/PowderToySDL.cpp
+@@ -58,6 +58,7 @@
+ #include "gui/game/Tool.h"
+ #include "graphics/Renderer.h"
+ #include "simulation/Simulation.h"
++#include "simulation/SaveRenderer.h"
+ #include "simulation/SimulationData.h"
+ #include "gui/game/GameView.h"
+ #include "gui/dialogues/ConfirmPrompt.h"
+@@ -1201,6 +1202,30 @@ extern "C"
+ 		}
+ 	}
+ 
++	// Renders the save or stamp file at path (as the game's own save browsers do, decorations and fire on)
++	// into a PNG of at most width x height pixels at outPath, keeping its aspect ratio; for the page's
++	// "My saves" gallery. Returns 1 on success, 0 if the file is missing or not a save.
++	EMSCRIPTEN_KEEPALIVE int tpt_save_thumbnail(const char *path, const char *outPath, int width, int height)
++	{
++		std::vector<char> data;
++		if (!Platform::ReadFile(data, path))
++			return 0;
++		try
++		{
++			GameSave save(data);
++			std::unique_ptr<VideoBuffer> thumb(SaveRenderer::Ref().Render(&save, true, true));
++			if (!thumb)
++				return 0;
++			thumb->Resize(width, height, true, true);
++			return thumb->WritePNG(outPath) ? 1 : 0;
++		}
++		catch (const std::exception &e)
++		{
++			std::cerr << "tpt_save_thumbnail: " << path << ": " << e.what() << std::endl;
++			return 0;
++		}
++	}
++
+ 	// Runs the simulation (what = 0) or the particle renderer (what = 1) for the given number of frames
+ 	// as fast as possible and returns the milliseconds taken; for benchmarks
+ 	// (tests/browser/perf.spec.mjs). Ignores pause, like single-frame stepping.
+diff --git a/tests/browser/tpt.spec.mjs b/tests/browser/tpt.spec.mjs
+index 4b42836..8ea29a5 100644
+--- a/tests/browser/tpt.spec.mjs
++++ b/tests/browser/tpt.spec.mjs
+@@ -168,11 +168,11 @@ test('save export and import round trip, persistence across reload', async ({ pa
+ 
+ 	// export through the page
+ 	await page.click('#btn-export');
+-	await expect(page.locator('#export-list')).toContainText('roundtrip.cps');
++	await expect(page.locator('#export-list li[data-name="roundtrip.cps"]')).toBeVisible();
+ 	await h.saveScreenshot(page, '05-export-dialog');
+ 	const [download] = await Promise.all([
+ 		page.waitForEvent('download'),
+-		page.locator('#export-list li', { hasText: 'roundtrip.cps' }).locator('button').click(),
++		page.locator('#export-list li[data-name="roundtrip.cps"] button[data-action=download]').click(),
+ 	]);
+ 	const exported = path.join(h.ARTIFACTS, 'roundtrip-exported.cps');
+ 	await download.saveAs(exported);
+diff --git a/web/index.html b/web/index.html
+index e0e7d20..77b76db 100644
+--- a/web/index.html
++++ b/web/index.html
+@@ -17,7 +17,7 @@
+ 	<nav class="actions">
+ 		<button type="button" id="btn-import" disabled title="Load a .cps or .stm save file from your computer">Import save…</button>
+ 		<input type="file" id="file-import" accept=".cps,.stm" hidden>
+-		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
++		<button type="button" id="btn-export" disabled title="Your saves and stamps: open, rename, download or delete them">My saves…</button>
+ 		<button type="button" id="btn-record" disabled title="Record a video or GIF of the game, or take a screenshot">Record…</button>
+ 		<button type="button" id="btn-challenges" disabled title="Puzzles to solve with a limited set of elements">Challenges…</button>
+ 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
+@@ -75,13 +75,26 @@
+ 	</div>
+ </main>
+ 
+-<dialog id="export-dialog" aria-labelledby="export-title">
++<dialog id="export-dialog" class="saves-dialog" aria-labelledby="export-title">
+ 	<form method="dialog">
+-		<h2 id="export-title">Saves stored in this browser</h2>
+-		<p class="hint">Save a simulation in the game with the save button in the bottom bar
+-			(you are not logged in, so it saves locally); it then appears here.</p>
+-		<ul id="export-list"></ul>
+-		<p><button value="close">Close</button></p>
++		<h2 id="export-title">My saves</h2>
++		<div class="saves-toolbar">
++			<nav id="saves-kinds" aria-label="Saves or stamps">
++				<button type="button" data-kind="save" class="active">Saves <span></span></button>
++				<button type="button" data-kind="stamp">Stamps <span></span></button>
++			</nav>
++			<input type="search" id="saves-search" placeholder="Search by name…" aria-label="Search saves" autocomplete="off" spellcheck="false">
++			<select id="saves-sort" aria-label="Sort">
++				<option value="newest">Newest first</option>
++				<option value="oldest">Oldest first</option>
++				<option value="name">Name</option>
++				<option value="size">Size</option>
++			</select>
++		</div>
++		<p class="hint">Saves made in the game with the save button in the bottom bar (you are not logged in, so they
++			save locally), saves you imported, and stamps. They are kept in this browser.</p>
++		<ul id="export-list" class="saves-grid"></ul>
++		<p class="dialog-buttons"><button value="close">Close</button></p>
+ 	</form>
+ </dialog>
+ 
+diff --git a/web/style.css b/web/style.css
+index df37e8c..f741892 100644
+--- a/web/style.css
++++ b/web/style.css
+@@ -344,3 +344,46 @@ dialog h2 { margin-top: 0; font-size: 16px; }
+ }
+ #update-bar[hidden] { display: none; }
+ #offline-note { color: var(--accent); }
++
++/* "My saves" gallery */
++.saves-dialog { width: min(920px, 96vw); }
++.saves-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
++.saves-toolbar input[type=search] { flex: 1; min-width: 160px; }
++#saves-kinds { display: flex; gap: 4px; }
++#saves-kinds button.active { border-color: var(--accent); color: var(--accent); }
++.saves-dialog .hint.message { color: var(--danger); }
++.saves-grid {
++	list-style: none;
++	margin: 8px 0;
++	padding: 0;
++	display: grid;
++	grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
++	gap: 10px;
++	max-height: 60vh;
++	overflow-y: auto;
++}
++.saves-grid li {
++	display: flex;
++	flex-direction: column;
++	gap: 4px;
++	padding: 6px;
++	background: var(--bg);
++	border: 1px solid var(--border);
++	border-radius: 6px;
++	min-width: 0;
++}
++.saves-grid li.empty { grid-column: 1 / -1; border-style: dashed; color: var(--muted); }
++.save-thumb {
++	width: 100%;
++	height: auto;
++	aspect-ratio: 204 / 128;
++	background: #000;
++	image-rendering: pixelated;
++	border-radius: 3px;
++}
++.save-thumb.broken { background: repeating-linear-gradient(45deg, #222 0 6px, #2a2a2a 6px 12px); }
++.save-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.save-meta { color: var(--muted); font-size: 12px; }
++.save-actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
++.save-actions button { padding: 2px 8px; }
++.saves-grid input[type=text] { width: 100%; }
+diff --git a/web/tpt-web.js b/web/tpt-web.js
+index 265e7ec..6b28d76 100644
+--- a/web/tpt-web.js
++++ b/web/tpt-web.js
+@@ -185,29 +185,200 @@
+ 		setTimeout(() => URL.revokeObjectURL(url), 10000);
+ 	}
+ 
+-	function showExportDialog() {
++	// "My saves": every save and stamp in the browser's storage, with thumbnails drawn by the game itself
++	// (tpt_save_thumbnail renders a save like the game's own save browser does).
++	const gallery = { kind: 'save', thumbs: new Map(), queue: [], rendering: false };
++	window.tptPage.gallery = gallery;
++	const THUMB_W = 204, THUMB_H = 128;
++
++	function formatDate(d) {
++		return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
++	}
++
++	// thumbnails are drawn one at a time between game frames, so a long list never freezes the game
++	function pumpThumbnails() {
++		if (gallery.rendering) {
++			return;
++		}
++		const job = gallery.queue.shift();
++		if (!job) {
++			return;
++		}
++		gallery.rendering = true;
++		setTimeout(() => {
++			let url = null;
++			try {
++				const out = '/tmp/tpt-thumb.png';
++				if (mod.ccall('tpt_save_thumbnail', 'number', ['string', 'string', 'number', 'number'], [job.file.path, out, THUMB_W, THUMB_H])) {
++					url = URL.createObjectURL(new Blob([mod.FS.readFile(out)], { type: 'image/png' }));
++					mod.FS.unlink(out);
++				}
++			} catch (e) {
++				rememberError('thumbnail: ' + e);
++			}
++			gallery.thumbs.set(job.key, url);
++			job.done(url);
++			gallery.rendering = false;
++			pumpThumbnails();
++		}, 0);
++	}
++
++	function thumbnailFor(file, img) {
++		const key = `${file.path}|${+file.mtime}|${file.size}`;
++		if (gallery.thumbs.has(key)) {
++			const url = gallery.thumbs.get(key);
++			url ? (img.src = url) : img.classList.add('broken');
++			return;
++		}
++		gallery.queue.push({ key, file, done: (url) => (url ? (img.src = url) : img.classList.add('broken')) });
++		pumpThumbnails();
++	}
++
++	function sortedFiles() {
++		const query = $('saves-search').value.trim().toLowerCase();
++		const files = listSaves().filter((f) => f.kind === gallery.kind && (!query || f.name.toLowerCase().includes(query)));
++		const by = $('saves-sort').value;
++		const cmp = {
++			newest: (a, b) => b.mtime - a.mtime,
++			oldest: (a, b) => a.mtime - b.mtime,
++			name: (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }),
++			size: (a, b) => b.size - a.size,
++		}[by];
++		return files.sort(cmp);
++	}
++
++	function cardButton(text, action, handler) {
++		const b = document.createElement('button');
++		b.type = 'button';
++		b.textContent = text;
++		b.dataset.action = action;
++		b.addEventListener('click', handler);
++		return b;
++	}
++
++	function renameFile(file, li) {
++		const dot = file.name.lastIndexOf('.');
++		const ext = file.name.slice(dot);
++		const input = document.createElement('input');
++		input.type = 'text';
++		input.value = file.name.slice(0, dot);
++		input.setAttribute('aria-label', 'New name');
++		const name = li.querySelector('.save-name');
++		name.replaceWith(input);
++		input.focus();
++		input.select();
++		let finished = false;
++		const finish = (save) => {
++			if (finished) {
++				return;
++			}
++			finished = true;
++			const wanted = input.value.trim().replace(/[\\/:*?"<>|]/g, '_');
++			if (save && wanted && wanted + ext !== file.name) {
++				const dir = file.path.slice(0, file.path.lastIndexOf('/'));
++				const target = `${dir}/${wanted}${ext}`;
++				if (exists(target)) {
++					setGalleryMessage(`There is already a file called ${wanted}${ext}.`);
++				} else {
++					mod.FS.rename(file.path, target);
++				}
++			}
++			renderGallery();
++		};
++		input.addEventListener('keydown', (e) => {
++			e.stopPropagation();
++			if (e.key === 'Enter') {
++				e.preventDefault();
++				finish(true);
++			} else if (e.key === 'Escape') {
++				e.preventDefault();
++				finish(false);
++			}
++		});
++		input.addEventListener('blur', () => finish(true));
++	}
++
++	function confirmDelete(file, li) {
++		const actions = li.querySelector('.save-actions');
++		actions.textContent = '';
++		const label = document.createElement('span');
++		label.textContent = 'Delete it?';
++		actions.append(label,
++			cardButton('Delete', 'confirm-delete', () => {
++				mod.FS.unlink(file.path);
++				renderGallery();
++			}),
++			cardButton('Keep', 'cancel-delete', () => renderGallery()));
++	}
++
++	function setGalleryMessage(text) {
++		const hint = $('export-dialog').querySelector('.hint');
++		hint.textContent = text;
++		hint.classList.add('message');
++	}
++
++	function renderGallery() {
+ 		const list = $('export-list');
+ 		list.textContent = '';
+-		const files = listSaves();
++		const all = listSaves();
++		for (const b of $('saves-kinds').querySelectorAll('button')) {
++			b.classList.toggle('active', b.dataset.kind === gallery.kind);
++			b.querySelector('span').textContent = `(${all.filter((f) => f.kind === b.dataset.kind).length})`;
++		}
++		const files = sortedFiles();
+ 		if (!files.length) {
+ 			const li = document.createElement('li');
+-			li.textContent = 'No saves yet.';
++			li.className = 'empty';
++			li.textContent = $('saves-search').value.trim() ? 'Nothing matches.' :
++				gallery.kind === 'save' ? 'No saves yet.' : 'No stamps yet.';
+ 			list.append(li);
+ 		}
+ 		for (const f of files) {
+ 			const li = document.createElement('li');
+-			const label = document.createElement('span');
+-			label.textContent = `${f.name} (${f.kind}, ${(f.size / 1024).toFixed(1)} KiB)`;
+-			const btn = document.createElement('button');
+-			btn.type = 'button';
+-			btn.textContent = 'Download';
+-			btn.addEventListener('click', () => download(f.path, f.name));
+-			li.append(label, btn);
++			li.dataset.name = f.name;
++			const img = document.createElement('img');
++			img.className = 'save-thumb';
++			img.alt = '';
++			img.width = THUMB_W;
++			img.height = THUMB_H;
++			thumbnailFor(f, img);
++			const name = document.createElement('span');
++			name.className = 'save-name';
++			name.textContent = f.name.replace(/\.(cps|stm)$/i, '');
++			name.title = f.name;
++			const meta = document.createElement('span');
++			meta.className = 'save-meta';
++			meta.textContent = `${formatDate(f.mtime)} · ${(f.size / 1024).toFixed(1)} KiB`;
++			const actions = document.createElement('span');
++			actions.className = 'save-actions';
++			actions.append(
++				cardButton('Open', 'open', () => {
++					$('export-dialog').close();
++					mod.ccall('tpt_open_file', null, ['string'], [f.path]);
++				}),
++				cardButton('Rename', 'rename', () => renameFile(f, li)),
++				cardButton('Download', 'download', () => download(f.path, f.name)),
++				cardButton('Delete', 'delete', () => confirmDelete(f, li)));
++			li.append(img, name, meta, actions);
+ 			list.append(li);
+ 		}
++	}
++
++	function showExportDialog() {
++		renderGallery();
+ 		$('export-dialog').showModal();
+ 	}
+ 
++	for (const b of $('saves-kinds').querySelectorAll('button')) {
++		b.addEventListener('click', () => {
++			gallery.kind = b.dataset.kind;
++			renderGallery();
++		});
++	}
++	$('saves-search').addEventListener('input', renderGallery);
++	$('saves-search').addEventListener('keydown', (e) => e.stopPropagation());
++	$('saves-sort').addEventListener('change', renderGallery);
++
+ 	// ------------------------------------------------------------------ controls
+ 	$('btn-import').addEventListener('click', () => $('file-import').click());
+ 	$('file-import').addEventListener('change', async (e) => {
