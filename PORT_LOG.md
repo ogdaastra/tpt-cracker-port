@@ -583,3 +583,29 @@ equivalent edits, each marked with the upstream commit in a comment):
   `beforesimdraw`/`aftersimdraw` events (they need Lua drawing redirected into the simulation buffer; this
   version draws Lua graphics on the interface layer); Lua-defined tools, `MenuSort` and `!get` (they build on
   upstream's reworked Lua API, which this mod's scripts do not use). Each could be done on its own later.
+
+## 23. Threads: a threaded build for cross-origin isolated pages
+
+- **Phase 0, measured** (`perf.spec.mjs` gained a gravity scene; `tpt_benchmark` includes the gravity
+  update): Newtonian gravity only costs anything when its field changes, i.e. with moving gravity sources
+  (GRVT, eating black holes). Then it takes about 2-4 ms per frame on the main thread (scene of GRVT and NBHL:
+  1.2 ms per frame without gravity, 3.5 ms with). Most other time is the particle loop, which TPT runs on one
+  thread on every platform; rendering is 0.3-3 ms.
+- **Phase 1, spike:** a small JSPI + pthreads program (a worker counting while the main thread sleeps
+  through JSPI) works in Chromium on a cross-origin isolated page (counter 81k -> 444k over five 200 ms
+  sleeps, thread joined) and fails without isolation, as expected (SharedArrayBuffer not allowed).
+- **Phase 2, built:** `WASM_THREADS=1` builds a second sysroot with `-pthread` (Emscripten's `-mt` port
+  variants for SDL2/libpng) and the game with `-Dweb_threads=true` (`-pthread`, a pool of 2 workers created
+  up front, `TPT_WEB_THREADS`), into `build-wasm-mt/`; `dist/` carries it as `powder-mt.js`/`.wasm` next to
+  the single-threaded build. Only the gravity thread runs for real; background tasks and search stay on the
+  main thread (their file system access would cross threads). The site now sends COOP/COEP headers
+  (`wasm/vercel.json`), the page picks `powder-mt.*` when `crossOriginIsolated` (and `?threads=0` forces the
+  single-threaded build); without the headers or offline it falls back. The offline ZIP only has the
+  single-threaded build. CI builds both and validates both binaries.
+- **Tests** (`threads.spec.mjs`): over HTTP the page is isolated, downloads `powder-mt.wasm` and runs
+  threaded; a dust particle 50 px from a block of black holes is pulled in and eaten in 2 s in both builds;
+  with a changing gravity field, gravity adds 0.04 ms per frame to the main thread threaded and 2.3 ms
+  single-threaded (`?threads=0`). With the COOP/COEP headers stripped from every response the page is not
+  isolated, uses the single-threaded build and never downloads `powder-mt.*`.
+- **Not done:** upstream's render thread (it needs upstream's renderer split); the gain would be the
+  0.3-3 ms of rendering per frame.

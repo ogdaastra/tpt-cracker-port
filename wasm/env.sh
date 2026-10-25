@@ -9,8 +9,13 @@ WASM_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TPT_EMSDK_VERSION="$(tr -d '[:space:]' < "$WASM_REPO_ROOT/wasm/emsdk-version.txt")"
 : "${EMSDK_DIR:=$WASM_REPO_ROOT/.cache/emsdk}"
 : "${WASM_WORK:=$WASM_REPO_ROOT/build-wasm-deps}"
-: "${WASM_PREFIX:=$WASM_WORK/prefix}"
-export EMSDK_DIR WASM_WORK WASM_PREFIX TPT_EMSDK_VERSION WASM_REPO_ROOT
+: "${WASM_THREADS:=0}"
+if [ "$WASM_THREADS" = 1 ]; then
+	: "${WASM_PREFIX:=$WASM_WORK/prefix-mt}"
+else
+	: "${WASM_PREFIX:=$WASM_WORK/prefix}"
+fi
+export EMSDK_DIR WASM_WORK WASM_PREFIX TPT_EMSDK_VERSION WASM_REPO_ROOT WASM_THREADS
 
 if [ ! -x "$EMSDK_DIR/emsdk" ]; then
 	echo "[env] cloning emsdk into $EMSDK_DIR"

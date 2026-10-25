@@ -219,3 +219,9 @@ option(
 	value: 'disabled',
 	description: 'Render icons with Inkscape (inkscape binary needs to be in PATH)'
 )
+option(
+	'web_threads',
+	type: 'boolean',
+	value: false,
+	description: 'WebAssembly only: build with pthreads (the gravity thread); the page must be cross-origin isolated'
+)

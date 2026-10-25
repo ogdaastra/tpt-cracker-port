@@ -17,6 +17,7 @@ mkdir -p "$STAGE/$NAME"
 
 cp -r "$DIST/." "$STAGE/$NAME/"
 rm -f "$STAGE/$NAME/vercel.json" # hosting config, meaningless offline
+rm -f "$STAGE/$NAME/powder-mt.js" "$STAGE/$NAME/powder-mt.wasm" # threads need cross-origin isolation, which file:// never has
 # file:// pages may not fetch() files, but may load scripts: ship the binary as a script as well.
 {
 	printf 'window.TPT_WASM_BASE64="'

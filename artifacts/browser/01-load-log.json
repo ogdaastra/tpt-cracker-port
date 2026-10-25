@@ -10,24 +10,43 @@
       "scripts"
     ],
     "timings": {
-      "start": 34.19999999925494,
-      "instantiated": 163.09999999776483,
-      "runtimeReady": 513.7999999970198,
-      "firstFrame": 538.3999999985099
+      "start": 94.43500000238419,
+      "instantiated": 282.054999999702,
+      "runtimeReady": 635.429999999702,
+      "firstFrame": 661.4900000020862
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "68d70b3cdda53fc938574ba5ca19e93630bb7850",
+      "commit": "8281d460173e1d25151d7fda53e5c5edc9eeabe6",
       "dirty": true,
       "emscripten": "4.0.23",
-      "wasmBytes": 5672012,
-      "built": "2026-10-25T13:14:32Z"
+      "wasmBytes": 5674941,
+      "threaded": {
+        "wasmBytes": 5780872
+      },
+      "built": "2026-10-25T13:57:52Z"
     }
   },
   "console": [
     {
       "type": "log",
       "text": "TPTMP v2.0.28: Cannot load: no TCP socket support in this build (e.g. the browser version)"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x8cc001d8a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x8cc001d8a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x8cc001d8a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x8cc001d8a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
     }
   ],
   "requests": [
@@ -57,14 +76,34 @@
       "type": "application/json; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/powder.js",
+      "url": "http://127.0.0.1:8765/powder-mt.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/powder.wasm",
+      "url": "http://127.0.0.1:8765/powder-mt.wasm",
       "status": 200,
       "type": "application/wasm"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
     }
   ],
   "pageErrors": []

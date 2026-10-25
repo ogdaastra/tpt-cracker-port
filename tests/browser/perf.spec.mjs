@@ -21,6 +21,14 @@ const SCENES = {
 		for y = 250, 379 do for x = 10, 600 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_WATR) end end
 		for y = 150, 189 do for x = 10, 600 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_SAND) end end
 		for x = 10, 600, 3 do sim.partCreate(-1, x, 140, elem.DEFAULT_PT_FIRE) end`,
+	// the powder bands again with Newtonian gravity on and black holes (section 5 of docs/NEXT-PLANS.md: what a
+	// gravity thread could save); the gravity field is computed on the main thread in this build
+	powderBandsGravity: `
+		sim.clearSim()
+		tpt.newtonian_gravity(1)
+		for y = 30, 190, 8 do for x = 20, 590 do for d = 0, 1 do sim.partCreate(-1, x, y + d, elem.DEFAULT_PT_DUST) end end end
+		-- only some elements make gravity; black holes that keep eating change the field every frame
+		for x = 40, 580, 60 do for y = 240, 340, 50 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_NBHL) end end`,
 	// powered electronics: metal wires fed by batteries, with switches and copper (~25k particles)
 	electronics: `
 		sim.clearSim()
@@ -52,7 +60,7 @@ test('cost of one simulation frame and one rendered frame', async ({ page }) => 
 	await h.lua(page, 'tpt.set_pause(1) or 0'); // scenes start from the same state; the benchmark steps them itself
 	const out = {};
 	for (const [name, code] of Object.entries(SCENES)) {
-		await h.luaFile(page, code + '\nreturn 0', 120_000);
+		await h.luaFile(page, 'tpt.newtonian_gravity(0)\n' + code + '\nreturn 0', 120_000);
 		await page.evaluate(() => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [20, 0])); // warm-up
 		const n = Number(await h.luaFile(page, 'local n = 0 for i in sim.parts() do n = n + 1 end return n'));
 		const simMs = await frameCost(page, 0, 7, 30);
@@ -85,7 +93,7 @@ for (const throttle of (process.env.PERF_THROTTLES || '').split(',').filter(Bool
 		}
 		const out = { idle: Math.round(await ticksPerSecond(page, 4000) * 10) / 10 };
 		for (const [name, code] of Object.entries(SCENES)) {
-			await h.luaFile(page, code + '\nreturn 0', 120_000);
+			await h.luaFile(page, 'tpt.newtonian_gravity(0)\n' + code + '\nreturn 0', 120_000);
 			await h.waitFrames(page, 30); // let the scene settle a little
 			// sim.NUM_PARTS is only refreshed at the start of a frame, so count the particles directly
 			const n = Number(await h.luaFile(page, 'local n = 0 for i in sim.parts() do n = n + 1 end return n'));

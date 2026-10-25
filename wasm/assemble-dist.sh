@@ -2,6 +2,7 @@
 # Assembles the static site in dist/ from a finished build directory:
 #   index.html, style.css, tpt-web.js         page (web/)
 #   powder.js, powder.wasm                    the game (Emscripten output)
+#   powder-mt.js, powder-mt.wasm              the threaded build, if build-wasm-mt/ (MT_BUILD_DIR) has one
 #   build-info.json                           provenance shown on the page
 #   LICENSE.txt, SOURCE.html,                 GPL-3.0 text, where the corresponding source is,
 #   THIRD_PARTY_NOTICES.txt, source/          bundled source archives
@@ -23,6 +24,14 @@ mkdir -p "$DIST/source"
 cp web/index.html web/style.css web/tpt-web.js "$DIST/"
 mkdir -p "$DIST/vendor" && cp web/vendor/gifenc.js web/vendor/gifenc.LICENSE.md "$DIST/vendor/"
 cp "$BUILD_DIR/powder.js" "$BUILD_DIR/powder.wasm" "$DIST/"
+# The threaded build (wasm/build.sh with WASM_THREADS=1); the page loads it when cross-origin isolated.
+MT_BUILD_DIR="${MT_BUILD_DIR:-$ROOT/build-wasm-mt}"
+threaded=null
+if [ -f "$MT_BUILD_DIR/powder.js" ] && [ -f "$MT_BUILD_DIR/powder.wasm" ]; then
+	cp "$MT_BUILD_DIR/powder.js" "$DIST/powder-mt.js"
+	cp "$MT_BUILD_DIR/powder.wasm" "$DIST/powder-mt.wasm"
+	threaded="{ \"wasmBytes\": $(stat -c %s "$DIST/powder-mt.wasm") }"
+fi
 cp LICENSE "$DIST/LICENSE.txt"
 cp wasm/vercel.json "$DIST/vercel.json"
 
@@ -41,6 +50,7 @@ cat > "$DIST/build-info.json" <<EOF
 	"dirty": $dirty,
 	"emscripten": "$emcc_version",
 	"wasmBytes": $wasm_bytes,
+	"threaded": $threaded,
 	"built": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF

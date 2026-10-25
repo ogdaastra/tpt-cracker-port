@@ -896,8 +896,13 @@
 		});
 	}
 
+	// The threaded build (gravity on its own thread) needs SharedArrayBuffer, which browsers only give to
+	// cross-origin isolated pages (the COOP/COEP headers in vercel.json). Otherwise, offline, or with
+	// ?threads=0, the single-threaded build runs.
+	let wasmFile = 'powder.wasm';
+
 	function instantiateWithProgress(imports, receiveInstance) {
-		const total = buildInfo.wasmBytes || 0;
+		const total = (wasmFile === 'powder-mt.wasm' ? buildInfo.threaded && buildInfo.threaded.wasmBytes : buildInfo.wasmBytes) || 0;
 		if (location.protocol === 'file:') {
 			loadWasmFromScript()
 				.then((bytes) => WebAssembly.instantiate(bytes, imports))
@@ -909,9 +914,9 @@
 			return {};
 		}
 		(async () => {
-			const response = await fetch('powder.wasm');
+			const response = await fetch(wasmFile);
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status} ${response.statusText} while downloading powder.wasm`);
+				throw new Error(`HTTP ${response.status} ${response.statusText} while downloading ${wasmFile}`);
 			}
 			let source = response;
 			if (response.body && typeof ReadableStream === 'function') {
@@ -1007,10 +1012,15 @@
 	buildInfoRequest.then((info) => {
 		buildInfo = info || {};
 		window.tptPage.buildInfo = buildInfo;
+		const threads = !!(buildInfo.threaded && self.crossOriginIsolated && typeof SharedArrayBuffer === 'function' &&
+			new URLSearchParams(location.search).get('threads') !== '0');
+		window.tptPage.threads = threads;
+		wasmFile = threads ? 'powder-mt.wasm' : 'powder.wasm';
+		const jsFile = threads ? 'powder-mt.js' : 'powder.js';
 		const script = document.createElement('script');
-		script.src = 'powder.js';
+		script.src = jsFile;
 		script.onload = start;
-		script.onerror = () => fail('Could not download the game (powder.js).', 'Check your connection and reload the page.');
+		script.onerror = () => fail(`Could not download the game (${jsFile}).`, 'Check your connection and reload the page.');
 		document.head.append(script);
 	});
 })();

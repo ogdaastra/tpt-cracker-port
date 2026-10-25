@@ -21,6 +21,18 @@ Linux or WSL2 with git, Python 3, Meson >= 0.61, Ninja, pkg-config, curl, zip an
 ./wasm/build.sh          # configures build-wasm/, builds powder.js + powder.wasm, assembles dist/
 ```
 
+**Threaded variant** (optional, used by the page when it is cross-origin isolated):
+
+```sh
+WASM_THREADS=1 ./wasm/build-deps.sh   # second sysroot, everything compiled with -pthread (prefix-mt/)
+WASM_THREADS=1 ./wasm/build.sh        # build-wasm-mt/, then dist/ gets powder-mt.js + powder-mt.wasm too
+```
+
+The site sends `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`
+(`wasm/vercel.json`), which makes the page cross-origin isolated; the page then loads `powder-mt.*`, where
+Newtonian gravity runs on its own thread. Without those headers, opened from disk, or with `?threads=0`,
+it loads the single-threaded `powder.*`. The offline ZIP only carries the single-threaded build.
+
 `EMSDK_DIR` picks where emsdk lives (default `.cache/emsdk`). Where `github.com/<repo>/archive/...`
 downloads are blocked, `TPT_SEED_PORTS=1 ./wasm/build-deps.sh` seeds Emscripten's port cache from the
 same versions via `git clone` / checksummed tarballs. The native desktop build is unchanged
@@ -36,7 +48,7 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
 screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
-`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 `PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
 times simulation and render frames inside the game (`tpt_benchmark`), writing `artifacts/browser/perf.json`.
@@ -76,7 +88,7 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | Mod updater (URS), game updater | unavailable; the URS check reports "URS updater: offline" |
 | Lua | PUC Lua 5.1 instead of LuaJIT: same language, slower scripts, no `ffi` |
 | Saves, stamps, settings, scripts | kept in the browser (IndexedDB) per site address; Export/Import buttons move them as `.cps` files |
-| Threads | none: gravity and background tasks run on the main thread |
+| Threads | the threaded build (cross-origin isolated pages) runs Newtonian gravity on its own thread; background tasks and the single-threaded fallback run on the main thread |
 | Window | the page scales the canvas; the page's Fullscreen button replaces the in-game one |
 | Menus | 17 px wider window: a second column of menu buttons holds five menus split off the longest ones (see `ADDED_ELEMENTS.md`); the page adds a searchable Elements panel |
 | `platform.restart()` | reloads the page; `platform.openLink()` opens a new tab |
