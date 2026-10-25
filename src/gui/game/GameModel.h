@@ -11,6 +11,9 @@
 #include "client/User.h"
 #include "gui/interface/Point.h"
 
+// hollow ellipse, square and triangle brushes (TPT Ultimata), the last three entries of the brush list
+#define HOLLOW_BRUSHES 3
+
 class Menu;
 class Tool;
 class QuickOption;
@@ -82,6 +85,7 @@ private:
 	bool mouseClickRequired;
 	bool includePressure;
 	bool perfectCircle = true;
+	bool currentlySelectingHollow = false; // Shift+Tab switches between solid and hollow brushes
 	int temperatureScale;
 
 	size_t activeColourPreset;
@@ -183,7 +187,7 @@ public:
 	Brush * GetBrush();
 	std::vector<Brush*> GetBrushList();
 	int GetBrushID();
-	void SetBrushID(int i);
+	void SetBrushID(int i, bool toggleHollow = false);
 
 	void SetVote(int direction);
 	SaveInfo * GetSave();
@@ -204,6 +208,19 @@ public:
 	bool GetNewtonianGrvity();
 	void ShowGravityGrid(bool showGrid);
 	bool GetGravityGrid();
+	// TPT Ultimata's field simulations and their views (quick options in the second side-bar column)
+	void ShowTimeDilation(bool show);
+	bool GetTimeDilation();
+	void ShowElectricField(bool show);
+	bool GetElectricField();
+	void ShowMagneticField(bool show);
+	bool GetMagneticField();
+	void SetEMEnabled(bool enabled);
+	bool GetEMEnabled();
+	void ToggleStress(bool enabled);
+	bool GetStress();
+	void ToggleStressView(bool enabled);
+	bool GetStressView();
 	void ClearSimulation();
 	std::vector<Menu*> GetMenuList();
 	std::vector<QuickOption*> GetQuickOptions();

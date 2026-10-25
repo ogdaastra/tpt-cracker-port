@@ -13,7 +13,7 @@
     "Radioactive": 28,
     "Special": 25,
     "Game Of Life": 39,
-    "Tools": 21,
+    "Tools": 26,
     "Decoration tools": 7,
     "Life and Nature": 25,
     "Space and Gravity": 12,
@@ -22,7 +22,7 @@
     "Metals": 15
   },
   "panel": {
-    "chips": 448
+    "chips": 453
   },
   "phone": {
     "scrollWidth": 375,

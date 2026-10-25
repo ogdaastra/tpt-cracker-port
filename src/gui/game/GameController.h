@@ -157,7 +157,7 @@ public:
 	void ClearSim();
 	void ReloadSim();
 	void Vote(int direction);
-	void ChangeBrush();
+	void ChangeBrush(bool toggleHollow = false);
 	void ShowConsole();
 	void HideConsole();
 	void FrameStep();

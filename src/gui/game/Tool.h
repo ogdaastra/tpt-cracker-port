@@ -3,6 +3,8 @@
 #include "Config.h"
 
 #include "common/String.h"
+#include <tuple>
+#include <vector>
 #include "gui/interface/Point.h"
 #include "simulation/StructProperty.h"
 
@@ -61,6 +63,64 @@ public:
 	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override { }
 };
 
+// Tools from TPT Ultimata (Bowserinator, GPL-3.0)
+class TextTool: public Tool {
+public:
+	GameModel * gameModel;
+	TextTool(GameModel *model):
+	Tool(0, "TEXT", "Text tool. Click on a spot to place text, you can drag the marker before placing.", 0, 0, 0, "DEFAULT_UI_TEXT", TextTool::GetIcon),
+	gameModel(model) {
+	}
+	static VideoBuffer * GetIcon(int toolID, int width, int height);
+	virtual ~TextTool() {}
+	void Click(Simulation * sim, Brush * brush, ui::Point position) override;
+	void Draw(Simulation * sim, Brush * brush, ui::Point position) override { }
+	void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) override { }
+	void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) override { }
+	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override { }
+};
+
+class RulerTool: public Tool {
+public:
+	GameModel * gameModel;
+	RulerTool(GameModel *model):
+	Tool(0, "RULR", "Ruler. Click two points to measure distance.", 0, 0, 0, "DEFAULT_UI_RULER", RulerTool::GetIcon),
+	  gameModel(model) {}
+	static VideoBuffer * GetIcon(int toolID, int width, int height);
+	virtual ~RulerTool() {}
+	void Click(Simulation * sim, Brush * brush, ui::Point position) override;
+	void Draw(Simulation * sim, Brush * brush, ui::Point position) override { }
+	void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) override { }
+	void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) override { }
+	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override { }
+};
+class TransformTool: public Tool {
+public:
+	GameModel * gameModel;
+	TransformTool(GameModel *model) : Tool(0, "TRFM", "Transform tool. Select a rectangle and resize and rotate selection.", 0x9b, 0xbc, 0xcc, "DEFAULT_UI_TRANSFORM", NULL),
+								   gameModel(model) {}
+	virtual ~TransformTool() {}
+	void Click(Simulation * sim, Brush * brush, ui::Point position) override;
+	void Draw(Simulation * sim, Brush * brush, ui::Point position) override { }
+	void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) override { }
+	void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) override { }
+	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override { }
+};
+
+class ConfigTool: public Tool {
+public:
+	GameModel * gameModel;
+	ConfigTool(GameModel *model):
+	Tool(0, "CNFG", "Config tool. Allows you to configurate certain particles like WIFI or QLOG by clicking on them.", 0x05, 0xe3, 0x77, "DEFAULT_UI_CONFIG", NULL),
+	  gameModel(model) {}
+	virtual ~ConfigTool() {}
+	void Click(Simulation * sim, Brush * brush, ui::Point position) override;
+	void Draw(Simulation * sim, Brush * brush, ui::Point position) override { }
+	void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) override { }
+	void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) override { }
+	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override { }
+};
+
 class SampleTool: public Tool
 {
 	GameModel * gameModel;
@@ -96,6 +156,26 @@ public:
 
 	void OpenWindow(Simulation *sim);
 	virtual ~PropertyTool() {}
+	virtual void SetProperty(Simulation *sim, ui::Point position);
+	void Click(Simulation * sim, Brush * brush, ui::Point position) override { }
+	void Draw(Simulation *sim, Brush *brush, ui::Point position) override;
+	void DrawLine(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2, bool dragging = false) override;
+	void DrawRect(Simulation * sim, Brush * brush, ui::Point position1, ui::Point position2) override;
+	void DrawFill(Simulation * sim, Brush * brush, ui::Point position) override;
+};
+
+class PropertyTool2: public Tool {
+public:
+	PropertyTool2():
+	Tool(0, "PRP2", "Multi-Property Drawing Tool. Use to alter the properties of elements in the field.", 254, 119, 0, "DEFAULT_UI_PROPERTY2", NULL) {}
+	
+	std::vector<std::tuple<StructProperty::PropertyType, PropertyValue, int, size_t> > props;
+	std::tuple<StructProperty::PropertyType, PropertyValue, int, size_t> change_type;
+	bool changed_type;
+	int counter = 0;
+
+	void OpenWindow(Simulation *sim);
+	virtual ~PropertyTool2() {}
 	virtual void SetProperty(Simulation *sim, ui::Point position);
 	void Click(Simulation * sim, Brush * brush, ui::Point position) override { }
 	void Draw(Simulation *sim, Brush *brush, ui::Point position) override;

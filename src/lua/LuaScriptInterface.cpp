@@ -42,6 +42,8 @@
 #include "simulation/ElementGraphics.h"
 #include "simulation/GOLString.h"
 #include "simulation/Simulation.h"
+#include "simulation/magnetics/magnetics.h"
+#include "simulation/stress/stress.h"
 #include "simulation/ToolClasses.h"
 #include "simulation/SaveRenderer.h"
 
@@ -930,6 +932,8 @@ void LuaScriptInterface::initSimulationAPI()
 		{"partExists", simulation_partExists},
 		{"pressure", simulation_pressure},
 		{"ambientHeat", simulation_ambientHeat},
+		{"emField", simulation_emField},
+		{"stressField", simulation_stressField},
 		{"velocityX", simulation_velocityX},
 		{"velocityY", simulation_velocityY},
 		{"gravMap", simulation_gravMap},
@@ -1024,6 +1028,14 @@ void LuaScriptInterface::initSimulationAPI()
 	SETCONST(l, TOOL_NGRV);
 	SETCONST(l, TOOL_MIX);
 	SETCONST(l, TOOL_CYCL);
+	SETCONST(l, TOOL_AMBM);
+	SETCONST(l, TOOL_AMBP);
+	SETCONST(l, TOOL_RSET);
+	SETCONST(l, TOOL_DECO);
+	SETCONST(l, TOOL_NORM);
+	SETCONST(l, TOOL_ERODE);
+	SETCONST(l, TOOL_SLOW);
+	SETCONST(l, TOOL_FAST);
 	lua_pushinteger(l, luacon_sim->tools.size()); lua_setfield(l, -2, "TOOL_WIND");
 	SETCONST(l, DECO_DRAW);
 	SETCONST(l, DECO_CLEAR);
@@ -1364,6 +1376,29 @@ int LuaScriptInterface::simulation_pressure(lua_State* l)
 		value = MIN_PRESSURE;
 
 	set_map(x, y, width, height, value, 1);
+	return 0;
+}
+
+// TPT Ultimata's electromagnetism and stress simulations: sim.emField() / sim.emField(bool), same for stress
+int LuaScriptInterface::simulation_emField(lua_State* l)
+{
+	if (lua_gettop(l) == 0)
+	{
+		lua_pushboolean(l, luacon_sim->emfield->isEnabled);
+		return 1;
+	}
+	luacon_sim->emfield->isEnabled = lua_toboolean(l, 1);
+	return 0;
+}
+
+int LuaScriptInterface::simulation_stressField(lua_State* l)
+{
+	if (lua_gettop(l) == 0)
+	{
+		lua_pushboolean(l, luacon_sim->stressField->enabled);
+		return 1;
+	}
+	luacon_sim->stressField->enabled = lua_toboolean(l, 1);
 	return 0;
 }
 
