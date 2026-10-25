@@ -73,7 +73,7 @@ static int update(UPDATE_FUNC_ARGS)
 							{
 								int ynxj = y + nxj, xnxi = x + nxi;
 
-								if ((ynxj < 0) || (ynxj >= YRES) || (xnxi <= 0) || (xnxi >= XRES))
+								if ((ynxj < 0) || (ynxj >= YRES) || (xnxi < 0) || (xnxi >= XRES))
 									continue;
 
 								nt = TYP(pmap[ynxj][xnxi]);
@@ -93,7 +93,9 @@ static int update(UPDATE_FUNC_ARGS)
 							}
 					for (nxj=-(rad+1); nxj<=(rad+1); nxj++)
 						for (nxi=-(rad+1); nxi<=(rad+1); nxi++)
-							if ((pow((float)nxi,2))/(pow((float)(rad+1),2))+(pow((float)nxj,2))/(pow((float)(rad+1),2))<=1 && !TYP(pmap[y+nxj][x+nxi]))
+							// upstream 0d9031bb: bounds check before reading pmap at the edge of the simulation
+							if ((pow((float)nxi,2))/(pow((float)(rad+1),2))+(pow((float)nxj,2))/(pow((float)(rad+1),2))<=1 &&
+								y+nxj >= 0 && y+nxj < YRES && x+nxi >= 0 && x+nxi < XRES && !TYP(pmap[y+nxj][x+nxi]))
 							{
 								nb = sim->create_part(-3, x+nxi, y+nxj, PT_EMBR);
 								if (nb!=-1)

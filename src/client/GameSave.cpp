@@ -535,6 +535,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 		CheckBsonFieldFloat(iter, "customGravityY", &customGravityY);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldFloat(iter, "ambientAirTemp", &ambientAirTemp);
+		CheckBsonFieldFloat(iter, "vorticityCoeff", &vorticityCoeff);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
 		CheckBsonFieldInt(iter, "pmapbits", &pmapbits);
 		if (!strcmp(bson_iterator_key(&iter), "signs"))
@@ -2318,7 +2319,8 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 				else if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
 				{
 					RESTRICTVERSION(93, 0);
-					if (particles[i].tmp & Simulation::PFLAG_CAN_CONDUCT)
+					// the "heatPipes" marker keeps the low byte of tmp (heat pipe and carried-deco flags) on loading
+					if (particles[i].tmp & (Simulation::PFLAG_CAN_CONDUCT | Simulation::PFLAG_PARTICLE_DECO))
 						heatPipeFlags = true;
 				}
 				if (particles[i].type == PT_TSNS || particles[i].type == PT_PSNS
@@ -2488,6 +2490,10 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
+	if (vorticityCoeff > 0.0001f && vorticityCoeff <= 1.0f)
+	{
+		bson_append_double(&b, "vorticityCoeff", double(vorticityCoeff));
+	}
 	if (fabsf(ambientAirTemp - (R_TEMP + 273.15f)) > 0.0001f)
 	{
 		bson_append_double(&b, "ambientAirTemp", double(ambientAirTemp));

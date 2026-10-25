@@ -120,7 +120,7 @@ static int update(UPDATE_FUNC_ARGS)
 {
 	const int rad = 4;
 	int rry, rrx, r, count = 0;
-	float tempAgg = 0;
+	float tempAgg = 0, hcTotal = 0; // temperatures weighted by heat capacity (upstream e7c708a0, df5d90cc)
 	for (int rx = -1; rx <= 1; rx++)
 	{
 		for (int ry = -1; ry <= 1; ry++)
@@ -133,13 +133,17 @@ static int update(UPDATE_FUNC_ARGS)
 				if (r && !sim->IsHeatInsulator(parts[ID(r)]))
 				{
 					count++;
-					tempAgg += parts[ID(r)].temp;
+					float hc = sim->HeatCapacityOf(parts[ID(r)]);
+					tempAgg += parts[ID(r)].temp * hc;
+					hcTotal += hc;
 				}
 				r = sim->photons[y+rry][x+rrx];
 				if (r && !sim->IsHeatInsulator(parts[ID(r)]))
 				{
 					count++;
-					tempAgg += parts[ID(r)].temp;
+					float hc = sim->HeatCapacityOf(parts[ID(r)]);
+					tempAgg += parts[ID(r)].temp * hc;
+					hcTotal += hc;
 				}
 			}
 		}
@@ -147,7 +151,7 @@ static int update(UPDATE_FUNC_ARGS)
 
 	if (count > 0)
 	{
-		parts[i].temp = tempAgg/count;
+		parts[i].temp = restrict_flt(tempAgg / hcTotal, MIN_TEMP, MAX_TEMP);
 
 		for (int rx = -1; rx <= 1; rx++)
 		{

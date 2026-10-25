@@ -300,3 +300,34 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 	.bar { padding: 6px 16px; }
 	h1 small { display: block; margin-left: 0; }
 }
+
+/* ---- challenges */
+#challenge-bar {
+	display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+	padding: 4px 12px; background: #1d1a10; border-bottom: 1px solid #5a4a14;
+}
+#challenge-bar[hidden] { display: none; }
+#challenge-bar strong { color: #ffd820; }
+#challenge-bar progress { width: 160px; }
+#challenge-bar .challenge-actions { display: flex; gap: 6px; margin-left: auto; }
+#challenge-text { flex-basis: 100%; margin: 0; color: var(--muted); }
+#challenge-status.won { color: #78ff78; }
+#challenge-status.lost { color: #ff7878; }
+#challenges-dialog { width: min(760px, 94vw); }
+.challenges-body { display: flex; gap: 12px; min-height: 300px; max-height: 60vh; }
+#challenge-cats { display: flex; flex-direction: column; gap: 4px; flex: 0 0 170px; }
+#challenge-cats button { text-align: left; }
+#challenge-cats .stars { float: right; color: #ffd820; }
+#challenge-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+#challenge-list li { border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; }
+#challenge-list li h3 { margin: 0 0 2px; font-size: 14px; display: flex; gap: 8px; align-items: baseline; }
+#challenge-list li h3 .stars { color: #ffd820; letter-spacing: 1px; }
+#challenge-list li h3 .stars-missing { color: #3a3f48; letter-spacing: 1px; }
+#challenge-list li h3 .diff { color: var(--muted); font-weight: normal; font-size: 12px; margin-left: auto; }
+#challenge-list li p { margin: 2px 0; }
+#challenge-list li .meta { color: var(--muted); font-size: 12px; }
+#challenge-list li button { float: right; margin-left: 8px; }
+@media (max-width: 600px) {
+	.challenges-body { flex-direction: column; max-height: none; }
+	#challenge-cats { flex-direction: row; flex-wrap: wrap; flex-basis: auto; }
+}

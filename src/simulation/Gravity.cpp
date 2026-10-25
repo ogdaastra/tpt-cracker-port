@@ -149,8 +149,8 @@ void Gravity::gravity_update_async()
 	if (!enabled)
 		return;
 
-#ifdef __EMSCRIPTEN__
-	// The WebAssembly build has no threads (see meson.build). Do what the gravity thread does after
+#if defined(__EMSCRIPTEN__) && !defined(TPT_WEB_THREADS)
+	// The single-threaded WebAssembly build has no threads (see meson.build). Do what the gravity thread does after
 	// each hand-off (one update_grav() on the maps it was given), then pick up the result below
 	// exactly as if the thread had just finished.
 	if (!grav_ready)
@@ -246,7 +246,7 @@ void Gravity::start_grav_async()
 
 	gravthread_done = 0;
 	grav_ready = 0;
-#ifdef __EMSCRIPTEN__
+#if defined(__EMSCRIPTEN__) && !defined(TPT_WEB_THREADS)
 	// No gravity thread in the WebAssembly build: do its start-up work (from update_grav_async) here,
 	// gravity_update_async() then runs update_grav() on the main thread.
 	{
@@ -277,7 +277,7 @@ void Gravity::stop_grav_async()
 {
 	if (enabled)
 	{
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) || defined(TPT_WEB_THREADS)
 		{
 			std::lock_guard<std::mutex> g(gravmutex);
 			gravthread_done = 1;

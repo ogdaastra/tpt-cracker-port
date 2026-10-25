@@ -90,6 +90,9 @@ plan an ASan pass. TRFM on huge selections can be slow; limit size.
 
 ## 3. Challenge mode (#11): lots of challenges
 
+**Status: built** (50 challenges, see `docs/CHALLENGES.md` and PORT_LOG section 18). The list below was the
+starting plan; some were changed or replaced while writing and testing the reference solutions.
+
 ### What you get
 A **Challenges** button on the page opens a panel: categories, each challenge with a title, a short
 description, difficulty (1-5), your best stars (★ to ★★★), and Play. Playing loads the challenge's scene, limits
@@ -209,6 +212,11 @@ part of the game, not user content).
 
 ## 4. Features from newer official TPT (#6)
 
+**Status: done for what applies** (PORT_LOG sections 19-22): batch A crash/correctness fixes, batch B heat
+capacity, vorticity confinement and caps, batch C reactions, and PROP binary values from batch D. The rest of D
+and E, and the parts of A-C that patch upstream's rewritten air/gravity/renderer code, are listed there as not
+ported, with the reason.
+
 This mod is based on official TPT from January 2023 (around snapshot 358, before 98.0). Official TPT has
 since released 98.0 to 100.1 (latest: snapshot 401, Oct 2026). Its new elements (RSST/RSSS, BASE, SEED,
 LITH) already exist here in Cracker's/Ultimata's own versions, so the useful part is fixes, physics,
@@ -260,6 +268,10 @@ listed in the PR so you can veto any.
 
 ## 5. Threads (#8)
 
+**Status: built** (PORT_LOG section 23): the spike worked, so the site runs a threaded build with Newtonian
+gravity on its own thread when the page is cross-origin isolated, and the single-threaded build otherwise
+(and offline). Upstream's render thread was not ported.
+
 **Honest expectation first.** The profile says most time is the particle update loop, which TPT runs on one
 thread on every platform (particles interact with neighbours in order). Threads help with:
 - **Newtonian gravity** (FFT, already written as a background thread in TPT, switched off in this build), a big
@@ -303,6 +315,11 @@ on the page does today; keep it that way); Lua scripts touching the simulation f
 ---
 
 ## 6. GPU rendering (#9)
+
+**Status: stage 1 built, stage 2 not started** (PORT_LOG section 24). The slowest display mode ("fancy")
+went from 17.7 to 4.8 ms per frame in a 100k-particle scene, and every mode draws exactly the same pixels as
+before. With drawing at 2-6 ms against 4-9 ms of simulation, shaders would buy little speed; they stay an
+option for new effects.
 
 **Honest expectation.** In the heavy scenes, drawing costs roughly 10-20% of a frame (`render_parts`
 5-9%, `render_fire` 1-6%, plus uploading the picture). Moving that to the GPU saves at most that much,

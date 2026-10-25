@@ -3,8 +3,8 @@
 int Element_PIPE_update(UPDATE_FUNC_ARGS);
 int Element_PIPE_graphics(GRAPHICS_FUNC_ARGS);
 void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part, bool STOR);
-static void transfer_part_to_pipe(Particle *part, Particle *pipe);
-static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR);
+static void transfer_part_to_pipe(Simulation *sim, Particle *part, Particle *pipe);
+static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest, bool STOR);
 static void pushParticle(Simulation * sim, int i, int count, int original);
 void Element_SOAP_detach(Simulation * sim, int i);
 void Element_PPIP_flood_trigger(Simulation * sim, int x, int y, int sparkedBy);
@@ -57,6 +57,7 @@ void Element::Element_PIPE()
 }
 
 // 0x00000001 heat pipe (Simulation::PFLAG_CAN_CONDUCT)
+// 0x00000002 deco carried from a particle (Simulation::PFLAG_PARTICLE_DECO)
 // 0x00000100 is single pixel pipe
 // 0x00000200 will transfer like a single pixel pipe when in forward mode
 // 0x00001C00 forward single pixel pipe direction
@@ -288,13 +289,13 @@ int Element_PIPE_update(UPDATE_FUNC_ARGS)
 					{
 						if (TYP(r)==PT_SOAP)
 							Element_SOAP_detach(sim, ID(r));
-						transfer_part_to_pipe(parts+(ID(r)), parts+i);
+						transfer_part_to_pipe(sim, parts+(ID(r)), parts+i);
 						sim->kill_part(ID(r));
 					}
 					else if (!TYP(parts[i].ctype) && TYP(r)==PT_STOR && sim->IsElement(parts[ID(r)].tmp) && (sim->elements[parts[ID(r)].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
 					{
 						// STOR stores properties in the same places as PIPE does
-						transfer_pipe_to_pipe(parts+(ID(r)), parts+i, true);
+						transfer_pipe_to_pipe(sim, parts+(ID(r)), parts+i, true);
 					}
 				}
 			}
@@ -448,6 +449,13 @@ void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Partic
 	{
 		part->type = TYP(pipe->ctype);
 		pipe->ctype = 0;
+
+		// If deco originated from particle, and not PIPE, then copy it
+		if (pipe->tmp & Simulation::PFLAG_PARTICLE_DECO)
+		{
+			part->dcolour = pipe->dcolour;
+			pipe->dcolour = 0;
+		}
 	}
 	part->temp = pipe->temp;
 	part->life = pipe->tmp2;
@@ -464,21 +472,36 @@ void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Partic
 	part->dcolour = 0;
 }
 
-// A heat pipe keeps its own temperature: what it carries mixes with it (equal weights; this version of
-// the game has no per-element heat capacity). Other pipes just carry the particle's temperature.
-static void transfer_part_to_pipe(Particle *part, Particle *pipe)
+// Heat capacity of an element id, 1 for anything that isn't one
+static float heatCapacity(Simulation *sim, int type)
+{
+	return (type > 0 && type < PT_NUM) ? sim->elements[type].HeatCapacity : 1.0f;
+}
+
+// A heat pipe keeps its own temperature: what it carries mixes with it, weighted by heat capacity
+// (upstream 85ee427e, e0d14786). Other pipes just carry the particle's temperature.
+static void transfer_part_to_pipe(Simulation *sim, Particle *part, Particle *pipe)
 {
 	pipe->ctype = part->type;
 	if (pipe->tmp & Simulation::PFLAG_CAN_CONDUCT)
-		pipe->temp = (part->temp + pipe->temp) / 2;
+	{
+		float cPart = heatCapacity(sim, part->type), cPipe = heatCapacity(sim, pipe->type);
+		pipe->temp = (cPart * part->temp + cPipe * pipe->temp) / (cPart + cPipe);
+	}
 	else
 		pipe->temp = part->temp;
 	pipe->tmp2 = part->life;
 	pipe->tmp3 = part->tmp;
 	pipe->tmp4 = part->ctype;
+
+	if (part->dcolour && !pipe->dcolour)
+	{
+		pipe->dcolour = part->dcolour;
+		pipe->tmp |= Simulation::PFLAG_PARTICLE_DECO;
+	}
 }
 
-static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
+static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest, bool STOR)
 {
 	// STOR to PIPE
 	if (STOR)
@@ -490,9 +513,25 @@ static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
 	{
 		dest->ctype = src->ctype;
 		src->ctype = 0;
+
+		if (src->tmp & Simulation::PFLAG_PARTICLE_DECO)
+		{
+			// Even if source pipe has particle deco, don't override existing pipe deco. Just delete source deco only.
+			if (!dest->dcolour)
+			{
+				dest->dcolour = src->dcolour;
+				dest->tmp |= Simulation::PFLAG_PARTICLE_DECO;
+			}
+			src->dcolour = 0;
+			src->tmp &= ~Simulation::PFLAG_PARTICLE_DECO;
+		}
 	}
 	if (dest->tmp & Simulation::PFLAG_CAN_CONDUCT)
-		dest->temp = (src->temp + dest->temp) / 2;
+	{
+		// the carried particle's capacity against the receiving pipe's
+		float cSrc = heatCapacity(sim, dest->ctype), cDest = heatCapacity(sim, dest->type);
+		dest->temp = (cSrc * src->temp + cDest * dest->temp) / (cSrc + cDest);
+	}
 	else
 		dest->temp = src->temp;
 	dest->tmp2 = src->tmp2;
@@ -528,7 +567,7 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 					continue;
 				else if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 				{
-					transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)), false);
+					transfer_pipe_to_pipe(sim, sim->parts+i, sim->parts+(ID(r)), false);
 					if (ID(r) > original)
 						sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 					count++;
@@ -558,7 +597,7 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 		r = sim->pmap[y+ pos_1_ry[coords]][x+ pos_1_rx[coords]];
 		if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 		{
-			transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)), false);
+			transfer_pipe_to_pipe(sim, sim->parts+i, sim->parts+(ID(r)), false);
 			if (ID(r) > original)
 				sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 			count++;

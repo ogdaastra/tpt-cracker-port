@@ -47,9 +47,20 @@ jobs:
           EMSDK_DIR: ${{ runner.temp }}/emsdk
         run: ./wasm/build.sh 2>&1 | tee build-wasm.log
 
-      - name: Validate the WebAssembly binary
+      # The threaded build (powder-mt.*), used by the page when it is cross-origin isolated: its own
+      # sysroot compiled with -pthread, then dist/ is assembled again with both builds.
+      - name: Build the threaded variant
+        env:
+          EMSDK_DIR: ${{ runner.temp }}/emsdk
+          WASM_THREADS: 1
+        run: |
+          ./wasm/build-deps.sh 2>&1 | tee build-deps-mt.log
+          ./wasm/build.sh 2>&1 | tee build-wasm-mt.log
+
+      - name: Validate the WebAssembly binaries
         run: |
           wasm-validate --enable-all dist/powder.wasm
+          wasm-validate --enable-all dist/powder-mt.wasm
           ls -la dist dist/source
 
       - name: Install Playwright and Chromium
@@ -94,6 +105,8 @@ jobs:
           path: |
             build-deps.log
             build-wasm.log
+            build-deps-mt.log
+            build-wasm-mt.log
             build-wasm/meson-logs/
             artifacts/
           if-no-files-found: warn

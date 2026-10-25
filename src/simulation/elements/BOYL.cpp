@@ -81,6 +81,7 @@ static int update(UPDATE_FUNC_ARGS)
 						sim->kill_part(ID(r));
 						sim->part_change_type(i,x,y,PT_WATR);
 						sim->pv[y/CELL][x/CELL] += 4.0;
+						return 1; // upstream 48df5cda: this particle is WATR now
 					}
 				}
 			}

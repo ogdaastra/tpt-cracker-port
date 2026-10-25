@@ -107,6 +107,7 @@ class LuaScriptInterface: public CommandInterface
 	static int simulation_airMode(lua_State * l);
 	static int simulation_waterEqualisation(lua_State * l);
 	static int simulation_ambientAirTemp(lua_State * l);
+	static int simulation_vorticityCoeff(lua_State * l);
 	static int simulation_elementCount(lua_State * l);
 	static int simulation_canMove(lua_State * l);
 	static int simulation_parts(lua_State * l);
@@ -188,6 +189,12 @@ class LuaScriptInterface: public CommandInterface
 	static int fileSystem_copy(lua_State * l);
 
 	void initPlatformAPI();
+	void initChallengeAPI();
+	static int challenge_begin(lua_State * l);
+	static int challenge_finish(lua_State * l);
+	static int challenge_ink(lua_State * l);
+	static int challenge_active(lua_State * l);
+	static int challenge_notify(lua_State * l);
 	static int platform_platform(lua_State * l);
 	static int platform_ident(lua_State * l);
 	static int platform_build(lua_State * l);

@@ -138,6 +138,12 @@ int Element_FIRE_update(UPDATE_FUNC_ARGS)
 			parts[i].tmp2 = RNG::Ref().between(0, 10); // Provide tmp2 for color noise
 			parts[i].ctype = PT_ROCK;
 		}
+		else if (parts[i].ctype == PT_GOLD && pres < -200.0f && parts[i].temp > sim->elements[PT_PTNM].HighTemperature && RNG::Ref().chance(1, 20000))
+		{
+			// LAVA(GOLD) -> LAVA(PTNM) in a near vacuum (upstream 2d7f5fa2)
+			parts[i].ctype = PT_PTNM;
+			sim->pv[y/CELL][x/CELL] += 2.0f;
+		}
 		break;
 	}
 	default:
@@ -248,6 +254,19 @@ int Element_FIRE_update(UPDATE_FUNC_ARGS)
 						parts[i].tmp = 0;
 						sim->kill_part(ID(r));
 						continue;
+					}
+					else if (parts[i].ctype == PT_SLCN && rt == PT_LAVA && parts[ID(r)].ctype == PT_SALT)
+					{
+						// LAVA(SLCN) + LAVA(SALT) -> LAVA(LITH) (upstream 2d7f5fa2)
+						if (parts[i].temp > sim->elements[PT_LITH].HighTemperature && RNG::Ref().chance(1, 1000))
+						{
+							parts[i].ctype = PT_LITH;
+							parts[i].tmp = 0;
+							parts[i].tmp2 = 0;
+							parts[i].life = 0;
+							sim->kill_part(ID(r));
+							continue;
+						}
 					}
 					else if (rt == PT_LAVA && (parts[ID(r)].ctype == PT_METL || parts[ID(r)].ctype == PT_BMTL) && parts[i].ctype == PT_SLCN)
 					{

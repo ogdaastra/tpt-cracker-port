@@ -1,0 +1,28 @@
+{
+  "frameCost": {
+    "powderBands": {
+      "particles": 23982,
+      "simMsPerFrame": 4.42,
+      "renderMsPerFrame": 0.5,
+      "totalMsPerFrame": 4.92
+    },
+    "liquidsAndFire": {
+      "particles": 72045,
+      "simMsPerFrame": 9.03,
+      "renderMsPerFrame": 0.505,
+      "totalMsPerFrame": 9.535
+    },
+    "powderBandsGravity": {
+      "particles": 24012,
+      "simMsPerFrame": 3.973,
+      "renderMsPerFrame": 0.355,
+      "totalMsPerFrame": 4.328
+    },
+    "electronics": {
+      "particles": 34560,
+      "simMsPerFrame": 10.327,
+      "renderMsPerFrame": 3.015,
+      "totalMsPerFrame": 13.342
+    }
+  }
+}

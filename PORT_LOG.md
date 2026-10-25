@@ -454,3 +454,187 @@ Ported from Ultimata (same TPT base, so nearly unchanged; files in `src/gui/game
   channel 5 (473.15 K); Shift+Tab draws a ring with an empty centre and back; EM and stress switches change the
   Lua state, the time-dilation view tints a SLOW field (14,785 pixels); PRP2 sets temp 500 and life 7 together.
   Full suite 36/36.
+
+## 18. Challenge mode
+
+50 challenges in 9 categories (list: `docs/CHALLENGES.md`), playable from the page (Challenges…) or in the game
+(★ button at the bottom of the second side-bar column, a Lua window).
+- **Game side (C++):** a challenge session. `Simulation::challenge` holds the ink budget, the ink used and locked
+  rectangles; `Simulation::userAction` is set by `GameController` around the player's drawing, line, box, flood
+  and tool actions, so only the player's particles count as ink (reactions don't) and locked rectangles refuse
+  only the player (`UserMayChange`, checked in `CreatePartFlags`, `Tool` and `CreateWalls`). `GameModel` keeps
+  the allowed tools: menus, favourites and the page's Elements panel only show those, `SetActiveTool` refuses
+  others (page, Lua, keyboard), placing stamps/saves is refused, undo history is cleared, and the menu of the
+  first allowed tool opens. The eraser and the sample tool always work. Lua: `challenge.begin{tools, ink,
+  locked}`, `challenge.finish()`, `challenge.ink()`, `challenge.active()`, `challenge.notify(json)` (calls
+  `Module.tptOnChallenge` on the page). The page runs Lua in the game loop with `tpt_lua_command`.
+- **Challenges (Lua, built in):** `src/lua/luascripts/challenges.lua`, loaded always (even when the optional
+  scripts are off). Each challenge is one table: scene setup, allowed tools, ink, time, a goal check run after
+  every simulation frame (progress 0..1, or a failure reason), star thresholds, hints (each costs a star) and a
+  **reference solution**. Stars are saved in `challenges-progress.json` in the game's data folder (IndexedDB in
+  the browser). Solution runs (`challenges.command("solve <id>")`) never earn stars.
+- **Every challenge was tuned by running its solution:** a native harness (ASan build, Lua autorun) played every
+  solution and every do-nothing run; designs that didn't hold up were changed or dropped (an air-pressure
+  "big bang" goal that explosions here never reach, a sponge goal the eraser could fake). Found on the way:
+  plasma melts the wires it is meant to heat, glass passes lava heat on to a stickman's feet, stone is a powder,
+  titanium melts below the furnace temperature first chosen, sorting dust from water needs a 5 s hold because
+  dust falls faster.
+- **Reliability:** repeated native runs turned out to be identical (same random seed every start), so they
+  say nothing about luck. In the browser every run is different: a stress script ran every solution 6-8 times
+  and every do-nothing case twice there, and each challenge that ever failed (Crater, Wildfire, Etching, Lava to
+  stone, Desalination) got a wider margin: a stronger reference solution within the ink limit or a slightly
+  easier goal.
+- **Tests** (`tests/browser/challenges.spec.mjs`, 4): all 50 solutions win and all 50 do-nothing runs lose (the
+  page steps the simulation with `tpt_benchmark`, about 2-3 minutes each); "First light" played by hand
+  through the page (only BTRY/METL/PSCN plus eraser and sample offered, WATR refused from the page and PLSM
+  from Lua, the locked LED survives the eraser, ink = particles drawn, win with stars, stars still there after a
+  reload); ink budget stops a big brush at exactly 300, the locked flag survives, hint text, restart clears the
+  scene and ink, the in-game window starts a challenge. They found two real bugs: the game crashed ("vector")
+  when a tool was selected during a challenge, because `GameController::SetActiveTool` looked up the gravity
+  wall by its position in the walls menu (now by identifier), and the challenge bar never hid (CSS `display`
+  overrode `hidden`).
+- **Page:** Challenges dialog (categories, stars, difficulty, tools, ink, Play), a bar above the game while one
+  runs (progress, time, ink, Hint, Restart, Next challenge, Stop); the in-game HUD shows the same.
+
+## 19. Fixes from newer official TPT, batch A (crashes and correctness)
+
+Upstream (The Powder Toy, 98.0 to 100.1 and later master) cloned and its fix commits since January 2023 read
+one by one; the ones whose code exists here were ported by hand (the code bases have diverged, so as small
+equivalent edits, each marked with the upstream commit in a comment):
+- **Simulation core:** NaN velocity no longer loops forever (51508113); a portal-captured particle is killed
+  properly instead of only clearing its type (82ec6b27); every pmap/photons clear checks the entry is non-empty
+  first (2eee738a); `create_part` checks the old position is inside the map (a5b12b71); swapped particles take
+  the other's exact position, so piles no longer stack oddly near power-of-two positions (76dca483); gases lose
+  a 0.25 px bias that pushed them down and right (d21a2293); `flood_water` checks the right span neighbour
+  (9481bf05) and moves particles with `move()` (5fc8770e); placing a save partly outside the simulation no
+  longer writes walls, pressure or signs out of bounds (a2056128); the air advection boundary read one cell too
+  far (3b19f846) and its "far away" step only worked in one direction (2e27cbfd).
+- **Elements:** PROT returns after killing itself (6433eb04); BOMB bounds-checks its outer ring (0d9031bb);
+  ACID eats one particle fewer, as intended (b5872657); MERC clamps its temperature before dividing (d6f66f5c);
+  BOYL stops after turning into water (48df5cda); EMP's sparking area is symmetric (32033af6); SOAP checks its
+  links' indices (ce250e31) and, in loop edge mode only, measures bubbles across the edges (d8da9ecc,
+  7f0bd154); SPRK(TESC) and SPNG cooling stay above 0 K (7623e04e); LITH respects the temperature limits
+  (79f2bbca); FUSE's sparks land around it instead of always at one spot (ca6558bd); GLOW multiplies photons
+  and NEUT makes Cherenkov photons in glass 1 in 30 / 1 in 10 times, not 29 in 30 / 9 in 10 (875f92b2); GLOW's
+  colour uses the right 0 C constant (46730cfc).
+- **Already fine or not applicable here:** DLAY, ETRD, VIBR heat (this code already had the checks); FIRE's
+  missing returns (present); stickman instant death, many-headed stickmen, save size, gravity-wall and
+  "infinite air heat" fixes (they patch upstream's newer code, which this version doesn't have).
+- **Tests** (`tests/browser/upstream-fixes.spec.mjs`, 3): a 60x60 gas cloud in a centred wall box drifts
+  0.4 px / 1.2 px in 10 s (the production build before this: 2.6 px right, 5.8 px down, so the test fails
+  there); a DMND + PRTI + NEUT setup from the upstream report leaves pmap/photons consistent; NaN velocity and
+  MERC at -1.5 K run without hanging. Honest note: the last two do not fail on the old build either (this older
+  engine clamps temperatures and moves NaN particles differently), so they are regression checks only.
+  All 50 challenges re-checked: ASan run 50/50 solutions win, no sanitizer reports in changed code; browser
+  stress 3 solution + 1 do-nothing runs each, after widening Wildfire's firebreak (the unbiased fire spread
+  further).
+
+## 20. Physics from newer official TPT, batch B
+
+- **Heat capacity** (upstream 74f6a129, 85ee427e, e0d14786, e7c708a0, df5d90cc): elements have a
+  `HeatCapacity` (1.0 by default, BASE 1.5 as upstream; Lua `elem.property(id, "HeatCapacity", v)`).
+  Neighbour heat exchange, air heat exchange, HEAC and heat pipes weight temperatures by it, and a pipe
+  with something in it counts the capacity of both. With every capacity at 1 the exchange is the plain
+  average it was before, so existing saves behave the same apart from BASE.
+- **Vorticity confinement** (b77a1cba, 4d1364b8): an air setting that keeps swirls going. Off by default
+  (0, the old behaviour; upstream now defaults to 0.1), `sim.vorticityCoeff([0..1])`, saved in saves as
+  `vorticityCoeff` when on. Upstream's display mode and options box are not ported.
+- **Caps:** ACEL keeps direction when capping velocity, FRAY and RPEL cap velocity (95b9d671, bfd1199b);
+  DEST, LIGH, SING, THDR and WARP clamp the pressure they add (0c47112c); air temperature is clamped to the
+  game's limits (feb3f9de).
+- **Not ported:** upstream's rewritten ambient heat convection and its settings, ambient air pressure and
+  velocity, gravity in saves: they sit on upstream's newer air and gravity code, which this version (with
+  Ultimata's time dilation inside the air loop) doesn't share. Porting them means porting that code first.
+- **Tests** (`upstream-fixes.spec.mjs`, now 5): a 1000 K METL block against a 300 K TTAN block settles at
+  650 K / 650 K; with TTAN's capacity set to 3 at 475 K / 475 K, which is the energy balance
+  (1000 + 3 x 300) / 4. The same air disturbance past a wall block leaves a total |curl| of 65 with
+  confinement off and 97 with 0.5; a stamp opened as a save brings the setting back (0.3). All 50 challenges
+  re-checked (ASan 50/50; browser 3 solution + 1 do-nothing runs each, all as expected).
+
+## 21. Reactions from newer official TPT, batch C
+
+- **New reactions** (upstream 2d7f5fa2): PROT accelerated into TUNG makes AMTR (elsewhere still SING);
+  molten gold below -200 pressure turns into molten PTNM (1 in 20,000 per frame); molten SLCN touching
+  molten SALT becomes molten LITH.
+- **FOG and RIME absorb GAS** (56ede6ca): each soaks up to 10; RIME with more than 5 melts into ACID instead
+  of water, and ACID/CAUS don't eat such acidic FOG/RIME. BCLN/PBCN no longer freeze FOG, so they can
+  clone it (8ad965b1). CAUS's "life >= 50" is the same off-by-one as ACID's (fixed in batch A).
+- **LN2 condenses on chemically strengthened GLAS** in very cold, pressurised air (7fcc3a2c).
+- **STOR holds radiation particles** such as PHOT (68a8b055). **DRAY copies fighters** with their own
+  fighter slot (858a0bce). **Pipes keep the deco of what they carry** (e2e25682), using pipe flag 0x2;
+  saves with such pipes get the same "heatPipes" marker as heat pipes so the flag survives loading.
+- **Not ported:** RIME/FOG remembering DSTW (needs upstream's CarriesTypeIn data), ETRD tmp/tmp2 distances
+  (conflicts with this version's ETRD and HUD), TESC lightning deco (needs a renderer flag this version
+  lacks), PROP_PHOTPASS (a refactor), PSTN tmp3 (Ultimata uses tmp3 here), SEED (Cracker has its own).
+- **Tests** (`upstream-fixes.spec.mjs`, 6): molten SLCN/SALT checkerboard at 2500 K gives 12 LITH in 5 s;
+  molten gold in a sealed wall box at -256 pressure gives 170 PTNM in 10 s; RIME ringed by cold GAS ends
+  with 102 acidic RIME, melting into 93 ACID; STOR next to a PHOT holds it. On the production build (before
+  this) the LITH check fails with 0, and the heat capacity test fails as the property doesn't exist.
+  Challenges re-checked: ASan 50/50 solutions; browser 2 solution + 1 do-nothing runs each, all as expected.
+
+## 22. Batches D and E (views, tools, Lua): what was taken
+
+- **Taken:** binary values in PROP and PRP2 (`0b1011`, upstream ccb671bd, with the crash fix bff38ce6 done as
+  a strict parser that rejects anything but 0/1 digits). Test: PRP2 with `life:0b1011` and
+  `tmp:0b11111111` sets 11 and 255.
+- **Not taken, and why:** the dynamic/variable heat display and the destructibility view (they extend upstream's
+  rewritten renderer, which this mod replaced with Cracker's and Ultimata's own display modes); stamp search
+  (upstream's stamp browser was redesigned); FPS/draw cap settings (the browser sets the frame rate here);
+  `beforesimdraw`/`aftersimdraw` events (they need Lua drawing redirected into the simulation buffer; this
+  version draws Lua graphics on the interface layer); Lua-defined tools, `MenuSort` and `!get` (they build on
+  upstream's reworked Lua API, which this mod's scripts do not use). Each could be done on its own later.
+
+## 23. Threads: a threaded build for cross-origin isolated pages
+
+- **Phase 0, measured** (`perf.spec.mjs` gained a gravity scene; `tpt_benchmark` includes the gravity
+  update): Newtonian gravity only costs anything when its field changes, i.e. with moving gravity sources
+  (GRVT, eating black holes). Then it takes about 2-4 ms per frame on the main thread (scene of GRVT and NBHL:
+  1.2 ms per frame without gravity, 3.5 ms with). Most other time is the particle loop, which TPT runs on one
+  thread on every platform; rendering is 0.3-3 ms.
+- **Phase 1, spike:** a small JSPI + pthreads program (a worker counting while the main thread sleeps
+  through JSPI) works in Chromium on a cross-origin isolated page (counter 81k -> 444k over five 200 ms
+  sleeps, thread joined) and fails without isolation, as expected (SharedArrayBuffer not allowed).
+- **Phase 2, built:** `WASM_THREADS=1` builds a second sysroot with `-pthread` (Emscripten's `-mt` port
+  variants for SDL2/libpng) and the game with `-Dweb_threads=true` (`-pthread`, a pool of 2 workers created
+  up front, `TPT_WEB_THREADS`), into `build-wasm-mt/`; `dist/` carries it as `powder-mt.js`/`.wasm` next to
+  the single-threaded build. Only the gravity thread runs for real; background tasks and search stay on the
+  main thread (their file system access would cross threads). The site now sends COOP/COEP headers
+  (`wasm/vercel.json`), the page picks `powder-mt.*` when `crossOriginIsolated` (and `?threads=0` forces the
+  single-threaded build); without the headers or offline it falls back. The offline ZIP only has the
+  single-threaded build. CI builds both and validates both binaries.
+- **Tests** (`threads.spec.mjs`): over HTTP the page is isolated, downloads `powder-mt.wasm` and runs
+  threaded; a dust particle 50 px from a block of black holes is pulled in and eaten in 2 s in both builds;
+  with a changing gravity field, gravity adds 0.04 ms per frame to the main thread threaded and 2.3 ms
+  single-threaded (`?threads=0`). With the COOP/COEP headers stripped from every response the page is not
+  isolated, uses the single-threaded build and never downloads `powder-mt.*`.
+- **Not done:** upstream's render thread (it needs upstream's renderer split); the gain would be the
+  0.3-3 ms of rendering per frame.
+
+## 24. Faster drawing (GPU rendering plan, stage 1)
+
+- **Measured first** (profiling build, 100k-particle scene of water, sand and fire, render only, ms per
+  frame): every display mode cost 2-3.7 ms except **fancy at 17.7 ms**. Inside fancy: the blur every liquid
+  particle gets (37 blended pixels each, ~9 ms) and gravity lensing (~4 ms, even with gravity off). Fire glow
+  cost up to 1.5 ms in scenes with sparks. In normal play the simulation costs several times more than drawing.
+- **What changed** (`src/graphics/Renderer.cpp`), all drawing exactly what it drew before:
+  - fire glow: each fire cell's 12x12 glow is clipped once instead of checking the screen bounds of every
+    pixel, and rows with no fire in or next to them are skipped (the in-place blur is kept bit for bit);
+  - gravity lensing: walks the picture row by row instead of column by column (it missed the cache on every
+    pixel), with a short path where the field is zero;
+  - blur, glow and blob: the pixels around a particle come from a precomputed list in the original order
+    (blends don't commute), without bounds checks away from the left/top edges; the blend of blur and blob
+    does the three colour channels at once with WebAssembly SIMD (a plain C++ version is used elsewhere).
+- **Result** (same profiling build, same scene): fancy **17.7 -> 4.8 ms**, blur alone 11.3 -> 5.7 ms,
+  blob 3.7 -> 3.0 ms, lensing ~4 -> under 1 ms; the other modes are unchanged within noise. Release build
+  (`PERF=1`, `perf.spec.mjs` now also times every display mode): fancy 6.3 ms, the others 2.4-3.7 ms.
+- **Same pixels, checked three ways:** a native harness ran the old and new fire code on 720 frames of random
+  sparse fire (pixels and fire arrays identical); the old and new browser builds rendered 14 scenes (7 display
+  modes, gravity on and off, particles touching the screen edges) with identical canvases, apart from the
+  black-hole block with gravity on, which also differs between two runs of the old build; native debug builds
+  (the plain C++ path) gave identical screenshots of the simulation area in all 14. New test
+  `render.spec.mjs` hashes the game's own screenshots in 6 display modes; the hashes are the old build's.
+- **Stage 2 (WebGL shaders) not done, on purpose:** drawing is now 2-6 ms per frame in a 100k-particle scene
+  and well under 1.5 ms in typical ones, while the simulation takes 4-9 ms. Shaders would save little of
+  the frame, add a second renderer to keep pixel-identical, and the CI machines render WebGL in software.
+  They would be worth it for new looks (bloom, smooth scaling), not for speed.
+- Full suite: 50 passed, 2 skipped (the PERF benchmarks).

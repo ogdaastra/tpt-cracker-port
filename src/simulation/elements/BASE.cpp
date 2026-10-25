@@ -28,6 +28,7 @@ void Element::Element_BASE()
 	Hardness = 0;
 	PhotonReflectWavelengths = 0x5C5CFF;
 	HeatConduct = 44;
+	HeatCapacity = 1.5f; // as upstream
 	Weight = 34;
 	Description = "Base, neutralisation rxn with acid. Dissolves certain metals, releases CO2 with COAL, GRPH, etc. Dilutes with acid/ watr.";
 

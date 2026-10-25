@@ -6,6 +6,7 @@
 #include <utility>
 #include <deque>
 #include <memory>
+#include <set>
 
 #include "gui/interface/Colour.h"
 #include "client/User.h"
@@ -86,6 +87,9 @@ private:
 	bool includePressure;
 	bool perfectCircle = true;
 	bool currentlySelectingHollow = false; // Shift+Tab switches between solid and hollow brushes
+	// Challenge mode (Lua challenge.begin): only these tools can be selected and are shown in the menus
+	bool challengeRestricted = false;
+	std::set<ByteString> challengeTools;
 	int temperatureScale;
 
 	size_t activeColourPreset;
@@ -175,6 +179,10 @@ public:
 
 	Tool * GetActiveTool(int selection);
 	void SetActiveTool(int selection, Tool * tool);
+	void SetChallengeTools(bool restricted, std::set<ByteString> tools);
+	bool ToolAllowed(Tool *tool) const;
+	bool GetChallengeRestricted() const { return challengeRestricted; }
+	void ClearHistory();
 	void SetToolStrength(float value);
 	float GetToolStrength();
 	Tool * GetLastTool();

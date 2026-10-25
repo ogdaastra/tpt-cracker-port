@@ -173,9 +173,23 @@ public:
 	bool IsWallBlocking(int x, int y, int type);
 	// PIPE/PPIP tmp flag: the pipe formed next to HEAC and conducts heat (heat pipe, as in TPT 100)
 	static constexpr int PFLAG_CAN_CONDUCT = 0x00000001;
+	static constexpr int PFLAG_PARTICLE_DECO = 0x00000002; // the pipe's deco came from what it carries (upstream e2e25682)
 	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
 	// not heat pipes
 	bool IsHeatInsulator(const Particle &p) const;
+	// a pipe with something in it holds the heat of both (upstream e7c708a0)
+	float HeatCapacityOf(const Particle &p) const;
+	// Challenge mode (Lua challenge.begin): limits on what the player's tools may change. GameController sets
+	// userAction while it applies a tool, so Lua scripts and reactions are never limited.
+	struct ChallengeRules
+	{
+		bool active = false;
+		int inkBudget = -1; // particles the player may place, -1 = no limit
+		int inkUsed = 0;
+		std::vector<std::array<int, 4>> locked; // x0, y0, x1, y1 (inclusive) the player's tools cannot change
+	} challenge;
+	bool userAction = false;
+	bool UserMayChange(int x, int y) const;
 	bool IsElement(int type) const {
 		return (type > 0 && type < PT_NUM && elements[type].Enabled);
 	}

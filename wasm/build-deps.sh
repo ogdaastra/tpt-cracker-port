@@ -10,6 +10,7 @@
 #
 # Environment:
 #   GRAVFFT=0            skip fftw3f (then configure the game with -Dgravfft=false)
+#   WASM_THREADS=1       the threaded variant: everything compiled with -pthread, into prefix-mt/
 #   TPT_SEED_PORTS=1     pre-seed Emscripten's port cache from pinned git tags / tarballs instead of
 #                        letting emcc download GitHub archives (needed where github.com/.../archive/
 #                        is blocked, e.g. some sandboxes). Same versions, same sources.
@@ -79,7 +80,11 @@ fi
 
 log "building Emscripten ports"
 # Build the exact variants the final link will use (wasm exceptions => wasm setjmp/longjmp for libpng).
-embuilder build sdl2 zlib bzip2 libpng-legacysjlj
+if [ "$WASM_THREADS" = 1 ]; then
+	embuilder build sdl2-mt zlib bzip2 libpng-mt-legacysjlj
+else
+	embuilder build sdl2 zlib bzip2 libpng-legacysjlj
+fi
 
 write_pc() { # name version cflags libs
 	cat > "$WASM_PREFIX/lib/pkgconfig/$1.pc" <<EOF
@@ -99,7 +104,7 @@ write_pc bzip2    1.0.6  "-sUSE_BZIP2=1" "-sUSE_BZIP2=1"
 # ---------------------------------------------------------------- Lua 5.1.5 (as C++)
 if [ ! -f "$WASM_PREFIX/lib/liblua5.1-c++.a" ]; then
 	lua_tgz="$(fetch_tarball https://www.lua.org/ftp/lua-5.1.5.tar.gz 2640fc56a795f29d28ef15e13c34a47e223960b0240e8cb0a82d9b0738695333)"
-	rm -rf "$SRC/lua-5.1.5" && tar -C "$SRC" -xzf "$lua_tgz"
+	rm -rf "$SRC/lua-5.1.5" && tar -C "$SRC" -xzf "$lua_tgz" # rebuilt per variant (objects stay in the tree)
 	cd "$SRC/lua-5.1.5/src"
 	# Compiled as C++ so lua_error() unwinds with C++ exceptions (LUAI_THROW in luaconf.h) rather than
 	# longjmp, which would skip destructors of the game's C++ frames. This is what the meson.build
@@ -133,6 +138,7 @@ if [ ! -f "$WASM_PREFIX/lib/libjsoncpp.a" ]; then
 	fetch_git https://github.com/open-source-parsers/jsoncpp.git 1.9.5 5defb4ed1a4293b8e2bf641e16b156fb9de498cc "$SRC/jsoncpp-1.9.5"
 	log "building jsoncpp 1.9.5"
 	cd "$SRC/jsoncpp-1.9.5"
+	rm -rf build-em
 	mkdir -p build-em
 	for f in json_reader json_value json_writer; do
 		em++ -std=c++17 $DEP_CFLAGS -Iinclude -Isrc/lib_json -c "src/lib_json/$f.cpp" -o "build-em/$f.o"

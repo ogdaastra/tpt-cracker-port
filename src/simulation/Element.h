@@ -38,6 +38,7 @@ public:
 	unsigned int PhotonReflectWavelengths;
 	int Weight;
 	unsigned char HeatConduct;
+	float HeatCapacity; // per pixel, relative (1.0 by default); weights temperatures when heat is exchanged (upstream 74f6a129)
 	String Description;
 	unsigned int Properties;
 

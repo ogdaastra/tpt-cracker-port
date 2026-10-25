@@ -182,12 +182,17 @@ curl_dep = enable_http ? dependency('libcurl', static: is_static) : []
 enable_gravfft = get_option('gravfft')
 fftw_dep = enable_gravfft ? dependency('fftw3f', static: is_static) : []
 
-if host_platform == 'emscripten'
+if host_platform == 'emscripten' and not get_option('web_threads')
 	# Single-threaded WebAssembly build: Meson would add -pthread for dependency('threads'), which
 	# requires SharedArrayBuffer and cross-origin isolation (COOP/COEP) on the hosting page.
 	# The few worker threads (gravity, tasks, search) run synchronously instead, see __EMSCRIPTEN__
 	# blocks in src/simulation/Gravity.cpp, src/tasks/Task.cpp and src/gui/search/SearchModel.cpp.
 	threads_dep = []
+elif host_platform == 'emscripten'
+	# Threaded WebAssembly build (-Dweb_threads=true, wasm/build.sh with WASM_THREADS=1): only the
+	# gravity thread runs for real (TPT_WEB_THREADS); tasks and search stay synchronous. The page uses
+	# it when it is cross-origin isolated and falls back to the single-threaded build otherwise.
+	threads_dep = dependency('threads')
 else
 	threads_dep = dependency('threads')
 endif
@@ -291,6 +296,9 @@ if host_platform == 'emscripten'
 	# and unlike ASYNCIFY=1 it is compatible with -fwasm-exceptions.
 	# -msimd128: WebAssembly SIMD (every browser with JSPI has it), so -ftree-vectorize can emit vector code.
 	args_ccomp_em = [ '-fwasm-exceptions', '-msimd128' ]
+	if get_option('web_threads')
+		args_ccomp_em += [ '-pthread', '-DTPT_WEB_THREADS' ]
+	endif
 	project_c_args   += args_ccomp_em
 	project_cpp_args += args_ccomp_em
 	em_pre_js = meson.project_source_root() / 'wasm' / 'pre.js'
@@ -309,6 +317,11 @@ if host_platform == 'emscripten'
 		'-lidbfs.js',
 		'--pre-js', em_pre_js,
 	]
+	if get_option('web_threads')
+		# workers are started up front: creating one later needs the main thread to return to the
+		# browser, which a blocked main loop only does through JSPI
+		project_link_args += [ '-pthread', '-sPTHREAD_POOL_SIZE=2' ]
+	endif
 	# emcc optimises at link time too (wasm-opt, JS minification, assertions off from -O1), but Meson only
 	# passes the optimization level when compiling.
 	if get_option('optimization') != 'plain'

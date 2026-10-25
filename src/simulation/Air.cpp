@@ -6,6 +6,7 @@
 #include "Simulation.h"
 #include "ElementClasses.h"
 #include "common/tpt-rand.h"
+#include "Misc.h"
 
 /*float kernel[9];
 
@@ -37,6 +38,17 @@ void Air::make_kernel(void) //used for velocity
 	for (j=-1; j<2; j++)
 		for (i=-1; i<2; i++)
 			kernel[(i+1)+3*(j+1)] *= s;
+}
+
+float Air::vorticity(int y, int x) const
+{
+	if (x > 1 && x < XRES/CELL-2 && y > 1 && y < YRES/CELL-2)
+	{
+		auto dvydx = (bmap[y][x] || bmap[y][x+1] || bmap[y][x-1]) ? 0.0f : vy[y][x+1] - vy[y][x-1];
+		auto dvxdy = (bmap[y][x] || bmap[y+1][x] || bmap[y-1][x]) ? 0.0f : vx[y+1][x] - vx[y-1][x];
+		return (dvydx - dvxdy)*0.5f;
+	}
+	return 0.0f;
 }
 
 void Air::Clear()
@@ -133,6 +145,8 @@ void Air::update_airh(void)
 					vy[y][x] += weight * convGravY;
 				}
 			}
+			// keep air temperature within the game's limits (upstream feb3f9de); hot air near the edges grew without bound
+			dh = restrict_flt(dh, MIN_TEMP, MAX_TEMP);
 			ohv[y][x] = dh;
 
 			// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
@@ -260,7 +274,7 @@ void Air::update_air(void)
 
 				tx = x - dx*advDistanceMult;
 				ty = y - dy*advDistanceMult;
-				if ((dx*advDistanceMult>1.0f || dy*advDistanceMult>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
+				if ((std::abs(dx*advDistanceMult)>1.0f || std::abs(dy*advDistanceMult)>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
 				{
 					// Trying to take velocity from far away, check whether there is an intervening wall. Step from current position to desired source location, looking for walls, with either the x or y step size being 1 cell
 					if (std::abs(dx)>std::abs(dy))
@@ -299,8 +313,9 @@ void Air::update_air(void)
 				j = (int)ty;
 				tx -= i;
 				ty -= j;
-				if (!bmap_blockair[y][x] && i>=2 && i<=XRES/CELL-3 &&
-				        j>=2 && j<=YRES/CELL-3)
+				// upstream 3b19f846: <= read one cell too far and made air appear in the lower right corner
+				if (!bmap_blockair[y][x] && i>=2 && i<XRES/CELL-3 &&
+				        j>=2 && j<YRES/CELL-3)
 				{
 					dx *= 1.0f - AIR_VADV;
 					dy *= 1.0f - AIR_VADV;
@@ -316,6 +331,17 @@ void Air::update_air(void)
 
 					dx += AIR_VADV*tx*ty*vx[j+1][i+1];
 					dy += AIR_VADV*tx*ty*vy[j+1][i+1];
+				}
+
+				// vorticity confinement (upstream b77a1cba, 4d1364b8)
+				if (vorticityCoeff > 0.0f && x > 1 && x < XRES/CELL-2 && y > 1 && y < YRES/CELL-2)
+				{
+					auto dwx = (std::abs(vorticity(y, x+1)) - std::abs(vorticity(y, x-1)))*0.5f;
+					auto dwy = (std::abs(vorticity(y+1, x)) - std::abs(vorticity(y-1, x)))*0.5f;
+					auto norm = std::hypot(dwx, dwy);
+					auto w = vorticity(y, x);
+					dx += vorticityCoeff/5.0f * dwy / (norm + 0.001f) * w;
+					dy += vorticityCoeff/5.0f * (-dwx) / (norm + 0.001f) * w;
 				}
 
 				if (bmap[y][x] == WL_FAN)
@@ -413,7 +439,8 @@ void Air::RecalculateBlockAirMaps()
 Air::Air(Simulation & simulation):
 	sim(simulation),
 	airMode(0),
-	ambientAirTemp(R_TEMP + 273.15f)
+	ambientAirTemp(R_TEMP + 273.15f),
+	vorticityCoeff(0.0f)
 {
 	//Simulation should do this.
 	make_kernel();

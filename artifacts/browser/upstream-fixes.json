@@ -1,0 +1,37 @@
+{
+  "nanFrames60ms": 43.7900390625,
+  "gas": {
+    "start": {
+      "x0": 305.5,
+      "y0": 191.5
+    },
+    "end": {
+      "x": 305.57,
+      "y": 191.39,
+      "n": 3600
+    }
+  },
+  "heatCapacity": {
+    "equal": {
+      "metl": 650,
+      "ttan": 650
+    },
+    "ttanCapacity3": {
+      "metl": 475,
+      "ttan": 475
+    }
+  },
+  "vorticity": {
+    "off": 65.753876558648,
+    "on": 97.461578467907,
+    "afterReload": 0.30000001192093
+  },
+  "reactions": {
+    "lith": 1492,
+    "ptnm": 155,
+    "acidicRime": 112,
+    "acid": 106,
+    "storHolds": "31"
+  },
+  "binaryProp": "11,255"
+}

@@ -348,6 +348,7 @@ bool hasMouseMoved = false;
 // queued SDL event, so the game state only changes inside the game loop.
 static GameController *webGameController = nullptr;
 static Uint32 webSelectToolEvent = (Uint32)-1;
+static Uint32 webCommandEvent = (Uint32)-1;
 static void WebSelectTool(const char *identifier, int selection);
 #endif
 
@@ -357,6 +358,13 @@ void EventProcess(SDL_Event event)
 	if (webSelectToolEvent != (Uint32)-1 && event.type == webSelectToolEvent)
 	{
 		WebSelectTool((const char *)event.user.data1, event.user.code);
+		SDL_free(event.user.data1);
+		return;
+	}
+	if (webCommandEvent != (Uint32)-1 && event.type == webCommandEvent)
+	{
+		if (webGameController)
+			webGameController->RunCommand(ByteString((const char *)event.user.data1).FromUtf8());
 		SDL_free(event.user.data1);
 		return;
 	}
@@ -933,6 +941,7 @@ int main(int argc, char * argv[])
 #ifdef __EMSCRIPTEN__
 		webGameController = gameController;
 		webSelectToolEvent = SDL_RegisterEvents(1);
+		webCommandEvent = SDL_RegisterEvents(1);
 #endif
 
 		auto openArg = arguments["open"];
@@ -1170,6 +1179,22 @@ extern "C"
 		event.type = webSelectToolEvent;
 		event.user.code = selection;
 		event.user.data1 = SDL_strdup(identifier);
+		if (SDL_PushEvent(&event) != 1)
+		{
+			SDL_free(event.user.data1);
+		}
+	}
+
+	// Runs Lua code in the game, as if typed into the console, at the next turn of the game loop (the page's
+	// challenge panel uses it to talk to challenges.lua).
+	EMSCRIPTEN_KEEPALIVE void tpt_lua_command(const char *code)
+	{
+		if (webCommandEvent == (Uint32)-1)
+			return;
+		SDL_Event event;
+		SDL_zero(event);
+		event.type = webCommandEvent;
+		event.user.data1 = SDL_strdup(code);
 		if (SDL_PushEvent(&event) != 1)
 		{
 			SDL_free(event.user.data1);

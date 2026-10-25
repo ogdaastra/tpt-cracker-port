@@ -14,8 +14,11 @@ test('page loads over HTTP, powder.js and powder.wasm initialise, no unexplained
 	await h.openGame(page, { dismissIntro: false });
 	const runningAt = Date.now();
 
-	const js = log.requests.find((r) => r.url.endsWith('/powder.js'));
-	const wasm = log.requests.find((r) => r.url.endsWith('/powder.wasm'));
+	// powder-mt.* (threaded) on a cross-origin isolated page, powder.* otherwise
+	const threads = await page.evaluate(() => window.tptPage.threads);
+	const name = threads ? 'powder-mt' : 'powder';
+	const js = log.requests.find((r) => r.url.endsWith(`/${name}.js`));
+	const wasm = log.requests.find((r) => r.url.endsWith(`/${name}.wasm`));
 	expect(js && js.status).toBe(200);
 	expect(wasm && wasm.status).toBe(200);
 	expect(wasm.type).toContain('application/wasm');
@@ -39,6 +42,7 @@ test('page loads over HTTP, powder.js and powder.wasm initialise, no unexplained
 		msToRunning: runningAt - navStart,
 		pageTimings: info.timings,
 		wasmBytes: info.buildInfo.wasmBytes,
+		threads,
 		commit: info.buildInfo.commit,
 	};
 	h.writeArtifact('01-load-log.json', { info, console: log.console, requests: log.requests, pageErrors: log.pageErrors });
@@ -433,7 +437,8 @@ test('readable failure state when JSPI is missing', async ({ page }) => {
 });
 
 test('readable failure state when powder.wasm cannot be downloaded', async ({ page }) => {
-	await page.route('**/powder.wasm', (route) => route.fulfill({ status: 404, body: 'not found' }));
+	// both builds' binaries (the page picks powder-mt.wasm when cross-origin isolated)
+	await page.route(/powder(-mt)?\.wasm$/, (route) => route.fulfill({ status: 404, body: 'not found' }));
 	await page.goto(h.START);
 	await expect(page.locator('#failure')).toBeVisible();
 	await expect(page.locator('#failure-message')).toContainText('powder.wasm');

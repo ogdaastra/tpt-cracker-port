@@ -110,7 +110,10 @@ static int update(UPDATE_FUNC_ARGS)
 		if (parts[i].life)
 		{
 			if (!--parts[i].life)
+			{
 				sim->kill_part(i);
+				return 1; // upstream 6433eb04: carrying on after kill_part corrupted pmap
+			}
 		}
 		break;
 	default:
@@ -138,7 +141,12 @@ static int update(UPDATE_FUNC_ARGS)
 	{
 		int newID, element;
 		if (parts[i].tmp > 500000)
-			element = PT_SING; //particle accelerators are known to create earth-destroying black holes
+		{
+			if (utype == PT_TUNG)
+				element = PT_AMTR; // PROT + TUNG -> AMTR (upstream 2d7f5fa2)
+			else
+				element = PT_SING; //particle accelerators are known to create earth-destroying black holes
+		}
 		else if (parts[i].tmp > 700)
 			element = PT_PLUT;
 		else if (parts[i].tmp > 420)

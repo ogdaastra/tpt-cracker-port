@@ -1,0 +1,18 @@
+{
+  "threaded": {
+    "off": 0.837,
+    "on": 0.861
+  },
+  "single": {
+    "off": 1.295,
+    "on": 3.285
+  },
+  "gravityExtraMs": {
+    "threaded": 0.02400000000000002,
+    "single": 1.9900000000000002
+  },
+  "fallback": {
+    "isolated": false,
+    "threads": false
+  }
+}

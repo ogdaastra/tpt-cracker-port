@@ -60,7 +60,7 @@ static int update(UPDATE_FUNC_ARGS)
 	else if (parts[i].life < 40) {
 		parts[i].life--;
 		if (RNG::Ref().chance(1, 100)) {
-			r = sim->create_part(-1, x + RNG::Ref().chance(-1, 1), y + RNG::Ref().chance(-1, 1), PT_PLSM);
+			r = sim->create_part(-1, x + RNG::Ref().between(-1, 1), y + RNG::Ref().between(-1, 1), PT_PLSM);
 			if (r>-1)
 				parts[r].life = 50;
 		}
