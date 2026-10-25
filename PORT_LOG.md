@@ -609,3 +609,32 @@ equivalent edits, each marked with the upstream commit in a comment):
   isolated, uses the single-threaded build and never downloads `powder-mt.*`.
 - **Not done:** upstream's render thread (it needs upstream's renderer split); the gain would be the
   0.3-3 ms of rendering per frame.
+
+## 24. Faster drawing (GPU rendering plan, stage 1)
+
+- **Measured first** (profiling build, 100k-particle scene of water, sand and fire, render only, ms per
+  frame): every display mode cost 2-3.7 ms except **fancy at 17.7 ms**. Inside fancy: the blur every liquid
+  particle gets (37 blended pixels each, ~9 ms) and gravity lensing (~4 ms, even with gravity off). Fire glow
+  cost up to 1.5 ms in scenes with sparks. In normal play the simulation costs several times more than drawing.
+- **What changed** (`src/graphics/Renderer.cpp`), all drawing exactly what it drew before:
+  - fire glow: each fire cell's 12x12 glow is clipped once instead of checking the screen bounds of every
+    pixel, and rows with no fire in or next to them are skipped (the in-place blur is kept bit for bit);
+  - gravity lensing: walks the picture row by row instead of column by column (it missed the cache on every
+    pixel), with a short path where the field is zero;
+  - blur, glow and blob: the pixels around a particle come from a precomputed list in the original order
+    (blends don't commute), without bounds checks away from the left/top edges; the blend of blur and blob
+    does the three colour channels at once with WebAssembly SIMD (a plain C++ version is used elsewhere).
+- **Result** (same profiling build, same scene): fancy **17.7 -> 4.8 ms**, blur alone 11.3 -> 5.7 ms,
+  blob 3.7 -> 3.0 ms, lensing ~4 -> under 1 ms; the other modes are unchanged within noise. Release build
+  (`PERF=1`, `perf.spec.mjs` now also times every display mode): fancy 6.3 ms, the others 2.4-3.7 ms.
+- **Same pixels, checked three ways:** a native harness ran the old and new fire code on 720 frames of random
+  sparse fire (pixels and fire arrays identical); the old and new browser builds rendered 14 scenes (7 display
+  modes, gravity on and off, particles touching the screen edges) with identical canvases, apart from the
+  black-hole block with gravity on, which also differs between two runs of the old build; native debug builds
+  (the plain C++ path) gave identical screenshots of the simulation area in all 14. New test
+  `render.spec.mjs` hashes the game's own screenshots in 6 display modes; the hashes are the old build's.
+- **Stage 2 (WebGL shaders) not done, on purpose:** drawing is now 2-6 ms per frame in a 100k-particle scene
+  and well under 1.5 ms in typical ones, while the simulation takes 4-9 ms. Shaders would save little of
+  the frame, add a second renderer to keep pixel-identical, and the CI machines render WebGL in software.
+  They would be worth it for new looks (bloom, smooth scaling), not for speed.
+- Full suite: 50 passed, 2 skipped (the PERF benchmarks).

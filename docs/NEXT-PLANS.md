@@ -268,6 +268,10 @@ listed in the PR so you can veto any.
 
 ## 5. Threads (#8)
 
+**Status: built** (PORT_LOG section 23): the spike worked, so the site runs a threaded build with Newtonian
+gravity on its own thread when the page is cross-origin isolated, and the single-threaded build otherwise
+(and offline). Upstream's render thread was not ported.
+
 **Honest expectation first.** The profile says most time is the particle update loop, which TPT runs on one
 thread on every platform (particles interact with neighbours in order). Threads help with:
 - **Newtonian gravity** (FFT, already written as a background thread in TPT, switched off in this build), a big
@@ -311,6 +315,11 @@ on the page does today; keep it that way); Lua scripts touching the simulation f
 ---
 
 ## 6. GPU rendering (#9)
+
+**Status: stage 1 built, stage 2 not started** (PORT_LOG section 24). The slowest display mode ("fancy")
+went from 17.7 to 4.8 ms per frame in a 100k-particle scene, and every mode draws exactly the same pixels as
+before. With drawing at 2-6 ms against 4-9 ms of simulation, shaders would buy little speed; they stay an
+option for new effects.
 
 **Honest expectation.** In the heavy scenes, drawing costs roughly 10-20% of a frame (`render_parts`
 5-9%, `render_fire` 1-6%, plus uploading the picture). Moving that to the GPU saves at most that much,

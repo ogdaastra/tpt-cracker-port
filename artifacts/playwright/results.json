@@ -3,7 +3,8 @@
     "argv": [
       "/opt/node22/bin/node",
       "/home/user/tpt-cracker-port/tests/browser/node_modules/.bin/playwright",
-      "test"
+      "test",
+      "perf.spec.mjs"
     ],
     "configFile": "/home/user/tpt-cracker-port/tests/browser/playwright.config.mjs",
     "rootDir": "/home/user/tpt-cracker-port/tests/browser",
@@ -77,18 +78,18 @@
   },
   "suites": [
     {
-      "title": "added-elements.spec.mjs",
-      "file": "added-elements.spec.mjs",
+      "title": "perf.spec.mjs",
+      "file": "perf.spec.mjs",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "every added element exists, is in a menu, and runs without breaking the simulation",
+          "title": "cost of one simulation frame and one rendered frame",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 240000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -98,12 +99,16 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 15706,
+                  "duration": 17705,
                   "errors": [],
-                  "stdout": [],
+                  "stdout": [
+                    {
+                      "text": "frame cost {\"powderBands\":{\"particles\":23982,\"simMsPerFrame\":3.639,\"renderMsPerFrame\":0.234,\"totalMsPerFrame\":3.873},\"liquidsAndFire\":{\"particles\":72085,\"simMsPerFrame\":6.164,\"renderMsPerFrame\":0.366,\"totalMsPerFrame\":6.53},\"powderBandsGravity\":{\"particles\":24012,\"simMsPerFrame\":3.45,\"renderMsPerFrame\":0.236,\"totalMsPerFrame\":3.686},\"electronics\":{\"particles\":34560,\"simMsPerFrame\":8.82,\"renderMsPerFrame\":1.413,\"totalMsPerFrame\":10.233}}\n"
+                    }
+                  ],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T19:12:50.177Z",
+                  "startTime": "2026-10-25T15:36:12.340Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -111,18 +116,18 @@
               "status": "expected"
             }
           ],
-          "id": "9b221b8400a0ddd9fb69-2d90fd2b860198bb2e83",
-          "file": "added-elements.spec.mjs",
-          "line": 35,
+          "id": "686e6cf7131c11a78911-d5c7525b50939ab8bad9",
+          "file": "perf.spec.mjs",
+          "line": 57,
           "column": 1
         },
         {
-          "title": "walls from TPT Ultimata: I-WALL keeps particles alive, the walls are in the wall menu",
+          "title": "cost of one rendered frame in each display mode",
           "ok": true,
           "tags": [],
           "tests": [
             {
-              "timeout": 120000,
+              "timeout": 600000,
               "annotations": [],
               "expectedStatus": "passed",
               "projectId": "chromium",
@@ -132,12 +137,16 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5290,
+                  "duration": 21189,
                   "errors": [],
-                  "stdout": [],
+                  "stdout": [
+                    {
+                      "text": "render cost by display mode {\"velocity\":2.62,\"pressure\":2.944,\"persistent\":2.637,\"fire\":3.428,\"blob\":3.41,\"heat\":3.738,\"fancy\":6.349,\"nothing\":3.354,\"heatGradient\":3.56,\"lifeGradient\":2.942,\"altVelocity\":2.419}\n"
+                    }
+                  ],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-24T19:13:05.981Z",
+                  "startTime": "2026-10-25T15:36:30.158Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -145,629 +154,9 @@
               "status": "expected"
             }
           ],
-          "id": "9b221b8400a0ddd9fb69-bb4737ed456a4c2caf90",
-          "file": "added-elements.spec.mjs",
-          "line": 92,
-          "column": 1
-        },
-        {
-          "title": "reactions of new elements: RSST solidifies under PHOT, EXPL blows up WOOD, BUTN sparks when clicked",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 14178,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:13:11.279Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "9b221b8400a0ddd9fb69-c35159efaa30a559f9a1",
-          "file": "added-elements.spec.mjs",
-          "line": 108,
-          "column": 1
-        },
-        {
-          "title": "undo/redo and stamps keep the added elements and Ultimata state",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 5823,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:13:25.465Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "9b221b8400a0ddd9fb69-e4612a9703c1f132c37f",
-          "file": "added-elements.spec.mjs",
-          "line": 157,
-          "column": 1
-        },
-        {
-          "title": "TPT Ultimata circuits: a VOLT source drives current (RSPK) round a METL loop",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 8889,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:13:31.296Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "9b221b8400a0ddd9fb69-2cb62d5d7b93db61411a",
-          "file": "added-elements.spec.mjs",
-          "line": 206,
-          "column": 1
-        },
-        {
-          "title": "a large block of VOLT that is not a circuit does not freeze the game",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 10400,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:13:40.195Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "9b221b8400a0ddd9fb69-c65afa37f9f8c090fd3e",
-          "file": "added-elements.spec.mjs",
-          "line": 231,
-          "column": 1
-        },
-        {
-          "title": "portals still carry particles (portal buffers are now allocated per channel)",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 9917,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:13:50.604Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "9b221b8400a0ddd9fb69-bf3397799e9790beaae7",
-          "file": "added-elements.spec.mjs",
-          "line": 250,
-          "column": 1
-        }
-      ]
-    },
-    {
-      "title": "tpt.spec.mjs",
-      "file": "tpt.spec.mjs",
-      "column": 0,
-      "line": 0,
-      "specs": [
-        {
-          "title": "page loads over HTTP, powder.js and powder.wasm initialise, no unexplained errors",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 3145,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:00.551Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-da5e675d2f521cbe9d60",
-          "file": "tpt.spec.mjs",
-          "line": 11,
-          "column": 1
-        },
-        {
-          "title": "canvas is non-blank and keeps updating",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 5343,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:03.705Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-3881abb6bb76c7ff3bcc",
-          "file": "tpt.spec.mjs",
-          "line": 48,
-          "column": 1
-        },
-        {
-          "title": "mouse draws and erases particles, keyboard shortcuts reach the game",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 9907,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:09.061Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-471ab5192a53cfd8b99d",
-          "file": "tpt.spec.mjs",
-          "line": 67,
-          "column": 1
-        },
-        {
-          "title": "crackerk.lua ran: MIST and PLNE (SPSH) exist, are selectable in the UI and can be placed",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 13481,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:18.979Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-2d3c610386945c54e358",
-          "file": "tpt.spec.mjs",
-          "line": 100,
-          "column": 1
-        },
-        {
-          "title": "save export and import round trip, persistence across reload",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 17623,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:32.469Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-f596d2f923f0a0f6e342",
-          "file": "tpt.spec.mjs",
-          "line": 138,
-          "column": 1
-        },
-        {
-          "title": "mod UI and mod C++ elements: J and the Cr-Menu button open the mod menu, all 51 elements run",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 180000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 14601,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:14:50.102Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-b244ebb4d28486009064",
-          "file": "tpt.spec.mjs",
-          "line": 215,
-          "column": 1
-        },
-        {
-          "title": "blocking dialogs from Lua (tpt.confirm, tpt.input, tpt.throw_error) run nested main loops",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 9301,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:15:04.710Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-87b45bab2071c6e3ba3f",
-          "file": "tpt.spec.mjs",
-          "line": 258,
-          "column": 1
-        },
-        {
-          "title": "settings persist across reload (game prefs and the mod's MANAGER settings)",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 8999,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:15:14.022Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-50fe5844af47acc32d82",
-          "file": "tpt.spec.mjs",
-          "line": 299,
-          "column": 1
-        },
-        {
-          "title": "resizing keeps the viewport usable and mouse mapping correct",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 7146,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:15:23.034Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-c85a3136d038bd136eca",
-          "file": "tpt.spec.mjs",
-          "line": 320,
-          "column": 1
-        },
-        {
-          "title": "performance: time to interactive and simulation frame rate, Newtonian gravity works",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 240000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 28182,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:15:30.187Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-d0ce5c73cb5ce2ea1303",
-          "file": "tpt.spec.mjs",
-          "line": 346,
-          "column": 1
-        },
-        {
-          "title": "saves survive leaving the page while the game starts (IndexedDB load race regression)",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 240000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 27689,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:15:58.377Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-9aea9647431cb7f262a4",
-          "file": "tpt.spec.mjs",
-          "line": 401,
-          "column": 1
-        },
-        {
-          "title": "readable failure state when JSPI is missing",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 171,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:16:26.075Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-e488d093a0a1f30b0f53",
-          "file": "tpt.spec.mjs",
-          "line": 425,
-          "column": 1
-        },
-        {
-          "title": "readable failure state when powder.wasm cannot be downloaded",
-          "ok": true,
-          "tags": [],
-          "tests": [
-            {
-              "timeout": 120000,
-              "annotations": [],
-              "expectedStatus": "passed",
-              "projectId": "chromium",
-              "projectName": "chromium",
-              "results": [
-                {
-                  "workerIndex": 0,
-                  "parallelIndex": 0,
-                  "status": "passed",
-                  "duration": 191,
-                  "errors": [],
-                  "stdout": [],
-                  "stderr": [],
-                  "retry": 0,
-                  "startTime": "2026-10-24T19:16:26.254Z",
-                  "annotations": [],
-                  "attachments": []
-                }
-              ],
-              "status": "expected"
-            }
-          ],
-          "id": "373455e398c2ccb9640d-5710bcc2515b2212b407",
-          "file": "tpt.spec.mjs",
-          "line": 435,
+          "id": "686e6cf7131c11a78911-d3b4cf0ac73076b18388",
+          "file": "perf.spec.mjs",
+          "line": 76,
           "column": 1
         }
       ]
@@ -775,9 +164,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-24T19:12:49.478Z",
-    "duration": 218083.821,
-    "expected": 20,
+    "startTime": "2026-10-25T15:36:11.569Z",
+    "duration": 40001.856,
+    "expected": 2,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

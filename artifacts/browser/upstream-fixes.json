@@ -1,13 +1,13 @@
 {
-  "nanFrames60ms": 46.744873046875,
+  "nanFrames60ms": 39.6298828125,
   "gas": {
     "start": {
       "x0": 305.5,
       "y0": 191.5
     },
     "end": {
-      "x": 305.97,
-      "y": 191.46,
+      "x": 305.38,
+      "y": 193.89,
       "n": 3600
     }
   },
@@ -27,10 +27,10 @@
     "afterReload": 0.30000001192093
   },
   "reactions": {
-    "lith": 6,
-    "ptnm": 177,
-    "acidicRime": 111,
-    "acid": 104,
+    "lith": 10,
+    "ptnm": 185,
+    "acidicRime": 106,
+    "acid": 101,
     "storHolds": "31"
   },
   "binaryProp": "11,255"

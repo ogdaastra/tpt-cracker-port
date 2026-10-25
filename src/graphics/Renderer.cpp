@@ -1,5 +1,10 @@
 #include "Renderer.h"
 
+#include <algorithm>
+#ifdef __wasm_simd128__
+# include <wasm_simd128.h>
+#endif
+
 #include <cmath>
 #include <iostream>
 #include <iomanip>
@@ -612,11 +617,24 @@ void Renderer::render_gravlensing(pixel * source)
 	pixel *dst = vid;
 	if (!dst)
 		return;
-	for(nx = 0; nx < XRES; nx++)
+	// row by row (the buffers are stored that way; column by column missed the cache on every pixel)
+	for(ny = 0; ny < YRES; ny++)
 	{
-		for(ny = 0; ny < YRES; ny++)
+		pixel *drow = dst + ny*(VIDXRES);
+		for(nx = 0; nx < XRES; nx++)
 		{
 			co = (ny/CELL)*(XRES/CELL)+(nx/CELL);
+			if (sim->gravx[co] == 0.0f && sim->gravy[co] == 0.0f)
+			{
+				// no field here: every channel samples the same pixel (what the general case computes)
+				pixel s = src[ny*(VIDXRES)+nx];
+				t = drow[nx];
+				r = PIXR(s) + PIXR(t);
+				g = PIXG(s) + PIXG(t);
+				b = PIXB(s) + PIXB(t);
+				drow[nx] = PIXRGB(r > 255 ? 255 : r, g > 255 ? 255 : g, b > 255 ? 255 : b);
+				continue;
+			}
 			rx = (int)(nx-sim->gravx[co]*0.75f+0.5f);
 			ry = (int)(ny-sim->gravy[co]*0.75f+0.5f);
 			gx = (int)(nx-sim->gravx[co]*0.875f+0.5f);
@@ -625,7 +643,7 @@ void Renderer::render_gravlensing(pixel * source)
 			by = (int)(ny-sim->gravy[co]+0.5f);
 			if(rx >= 0 && rx < XRES && ry >= 0 && ry < YRES && gx >= 0 && gx < XRES && gy >= 0 && gy < YRES && bx >= 0 && bx < XRES && by >= 0 && by < YRES)
 			{
-				t = dst[ny*(VIDXRES)+nx];
+				t = drow[nx];
 				r = PIXR(src[ry*(VIDXRES)+rx]) + PIXR(t);
 				g = PIXG(src[gy*(VIDXRES)+gx]) + PIXG(t);
 				b = PIXB(src[by*(VIDXRES)+bx]) + PIXB(t);
@@ -635,7 +653,7 @@ void Renderer::render_gravlensing(pixel * source)
 					g = 255;
 				if (b>255)
 					b = 255;
-				dst[ny*(VIDXRES)+nx] = PIXRGB(r,g,b);
+				drow[nx] = PIXRGB(r,g,b);
 			}
 		}
 	}
@@ -645,22 +663,51 @@ void Renderer::render_fire()
 {
 	if(!(render_mode & FIREMODE))
 		return;
-	int i,j,x,y,r,g,b,a;
+	int i,j,x,y,r,g,b;
+	// the glow of each fire cell is a 3x3-cell patch; clip it once per cell and blend straight into vid
+	// (the same arithmetic as addpixel, which checked the bounds of every one of its 144 pixels)
+	int alpha[CELL*3][CELL*3];
+	for (y=0; y<CELL*3; y++)
+		for (x=0; x<CELL*3; x++)
+			alpha[y][x] = findingElement ? int(fire_alpha[y][x]) / 2 : int(fire_alpha[y][x]);
+	// Rows with no fire in them or next to them stay empty (nothing to draw, nothing spreads in): skip them.
+	// The blur below works in place, so the row above is checked after its update, as the loop sees it.
+	bool rowFire[YRES/CELL];
 	for (j=0; j<YRES/CELL; j++)
+	{
+		rowFire[j] = false;
+		for (i=0; i<XRES/CELL && !rowFire[j]; i++)
+			rowFire[j] = fire_r[j][i] || fire_g[j][i] || fire_b[j][i];
+	}
+	for (j=0; j<YRES/CELL; j++)
+	{
+		if (!rowFire[j] && (j == 0 || !rowFire[j-1]) && (j+1 >= YRES/CELL || !rowFire[j+1]))
+			continue;
+		bool anyFire = false;
 		for (i=0; i<XRES/CELL; i++)
 		{
 			r = fire_r[j][i];
 			g = fire_g[j][i];
 			b = fire_b[j][i];
 			if (r || g || b)
-				for (y=-CELL; y<2*CELL; y++)
-					for (x=-CELL; x<2*CELL; x++)
+			{
+				int x0 = std::max(-CELL, -i*CELL), x1 = std::min(2*CELL, VIDXRES - i*CELL);
+				int y0 = std::max(-CELL, -j*CELL), y1 = std::min(2*CELL, VIDYRES - j*CELL);
+				for (y=y0; y<y1; y++)
+				{
+					pixel *row = vid + (j*CELL+y)*VIDXRES + i*CELL;
+					const int *arow = alpha[y+CELL] + CELL;
+					for (x=x0; x<x1; x++)
 					{
-						a = fire_alpha[y+CELL][x+CELL];
-						if (findingElement)
-							a /= 2;
-						addpixel(i*CELL+x, j*CELL+y, r, g, b, a);
+						int a = arow[x];
+						pixel t = row[x];
+						int nr = (a*r + 255*PIXR(t)) >> 8;
+						int ng = (a*g + 255*PIXG(t)) >> 8;
+						int nb = (a*b + 255*PIXB(t)) >> 8;
+						row[x] = PIXRGB(nr > 255 ? 255 : nr, ng > 255 ? 255 : ng, nb > 255 ? 255 : nb);
 					}
+				}
+			}
 			r *= 8;
 			g *= 8;
 			b *= 8;
@@ -678,7 +725,10 @@ void Renderer::render_fire()
 			fire_r[j][i] = r>4 ? r-4 : 0;
 			fire_g[j][i] = g>4 ? g-4 : 0;
 			fire_b[j][i] = b>4 ? b-4 : 0;
+			anyFire = anyFire || fire_r[j][i] || fire_g[j][i] || fire_b[j][i];
 		}
+		rowFire[j] = anyFire;
+	}
 }
 
 float temp[CELL*3][CELL*3];
@@ -704,9 +754,137 @@ void Renderer::prepare_alpha(int size, float intensity)
 }
 
 #ifndef FONTEDITOR
+namespace
+{
+	// The pixels PMODE_GLOW and PMODE_BLUR draw around a particle, in the order the original nested loops
+	// drew them (the blends do not commute), so render_parts can walk a list instead of testing the shape
+	// and the screen bounds for every pixel.
+	struct PatternOp
+	{
+		int dx, dy, offset, a; // a: index into the pattern's alphas
+	};
+
+	const int BlurAlpha[3] = { 30, 20, 10 };
+
+	const std::vector<PatternOp> &BlurOps()
+	{
+		static const std::vector<PatternOp> ops = [] {
+			std::vector<PatternOp> v;
+			for (int x = -3; x < 4; x++)
+				for (int y = -3; y < 4; y++)
+				{
+					if (std::abs(x)+std::abs(y) < 2 && !(std::abs(x) == 2 || std::abs(y) == 2))
+						v.push_back({ x, y, y*(VIDXRES)+x, 0 });
+					if (std::abs(x)+std::abs(y) <= 3 && std::abs(x)+std::abs(y))
+						v.push_back({ x, y, y*(VIDXRES)+x, 1 });
+					if (std::abs(x)+std::abs(y) == 2)
+						v.push_back({ x, y, y*(VIDXRES)+x, 2 });
+				}
+			return v;
+		}();
+		return ops;
+	}
+
+	// alphas: 0 = 192*cola/255 (centre), 1 = 96*cola/255 (next to it), 2 = 5*cola/255 (the rest)
+	const std::vector<PatternOp> &GlowOps()
+	{
+		static const std::vector<PatternOp> ops = [] {
+			std::vector<PatternOp> v;
+			auto add = [&v](int x, int y, int a) { v.push_back({ x, y, y*(VIDXRES)+x, a }); };
+			add(0, 0, 0);
+			add(1, 0, 1);
+			add(-1, 0, 1);
+			add(0, 1, 1);
+			add(0, -1, 1);
+			for (int x = 1; x < 6; x++)
+			{
+				add(0, -x, 2);
+				add(0, x, 2);
+				add(-x, 0, 2);
+				add(x, 0, 2);
+				for (int y = 1; y < 6; y++)
+				{
+					if (x + y > 7)
+						continue;
+					add(x, -y, 2);
+					add(-x, y, 2);
+					add(x, y, 2);
+					add(-x, -y, 2);
+				}
+			}
+			return v;
+		}();
+		return ops;
+	}
+
+	const int BlobAlpha[2] = { 223, 112 };
+
+	// blendpixel of one colour at a few fixed alphas (none of them 255), without the bounds check
+	class FixedBlend
+	{
+#if defined(__wasm_simd128__) && !defined(PIX16) && !defined(PIX32BGRA)
+		// the three channels at once, in 16-bit lanes (a*colour + (255-a)*old is at most 255*255); the
+		// pixel's bytes in memory are b, g, r and a fourth that PIXRGB leaves 0, as the zero lane of keep does
+		v128_t add[3], keep[3];
+
+	public:
+		template<int N>
+		FixedBlend(const int (&alphas)[N], int r, int g, int b)
+		{
+			static_assert(N <= 3, "FixedBlend holds three alphas");
+			for (int k = 0; k < N; k++)
+			{
+				int a = alphas[k];
+				add[k] = wasm_u16x8_make(a*b, a*g, a*r, 0, 0, 0, 0, 0);
+				keep[k] = wasm_u16x8_make(255 - a, 255 - a, 255 - a, 0, 0, 0, 0, 0);
+			}
+		}
+
+		void operator ()(pixel *p, int k) const
+		{
+			v128_t t = wasm_u16x8_extend_low_u8x16(wasm_v128_load32_zero(p));
+			v128_t sum = wasm_u16x8_shr(wasm_i16x8_add(wasm_i16x8_mul(t, keep[k]), add[k]), 8);
+			wasm_v128_store32_lane(p, wasm_u8x16_narrow_i16x8(sum, sum), 0);
+		}
+#else
+		int ar[3], ag[3], ab[3], keep[3];
+
+	public:
+		template<int N>
+		FixedBlend(const int (&alphas)[N], int r, int g, int b)
+		{
+			static_assert(N <= 3, "FixedBlend holds three alphas");
+			for (int k = 0; k < N; k++)
+			{
+				ar[k] = alphas[k]*r;
+				ag[k] = alphas[k]*g;
+				ab[k] = alphas[k]*b;
+				keep[k] = 255 - alphas[k];
+			}
+		}
+
+		void operator ()(pixel *p, int k) const
+		{
+			pixel t = *p;
+			*p = PIXRGB((ar[k] + keep[k]*PIXR(t)) >> 8, (ag[k] + keep[k]*PIXG(t)) >> 8, (ab[k] + keep[k]*PIXB(t)) >> 8);
+		}
+#endif
+	};
+
+	// addpixel without the bounds check
+	inline void AddTo(pixel *p, int r, int g, int b, int a)
+	{
+		pixel t = *p;
+		r = (a*r + 255*PIXR(t)) >> 8;
+		g = (a*g + 255*PIXG(t)) >> 8;
+		b = (a*b + 255*PIXB(t)) >> 8;
+		*p = PIXRGB(r > 255 ? 255 : r, g > 255 ? 255 : g, b > 255 ? 255 : b);
+	}
+}
+
 void Renderer::render_parts()
 {
-	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x, y;
+	int deca, decr, decg, decb, cola, colr, colg, colb, firea, firer, fireg, fireb, pixel_mode, q, i, t, nx, ny, x;
 	int orbd[4] = {0, 0, 0, 0}, orbl[4] = {0, 0, 0, 0};
 	float gradv, flicker;
 	Particle * parts;
@@ -1071,54 +1249,61 @@ void Renderer::render_parts()
 				{
 					vid[ny*(VIDXRES)+nx] = PIXRGB(colr,colg,colb);
 
-					blendpixel(nx+1, ny, colr, colg, colb, 223);
-					blendpixel(nx-1, ny, colr, colg, colb, 223);
-					blendpixel(nx, ny+1, colr, colg, colb, 223);
-					blendpixel(nx, ny-1, colr, colg, colb, 223);
+					if (nx >= 1 && ny >= 1)
+					{
+						pixel *centre = vid + ny*(VIDXRES) + nx;
+						FixedBlend blend(BlobAlpha, colr, colg, colb);
+						blend(centre + 1, 0);
+						blend(centre - 1, 0);
+						blend(centre + VIDXRES, 0);
+						blend(centre - VIDXRES, 0);
 
-					blendpixel(nx+1, ny-1, colr, colg, colb, 112);
-					blendpixel(nx-1, ny-1, colr, colg, colb, 112);
-					blendpixel(nx+1, ny+1, colr, colg, colb, 112);
-					blendpixel(nx-1, ny+1, colr, colg, colb, 112);
+						blend(centre + 1 - VIDXRES, 1);
+						blend(centre - 1 - VIDXRES, 1);
+						blend(centre + 1 + VIDXRES, 1);
+						blend(centre - 1 + VIDXRES, 1);
+					}
+					else
+					{
+						blendpixel(nx+1, ny, colr, colg, colb, 223);
+						blendpixel(nx-1, ny, colr, colg, colb, 223);
+						blendpixel(nx, ny+1, colr, colg, colb, 223);
+						blendpixel(nx, ny-1, colr, colg, colb, 223);
+
+						blendpixel(nx+1, ny-1, colr, colg, colb, 112);
+						blendpixel(nx-1, ny-1, colr, colg, colb, 112);
+						blendpixel(nx+1, ny+1, colr, colg, colb, 112);
+						blendpixel(nx-1, ny+1, colr, colg, colb, 112);
+					}
 				}
 				if(pixel_mode & PMODE_GLOW)
 				{
 					int cola1 = (5*cola)/255;
-					addpixel(nx, ny, colr, colg, colb, (192*cola)/255);
-					addpixel(nx+1, ny, colr, colg, colb, (96*cola)/255);
-					addpixel(nx-1, ny, colr, colg, colb, (96*cola)/255);
-					addpixel(nx, ny+1, colr, colg, colb, (96*cola)/255);
-					addpixel(nx, ny-1, colr, colg, colb, (96*cola)/255);
-
-					for (x = 1; x < 6; x++) {
-						addpixel(nx, ny-x, colr, colg, colb, cola1);
-						addpixel(nx, ny+x, colr, colg, colb, cola1);
-						addpixel(nx-x, ny, colr, colg, colb, cola1);
-						addpixel(nx+x, ny, colr, colg, colb, cola1);
-						for (y = 1; y < 6; y++) {
-							if(x + y > 7)
-								continue;
-							addpixel(nx+x, ny-y, colr, colg, colb, cola1);
-							addpixel(nx-x, ny+y, colr, colg, colb, cola1);
-							addpixel(nx+x, ny+y, colr, colg, colb, cola1);
-							addpixel(nx-x, ny-y, colr, colg, colb, cola1);
-						}
+					const int alphas[3] = { (192*cola)/255, (96*cola)/255, cola1 };
+					// the glow reaches 5 pixels; particles are left of XRES and above YRES, so only the
+					// left and top edges need the clipped path
+					if (nx >= 5 && ny >= 5)
+					{
+						pixel *centre = vid + ny*(VIDXRES) + nx;
+						for (auto &op : GlowOps())
+							AddTo(centre + op.offset, colr, colg, colb, alphas[op.a]);
 					}
+					else
+						for (auto &op : GlowOps())
+							addpixel(nx+op.dx, ny+op.dy, colr, colg, colb, alphas[op.a]);
 				}
 				if(pixel_mode & PMODE_BLUR)
 				{
-					for (x=-3; x<4; x++)
+					if (nx >= 3 && ny >= 3)
 					{
-						for (y=-3; y<4; y++)
-						{
-							if (abs(x)+abs(y) <2 && !(abs(x)==2||abs(y)==2))
-								blendpixel(x+nx, y+ny, colr, colg, colb, 30);
-							if (abs(x)+abs(y) <=3 && abs(x)+abs(y))
-								blendpixel(x+nx, y+ny, colr, colg, colb, 20);
-							if (abs(x)+abs(y) == 2)
-								blendpixel(x+nx, y+ny, colr, colg, colb, 10);
-						}
+						pixel *centre = vid + ny*(VIDXRES) + nx;
+						FixedBlend blend(BlurAlpha, colr, colg, colb);
+						for (auto &op : BlurOps())
+							blend(centre + op.offset, op.a);
 					}
+					else
+						for (auto &op : BlurOps())
+							blendpixel(nx+op.dx, ny+op.dy, colr, colg, colb, BlurAlpha[op.a]);
 				}
 				if(pixel_mode & PMODE_SPARK)
 				{

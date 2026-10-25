@@ -71,6 +71,25 @@ test('cost of one simulation frame and one rendered frame', async ({ page }) => 
 	console.log('frame cost', JSON.stringify(out));
 });
 
+// Rendering cost of each display mode (tpt.display_mode) in the liquids scene; "fancy" blurs every liquid
+// particle, which made it the slowest by far (section 6 of docs/NEXT-PLANS.md).
+test('cost of one rendered frame in each display mode', async ({ page }) => {
+	test.setTimeout(600_000);
+	await h.openGame(page);
+	await h.lua(page, 'tpt.set_pause(1) or 0');
+	await h.luaFile(page, 'tpt.newtonian_gravity(0)\n' + SCENES.liquidsAndFire + '\nreturn 0', 120_000);
+	const names = ['velocity', 'pressure', 'persistent', 'fire', 'blob', 'heat', 'fancy', 'nothing', 'heatGradient', 'lifeGradient', 'altVelocity'];
+	const out = {};
+	for (let mode = 0; mode < names.length; mode++) {
+		await h.luaFile(page, `tpt.display_mode(${mode}) return 0`);
+		await page.evaluate(() => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [20, 1])); // warm-up
+		out[names[mode]] = await frameCost(page, 1, 5, 30);
+	}
+	await h.luaFile(page, 'tpt.display_mode(3) return 0');
+	results.renderMsPerFrameByDisplayMode = out;
+	console.log('render cost by display mode', JSON.stringify(out));
+});
+
 async function ticksPerSecond(page, ms) {
 	const a = Number(await h.lua(page, 'TK'));
 	const ta = Date.now();

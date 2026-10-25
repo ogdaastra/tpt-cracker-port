@@ -48,10 +48,11 @@ TPT_BASE_URL=https://<deployment>/ npx playwright test   # against a deployment
 
 The suite drives the game through its own UI (mouse, keyboard, the in-game Lua console) and saves
 screenshots and measurements to `artifacts/browser/`. `added-elements.spec.mjs` covers the added elements,
-`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars). `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
+`categories.spec.mjs` the split menus and the page's element browser, `heat-pipe.spec.mjs` heat pipes, `record.spec.mjs` video/GIF recording and screenshots, `ultimata-tools.spec.mjs` Ultimata's tools and field switches, `threads.spec.mjs` the threaded build and its fallback, `upstream-fixes.spec.mjs` fixes and physics from newer TPT, `challenges.spec.mjs` challenge mode (every reference solution wins, doing nothing never does, one challenge played by hand, ink budget, locks, saved stars), `render.spec.mjs` that the display modes draw the same pixels as before the renderer was sped up. `TPT_BROWSER_CHANNEL=msedge` uses an installed Edge.
 
 `PERF=1 npx playwright test perf.spec.mjs` is a benchmark (skipped otherwise): it builds fixed scenes and
-times simulation and render frames inside the game (`tpt_benchmark`), writing `artifacts/browser/perf.json`.
+times simulation and render frames inside the game (`tpt_benchmark`), and render frames in every display
+mode, writing `artifacts/browser/perf.json`.
 `PERF_THROTTLES=1,4` adds the whole-game tick rate with Chromium CPU throttling (much noisier).
 
 The page talks to the game through a few exported functions (`src/PowderToySDL.cpp`): `tpt_open_file`
