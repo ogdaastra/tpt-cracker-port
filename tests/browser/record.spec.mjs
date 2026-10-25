@@ -88,6 +88,8 @@ test('video recording: a file of the right kind downloads and plays', async ({ p
 	expect(rec.state).toBe('done');
 	expect(rec.frames, 'frames copied in 5 s').toBeGreaterThan(100);
 	results.video = { name, bytes: buf.length, ...meta, frames: rec.frames, videoType };
+	// the <video> above cancels its blob request once it has what it needs (seen on file:// pages)
+	log.failedRequests = log.failedRequests.filter((r) => !/^blob:\S+ net::ERR_ABORTED$/.test(r));
 	await expect(page.locator('#btn-record')).not.toHaveClass(/recording/);
 	await h.expectNoUnexplainedErrors(log);
 });
