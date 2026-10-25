@@ -10,18 +10,18 @@
       "scripts"
     ],
     "timings": {
-      "start": 15.099999999627471,
-      "instantiated": 98.5,
-      "runtimeReady": 361.8999999994412,
-      "firstFrame": 381.8999999994412
+      "start": 19,
+      "instantiated": 131.40000000002328,
+      "runtimeReady": 436.30000000004657,
+      "firstFrame": 458.60000000009313
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "6cd0ff59d64611a6fee844f770a70e5730c6b082",
+      "commit": "a5e0bef7039264face1da1fa2c6091b9dce2de82",
       "dirty": true,
       "emscripten": "4.0.23",
-      "wasmBytes": 5215838,
-      "built": "2026-10-24T22:04:20Z"
+      "wasmBytes": 5215326,
+      "built": "2026-10-25T06:43:22Z"
     }
   },
   "console": [
@@ -40,6 +40,11 @@
       "url": "http://127.0.0.1:8765/style.css",
       "status": 200,
       "type": "text/css; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/vendor/gifenc.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
     },
     {
       "url": "http://127.0.0.1:8765/tpt-web.js",

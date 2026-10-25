@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record']) {
 			$(id).disabled = true;
 		}
 	}
@@ -429,6 +429,207 @@
 		setPanel(saved === null ? window.innerWidth >= 1000 : saved === '1');
 	}
 
+	// ------------------------------------------------------------------ recording
+	// Video (MediaRecorder) or GIF (gifenc in a worker) of the game canvas, and PNG screenshots. The game's
+	// canvas is WebGL, so frames are copied from Module.tptOnFrame, which the game calls right after it
+	// draws (tpt_set_frame_callback), into a 2D canvas that holds the chosen area and size.
+	const GAME_W = 646;
+	const SIM_W = 612;
+	const SIM_H = 384;
+	const recordButton = $('btn-record');
+	const recordDialog = $('record-dialog');
+	const VIDEO_TYPES = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+	const videoType = typeof MediaRecorder === 'function' ? VIDEO_TYPES.find((t) => MediaRecorder.isTypeSupported(t)) : undefined;
+	let recording = null;
+
+	$('record-video-type').textContent = videoType ? `(${videoType.startsWith('video/mp4') ? 'MP4' : 'WebM'})` : '(not supported by this browser)';
+
+	function timestamp() {
+		const d = new Date();
+		const p = (n) => String(n).padStart(2, '0');
+		return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+	}
+
+	function saveBlob(blob, name) {
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = name;
+		document.body.append(a);
+		a.click();
+		a.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 60000);
+		window.tptPage.lastDownload = { name, size: blob.size, type: blob.type };
+	}
+
+	// A 2D canvas the size of the chosen area, and a function that copies the current game frame into it.
+	function frameCopier(area, scale) {
+		const ratio = canvas.width / GAME_W; // the game's own scale option makes the canvas 2x, 3x...
+		const sw = (area === 'sim' ? SIM_W : canvas.width / ratio) * ratio;
+		const sh = (area === 'sim' ? SIM_H : canvas.height / ratio) * ratio;
+		const out = document.createElement('canvas');
+		out.width = Math.round(sw / ratio * scale);
+		out.height = Math.round(sh / ratio * scale);
+		const ctx = out.getContext('2d', { willReadFrequently: false });
+		ctx.imageSmoothingEnabled = false; // keep the pixels sharp when scaling up
+		return { canvas: out, ctx, copy: () => ctx.drawImage(canvas, 0, 0, sw, sh, 0, 0, out.width, out.height) };
+	}
+
+	function setFrameCallback(fn) {
+		mod.tptOnFrame = fn;
+		mod.ccall('tpt_set_frame_callback', null, ['number'], [fn ? 1 : 0]);
+	}
+
+	function takeScreenshot(area, scale) {
+		const copier = frameCopier(area, scale);
+		setFrameCallback(() => {
+			setFrameCallback(null);
+			copier.copy();
+			copier.canvas.toBlob((blob) => saveBlob(blob, `tpt-screenshot-${timestamp()}.png`), 'image/png');
+		});
+	}
+
+	// The GIF worker is built from function source so it also works on file:// pages, where module and
+	// URL workers are refused; tptGifencFactory comes from vendor/gifenc.js.
+	function gifWorkerMain() {
+		const enc = tptGifencFactory();
+		const gif = enc.GIFEncoder();
+		let frames = 0;
+		self.onmessage = (e) => {
+			const m = e.data;
+			if (m.type === 'frame') {
+				const data = new Uint8ClampedArray(m.buffer);
+				const palette = enc.quantize(data, 256);
+				gif.writeFrame(enc.applyPalette(data, palette), m.width, m.height, { palette, delay: m.delay });
+				frames++;
+				self.postMessage({ type: 'progress', frames });
+			} else if (m.type === 'finish') {
+				gif.finish();
+				const bytes = gif.bytes();
+				self.postMessage({ type: 'done', bytes, frames }, [bytes.buffer]);
+			}
+		};
+	}
+
+	function makeGifWorker() {
+		const source = `${tptGifencFactory.toString()}\n(${gifWorkerMain.toString()})();`;
+		const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+		const worker = new Worker(url);
+		URL.revokeObjectURL(url);
+		return worker;
+	}
+
+	function updateRecordButton() {
+		if (!recording) {
+			recordButton.textContent = 'Record…';
+			recordButton.classList.remove('recording');
+			return;
+		}
+		const secs = Math.floor((performance.now() - recording.started) / 1000);
+		const label = recording.encoding ? `Encoding GIF… ${recording.encoded}/${recording.frames}` :
+			`Stop ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+		recordButton.textContent = label;
+		recordButton.classList.add('recording');
+	}
+
+	function startRecording({ format, area, scale, seconds }) {
+		const copier = frameCopier(area, scale);
+		const rec = { format, started: performance.now(), frames: 0, encoded: 0, encoding: false };
+		recording = rec;
+		window.tptPage.recording = { format, state: 'recording' };
+		const finished = (blob, ext) => {
+			saveBlob(blob, `tpt-recording-${timestamp()}.${ext}`);
+			window.tptPage.recording = { format, state: 'done', frames: rec.frames, size: blob.size, type: blob.type };
+			recording = null;
+			clearInterval(rec.timer);
+			updateRecordButton();
+		};
+		if (format === 'video') {
+			const stream = copier.canvas.captureStream(60);
+			const chunks = [];
+			const recorder = new MediaRecorder(stream, { mimeType: videoType, videoBitsPerSecond: 8_000_000 });
+			recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+			recorder.onstop = () => finished(new Blob(chunks, { type: videoType.split(';')[0] }), videoType.startsWith('video/mp4') ? 'mp4' : 'webm');
+			copier.copy(); // first frame before the recorder starts, so the video does not begin black
+			recorder.start(1000);
+			setFrameCallback(() => {
+				copier.copy();
+				rec.frames++;
+			});
+			rec.stop = () => {
+				setFrameCallback(null);
+				recorder.stop();
+				stream.getTracks().forEach((t) => t.stop());
+			};
+		} else {
+			const worker = makeGifWorker();
+			const delay = 50; // 20 frames per second
+			let last = -Infinity;
+			worker.onmessage = (e) => {
+				if (e.data.type === 'progress') {
+					rec.encoded = e.data.frames;
+				} else if (e.data.type === 'done') {
+					worker.terminate();
+					finished(new Blob([e.data.bytes], { type: 'image/gif' }), 'gif');
+				}
+			};
+			setFrameCallback(() => {
+				const now = performance.now();
+				if (now - last < delay - 2) {
+					return;
+				}
+				last = now;
+				copier.copy();
+				const img = copier.ctx.getImageData(0, 0, copier.canvas.width, copier.canvas.height);
+				worker.postMessage({ type: 'frame', buffer: img.data.buffer, width: img.width, height: img.height, delay }, [img.data.buffer]);
+				rec.frames++;
+			});
+			rec.stop = () => {
+				setFrameCallback(null);
+				rec.encoding = true;
+				worker.postMessage({ type: 'finish' });
+			};
+		}
+		rec.timer = setInterval(() => {
+			updateRecordButton();
+			if (seconds && !rec.stopping && performance.now() - rec.started >= seconds * 1000) {
+				stopRecording();
+			}
+		}, 250);
+		updateRecordButton();
+	}
+
+	function stopRecording() {
+		if (recording && !recording.stopping) {
+			recording.stopping = true;
+			recording.stop();
+		}
+	}
+
+	recordButton.addEventListener('click', () => {
+		refocus();
+		if (recording) {
+			stopRecording();
+		} else {
+			recordDialog.showModal();
+		}
+	});
+	recordDialog.addEventListener('close', () => {
+		const f = new FormData($('record-form'));
+		const opts = { format: f.get('format'), area: f.get('area'), scale: Number(f.get('scale')), seconds: Number(f.get('seconds')) };
+		if (recordDialog.returnValue === 'start') {
+			if (opts.format === 'video' && !videoType) {
+				rememberError('recording: this browser cannot record video');
+			} else {
+				startRecording(opts);
+			}
+		} else if (recordDialog.returnValue === 'screenshot') {
+			takeScreenshot(opts.area, opts.scale);
+		}
+		refocus();
+	});
+	window.tptPage.recorder = { start: startRecording, stop: stopRecording, screenshot: takeScreenshot, videoType };
+
 	// ------------------------------------------------------------------ loading
 	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
 	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by
@@ -521,7 +722,7 @@
 				window.tptPage.state = 'running';
 				window.tptPage.timings.firstFrame = performance.now();
 				statusBox.hidden = true;
-				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen']) {
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record']) {
 					$(id).disabled = false;
 				}
 				initPanel();

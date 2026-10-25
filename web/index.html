@@ -14,6 +14,7 @@
 		<button type="button" id="btn-import" disabled title="Load a .cps or .stm save file from your computer">Import save…</button>
 		<input type="file" id="file-import" accept=".cps,.stm" hidden>
 		<button type="button" id="btn-export" disabled title="Download saves and stamps stored in this browser">Export saves…</button>
+		<button type="button" id="btn-record" disabled title="Record a video or GIF of the game, or take a screenshot">Record…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
 	</nav>
@@ -59,6 +60,33 @@
 	</form>
 </dialog>
 
+<dialog id="record-dialog" aria-labelledby="record-title">
+	<form method="dialog" id="record-form">
+		<h2 id="record-title">Record</h2>
+		<fieldset>
+			<legend>Format</legend>
+			<label><input type="radio" name="format" value="video" checked> Video <span class="hint" id="record-video-type"></span></label>
+			<label><input type="radio" name="format" value="gif"> GIF (plays anywhere, bigger file)</label>
+		</fieldset>
+		<fieldset>
+			<legend>Area</legend>
+			<label><input type="radio" name="area" value="sim" checked> Simulation only</label>
+			<label><input type="radio" name="area" value="window"> Whole game window</label>
+		</fieldset>
+		<fieldset>
+			<legend>Size and length</legend>
+			<label>Size <select name="scale"><option value="1">1x</option><option value="2" selected>2x</option></select></label>
+			<label>Length <select name="seconds"><option value="5">5 s</option><option value="10" selected>10 s</option><option value="20">20 s</option><option value="0">until I stop it</option></select></label>
+		</fieldset>
+		<p class="hint">The file downloads when recording stops. Click the red Stop button to stop early.</p>
+		<p class="dialog-buttons">
+			<button value="screenshot" id="record-screenshot">Screenshot (PNG)</button>
+			<button value="cancel">Cancel</button>
+			<button value="start" id="record-start" class="primary">Start recording</button>
+		</p>
+	</form>
+</dialog>
+
 <footer class="bar">
 	<p>
 		The real C++ game compiled with Emscripten; runs locally in your browser.
@@ -75,6 +103,7 @@
 	</p>
 </footer>
 
+<script src="vendor/gifenc.js"></script>
 <script src="tpt-web.js"></script>
 </body>
 </html>

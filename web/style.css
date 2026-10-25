@@ -71,6 +71,15 @@ button {
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:disabled { opacity: 0.45; cursor: default; }
 button.on { border-color: var(--accent); color: var(--accent); }
+button.primary { border-color: var(--accent); }
+button.recording { border-color: var(--danger); color: var(--danger); font-variant-numeric: tabular-nums; }
+button.recording::before { content: "\25CF  "; }
+
+#record-dialog fieldset { border: 1px solid var(--border); border-radius: 4px; margin: 0 0 10px; }
+#record-dialog legend { color: var(--muted); padding: 0 4px; }
+#record-dialog label { display: block; margin: 3px 0; }
+#record-dialog select { font: inherit; color: var(--text); background: #0f1216; border: 1px solid var(--border); border-radius: 4px; }
+.dialog-buttons { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 
 #stage {
 	position: relative;

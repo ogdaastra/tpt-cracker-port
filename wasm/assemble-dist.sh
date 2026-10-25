@@ -21,6 +21,7 @@ done
 rm -rf "$DIST"
 mkdir -p "$DIST/source"
 cp web/index.html web/style.css web/tpt-web.js "$DIST/"
+mkdir -p "$DIST/vendor" && cp web/vendor/gifenc.js web/vendor/gifenc.LICENSE.md "$DIST/vendor/"
 cp "$BUILD_DIR/powder.js" "$BUILD_DIR/powder.wasm" "$DIST/"
 cp LICENSE "$DIST/LICENSE.txt"
 cp wasm/vercel.json "$DIST/vercel.json"
@@ -83,6 +84,9 @@ notice() { # title file
 	notice "libpng 1.6.39 (libpng-2.0)" "$EM_PORTS/libpng/libpng-1.6.39/LICENSE"
 	notice "bzip2 1.0.6 (bzip2 license)" "$EM_PORTS/bzip2/bzip2-1.0.6/LICENSE"
 	notice "Emscripten runtime and system libraries (MIT / UIUC; musl: MIT; libc++: Apache-2.0 WITH LLVM-exception)" "$(dirname "$(command -v emcc)")/LICENSE"
+	echo
+	echo "Used by the web page (not linked into powder.wasm):"
+	notice "gifenc 1.0.3 (MIT), GIF recording, vendor/gifenc.js" "web/vendor/gifenc.LICENSE.md"
 } > "$DIST/THIRD_PARTY_NOTICES.txt"
 
 echo "dist ready: $DIST"

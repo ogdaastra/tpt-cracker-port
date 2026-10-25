@@ -176,6 +176,12 @@ void CalculateMousePosition(int *x, int *y)
 		*y = (globalMy - windowY) / scale;
 }
 
+#ifdef __EMSCRIPTEN__
+// Set by the page while it records the canvas (tpt_set_frame_callback): the WebGL canvas can only be read
+// back in the same task that drew it, so the page copies each frame from Module.tptOnFrame.
+static bool webFrameCallback = false;
+#endif
+
 void blit(pixel * vid)
 {
 	SDL_UpdateTexture(sdl_texture, NULL, vid, WINDOWW * sizeof (Uint32));
@@ -184,6 +190,15 @@ void blit(pixel * vid)
 		SDL_RenderClear(sdl_renderer);
 	SDL_RenderCopy(sdl_renderer, sdl_texture, NULL, NULL);
 	SDL_RenderPresent(sdl_renderer);
+#ifdef __EMSCRIPTEN__
+	if (webFrameCallback)
+	{
+		EM_ASM({
+			if (Module['tptOnFrame'])
+				Module['tptOnFrame']();
+		});
+	}
+#endif
 }
 
 bool RecreateWindow();
@@ -1121,6 +1136,12 @@ extern "C"
 		}
 		json += "]}";
 		return json.c_str();
+	}
+
+	// Turns the per-frame Module.tptOnFrame() call (see blit) on or off.
+	EMSCRIPTEN_KEEPALIVE void tpt_set_frame_callback(int enabled)
+	{
+		webFrameCallback = enabled != 0;
 	}
 
 	// Identifiers of the left and right mouse tools, separated by a newline.
