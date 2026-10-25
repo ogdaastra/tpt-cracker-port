@@ -63,6 +63,11 @@ Key technical facts:
 - N1 was tested: `app.spec.mjs` 3/3, full suite 51 passed / 2 skipped with two failures that are explained
   in section 6 (one was the gallery's test edit run against the N1 build; one was the flaky portal test,
   fix pending). The offline file:// copy passed its CI subset.
+- **If your session was given a different branch name** (new sessions usually are): start it from this
+  branch, not from main, because the commits above are not in main yet:
+  `git fetch origin claude/festive-einstein-70qgap && git checkout -B <your-branch> origin/claude/festive-einstein-70qgap`.
+  Then work and open PRs from your branch. Wherever this document says `claude/festive-einstein-70qgap`
+  for new work, read it as your branch.
 - **Next action: open the PR for N1** (title like "Install as an app, works offline"), subscribe to it,
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - `FROM-SPARK.md` (linked from the README) is a personal note the user asked the previous agent to leave
