@@ -118,6 +118,7 @@ public:
 	float customGravityY = 0.0f;
 	int airMode = 0;
 	float ambientAirTemp = R_TEMP + 273.15f;
+	float vorticityCoeff = 0.0f; // air vorticity confinement, saved when on (upstream b77a1cba)
 	int edgeMode = 0;
 
 	//Signs

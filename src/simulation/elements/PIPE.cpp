@@ -3,8 +3,8 @@
 int Element_PIPE_update(UPDATE_FUNC_ARGS);
 int Element_PIPE_graphics(GRAPHICS_FUNC_ARGS);
 void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Particle *part, bool STOR);
-static void transfer_part_to_pipe(Particle *part, Particle *pipe);
-static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR);
+static void transfer_part_to_pipe(Simulation *sim, Particle *part, Particle *pipe);
+static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest, bool STOR);
 static void pushParticle(Simulation * sim, int i, int count, int original);
 void Element_SOAP_detach(Simulation * sim, int i);
 void Element_PPIP_flood_trigger(Simulation * sim, int x, int y, int sparkedBy);
@@ -288,13 +288,13 @@ int Element_PIPE_update(UPDATE_FUNC_ARGS)
 					{
 						if (TYP(r)==PT_SOAP)
 							Element_SOAP_detach(sim, ID(r));
-						transfer_part_to_pipe(parts+(ID(r)), parts+i);
+						transfer_part_to_pipe(sim, parts+(ID(r)), parts+i);
 						sim->kill_part(ID(r));
 					}
 					else if (!TYP(parts[i].ctype) && TYP(r)==PT_STOR && sim->IsElement(parts[ID(r)].tmp) && (sim->elements[parts[ID(r)].tmp].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY)))
 					{
 						// STOR stores properties in the same places as PIPE does
-						transfer_pipe_to_pipe(parts+(ID(r)), parts+i, true);
+						transfer_pipe_to_pipe(sim, parts+(ID(r)), parts+i, true);
 					}
 				}
 			}
@@ -464,13 +464,22 @@ void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Partic
 	part->dcolour = 0;
 }
 
-// A heat pipe keeps its own temperature: what it carries mixes with it (equal weights; this version of
-// the game has no per-element heat capacity). Other pipes just carry the particle's temperature.
-static void transfer_part_to_pipe(Particle *part, Particle *pipe)
+// Heat capacity of an element id, 1 for anything that isn't one
+static float heatCapacity(Simulation *sim, int type)
+{
+	return (type > 0 && type < PT_NUM) ? sim->elements[type].HeatCapacity : 1.0f;
+}
+
+// A heat pipe keeps its own temperature: what it carries mixes with it, weighted by heat capacity
+// (upstream 85ee427e, e0d14786). Other pipes just carry the particle's temperature.
+static void transfer_part_to_pipe(Simulation *sim, Particle *part, Particle *pipe)
 {
 	pipe->ctype = part->type;
 	if (pipe->tmp & Simulation::PFLAG_CAN_CONDUCT)
-		pipe->temp = (part->temp + pipe->temp) / 2;
+	{
+		float cPart = heatCapacity(sim, part->type), cPipe = heatCapacity(sim, pipe->type);
+		pipe->temp = (cPart * part->temp + cPipe * pipe->temp) / (cPart + cPipe);
+	}
 	else
 		pipe->temp = part->temp;
 	pipe->tmp2 = part->life;
@@ -478,7 +487,7 @@ static void transfer_part_to_pipe(Particle *part, Particle *pipe)
 	pipe->tmp4 = part->ctype;
 }
 
-static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
+static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest, bool STOR)
 {
 	// STOR to PIPE
 	if (STOR)
@@ -492,7 +501,11 @@ static void transfer_pipe_to_pipe(Particle *src, Particle *dest, bool STOR)
 		src->ctype = 0;
 	}
 	if (dest->tmp & Simulation::PFLAG_CAN_CONDUCT)
-		dest->temp = (src->temp + dest->temp) / 2;
+	{
+		// the carried particle's capacity against the receiving pipe's
+		float cSrc = heatCapacity(sim, dest->ctype), cDest = heatCapacity(sim, dest->type);
+		dest->temp = (cSrc * src->temp + cDest * dest->temp) / (cSrc + cDest);
+	}
 	else
 		dest->temp = src->temp;
 	dest->tmp2 = src->tmp2;
@@ -528,7 +541,7 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 					continue;
 				else if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 				{
-					transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)), false);
+					transfer_pipe_to_pipe(sim, sim->parts+i, sim->parts+(ID(r)), false);
 					if (ID(r) > original)
 						sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 					count++;
@@ -558,7 +571,7 @@ static void pushParticle(Simulation * sim, int i, int count, int original)
 		r = sim->pmap[y+ pos_1_ry[coords]][x+ pos_1_rx[coords]];
 		if ((TYP(r)==PT_PIPE || TYP(r) == PT_PPIP) && (sim->parts[ID(r)].tmp&PFLAG_COLORS) != notctype && !TYP(sim->parts[ID(r)].ctype))
 		{
-			transfer_pipe_to_pipe(sim->parts+i, sim->parts+(ID(r)), false);
+			transfer_pipe_to_pipe(sim, sim->parts+i, sim->parts+(ID(r)), false);
 			if (ID(r) > original)
 				sim->parts[ID(r)].flags |= PFLAG_NORMALSPEED;//skip particle push, normalizes speed
 			count++;

@@ -1068,6 +1068,7 @@ void GameModel::SetSave(SaveInfo * newSave, bool invertIncludePressure)
 		sim->customGravityY = saveData->customGravityY;
 		sim->air->airMode = saveData->airMode;
 		sim->air->ambientAirTemp = saveData->ambientAirTemp;
+		sim->air->vorticityCoeff = restrict_flt(saveData->vorticityCoeff, 0.0f, 1.0f);
 		sim->edgeMode = saveData->edgeMode;
 		sim->legacy_enable = saveData->legacyEnable;
 		sim->water_equal_test = saveData->waterEEnabled;
@@ -1132,6 +1133,7 @@ void GameModel::SetSaveFile(SaveFile * newSave, bool invertIncludePressure)
 		sim->customGravityY = saveData->customGravityY;
 		sim->air->airMode = saveData->airMode;
 		sim->air->ambientAirTemp = saveData->ambientAirTemp;
+		sim->air->vorticityCoeff = restrict_flt(saveData->vorticityCoeff, 0.0f, 1.0f);
 		sim->edgeMode = saveData->edgeMode;
 		sim->legacy_enable = saveData->legacyEnable;
 		sim->water_equal_test = saveData->waterEEnabled;
@@ -1512,6 +1514,7 @@ void GameModel::ClearSimulation()
 	sim->customGravityX = 0.0f;
 	sim->customGravityY = 0.0f;
 	sim->air->airMode = 0;
+	sim->air->vorticityCoeff = 0.0f;
 	sim->legacy_enable = false;
 	sim->water_equal_test = false;
 	sim->SetEdgeMode(edgeMode);

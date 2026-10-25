@@ -103,3 +103,81 @@ test('gas spreads evenly instead of drifting down and right', async ({ page }) =
 	expect(Math.abs(end.y - r.y0), 'vertical drift of the gas cloud (px)').toBeLessThan(3);
 	await h.expectNoUnexplainedErrors(log);
 });
+
+// ---- batch B: physics
+
+test('heat capacity: a block with three times the capacity pulls the shared temperature towards its own', async ({ page }) => {
+	const log = h.collect(page);
+	await h.openGame(page);
+	expect(await h.luaFile(page, 'return elem.property(elem.DEFAULT_PT_BASE, "HeatCapacity")')).toBe('1.5');
+	// a hot METL block touching a cold TTAN block, nothing else; returns the two average temperatures
+	const run = (ttanCapacity) => h.luaFile(page, `
+		sim.clearSim()
+		elem.property(elem.DEFAULT_PT_TTAN, "HeatCapacity", ${ttanCapacity})
+		for x = 280, 299 do for y = 180, 219 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_METL) end end
+		for x = 300, 319 do for y = 180, 219 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_TTAN) end end
+		for i in sim.parts() do
+			sim.partProperty(i, "temp", sim.partProperty(i, "type") == elem.DEFAULT_PT_METL and 1000 or 300)
+		end
+		return 0`);
+	const measure = async () => JSON.parse(await h.luaFile(page, `
+		local s = { [elem.DEFAULT_PT_METL] = 0, [elem.DEFAULT_PT_TTAN] = 0 }
+		for i in sim.parts() do local t = sim.partProperty(i, "type") s[t] = s[t] + sim.partProperty(i, "temp") end
+		return string.format('{"metl":%.1f,"ttan":%.1f}', s[elem.DEFAULT_PT_METL] / 800, s[elem.DEFAULT_PT_TTAN] / 800)`));
+	await run(1);
+	await step(page, 3000);
+	const equal = await measure();
+	await run(3);
+	await step(page, 3000);
+	const heavy = await measure();
+	await h.luaFile(page, 'elem.property(elem.DEFAULT_PT_TTAN, "HeatCapacity", 1) return 0');
+	results.heatCapacity = { equal, ttanCapacity3: heavy };
+	// equal capacities meet near 650 K; with TTAN 3x, energy balance gives (1000 + 3 * 300) / 4 = 475 K
+	expect(Math.abs(equal.metl - equal.ttan), 'equal capacities reach one temperature').toBeLessThan(25);
+	expect(Math.abs((equal.metl + equal.ttan) / 2 - 650)).toBeLessThan(15);
+	expect(Math.abs(heavy.metl - heavy.ttan)).toBeLessThan(25);
+	expect(Math.abs((heavy.metl + 3 * heavy.ttan) / 4 - 475), 'heat conserved with capacities').toBeLessThan(15);
+	expect((heavy.metl + heavy.ttan) / 2).toBeLessThan(520);
+	await h.expectNoUnexplainedErrors(log);
+});
+
+test('vorticity confinement keeps air swirling, and the setting is saved with the simulation', async ({ page }) => {
+	const log = h.collect(page);
+	await h.openGame(page);
+	// the same air disturbance past a wall block, with confinement off and on; total |curl| afterwards
+	const swirl = async (coeff) => {
+		await h.luaFile(page, `
+			sim.clearSim()
+			sim.vorticityCoeff(${coeff})
+			sim.createWallBox(296, 176, 315, 207, 8)
+			for cx = 60, 70 do for cy = 44, 52 do sim.velocityX(cx, cy, 20) end end
+			return 0`);
+		await step(page, 90);
+		return Number(await h.luaFile(page, `
+			local s = 0
+			for cy = 2, 93 do for cx = 2, 150 do
+				local w = (sim.velocityY(cx + 1, cy) - sim.velocityY(cx - 1, cy)) - (sim.velocityX(cx, cy + 1) - sim.velocityX(cx, cy - 1))
+				s = s + math.abs(w) * 0.5
+			end end
+			return s`));
+	};
+	const off = await swirl(0);
+	const on = await swirl(0.5);
+	results.vorticity = { off, on };
+	expect(on, 'more swirl with confinement on').toBeGreaterThan(off * 1.2);
+	// saved with the simulation: a stamp of the whole screen, opened again as a save, brings the setting back
+	const stamp = await h.luaFile(page, `
+		sim.vorticityCoeff(0.3)
+		return sim.saveStamp(0, 0, 611, 383)`);
+	await h.luaFile(page, 'sim.vorticityCoeff(0) return 0');
+	await page.evaluate(([dir, name]) => {
+		const fs = window.tptPage.module.FS;
+		fs.writeFile('/tmp/vorticity.cps', fs.readFile(`${dir}/stamps/${name}.stm`));
+		window.tptPage.module.ccall('tpt_open_file', null, ['string'], ['/tmp/vorticity.cps']);
+	}, [h.DATA_DIR, stamp]);
+	await h.waitFrames(page, 30);
+	const loaded = Number(await h.luaFile(page, 'return sim.vorticityCoeff()'));
+	results.vorticity.afterReload = loaded;
+	expect(loaded).toBeCloseTo(0.3, 5);
+	await h.expectNoUnexplainedErrors(log);
+});

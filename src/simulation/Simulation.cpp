@@ -564,6 +564,7 @@ void Simulation::SaveSimOptions(GameSave * gameSave)
 	gameSave->customGravityY = customGravityY;
 	gameSave->airMode = air->airMode;
 	gameSave->ambientAirTemp = air->ambientAirTemp;
+	gameSave->vorticityCoeff = air->vorticityCoeff;
 	gameSave->edgeMode = edgeMode;
 	gameSave->legacyEnable = legacy_enable;
 	gameSave->waterEEnabled = water_equal_test;
@@ -4133,11 +4134,12 @@ void Simulation::UpdateParticles(int start, int end)
 #else
 						c_heat = (hv[y/CELL][x/CELL]-parts[i].temp)*0.04;
 						c_heat = restrict_flt(c_heat, -MAX_TEMP+MIN_TEMP, MAX_TEMP-MIN_TEMP);
-						parts[i].temp += c_heat;
+						parts[i].temp = restrict_flt(parts[i].temp + c_heat / HeatCapacityOf(parts[i]), MIN_TEMP, MAX_TEMP);
 						hv[y/CELL][x/CELL] -= c_heat;
 #endif
 					}
 					c_heat = 0.0f;
+					float hc_total = 0.0f;
 #ifdef REALISTIC
 					float c_Cm = 0.0f;
 #endif
@@ -4171,7 +4173,10 @@ void Simulation::UpdateParticles(int start, int end)
 							c_heat += parts[ID(r)].temp*96.645/elements[rt].HeatConduct*gel_scale*fabs(elements[rt].Weight);
 							c_Cm += 96.645/elements[rt].HeatConduct*gel_scale*fabs(elements[rt].Weight);
 #else
-							c_heat += parts[ID(r)].temp;
+							// weighted by heat capacity (upstream 74f6a129); with all capacities 1 this is the plain average
+							float hc = HeatCapacityOf(parts[ID(r)]);
+							c_heat += parts[ID(r)].temp * hc;
+							hc_total += hc;
 #endif
 							h_count++;
 						}
@@ -4190,7 +4195,10 @@ void Simulation::UpdateParticles(int start, int end)
 					c_Cm += 96.645/elements[t].HeatConduct*gel_scale*fabs(elements[t].Weight);
 					parts[i].temp = restrict_flt(pt, MIN_TEMP, MAX_TEMP);
 #else
-					pt = (c_heat+parts[i].temp)/(h_count+1);
+					float hcSelf = HeatCapacityOf(parts[i]);
+					c_heat += parts[i].temp * hcSelf;
+					hc_total += hcSelf;
+					pt = c_heat / hc_total;
 					pt = parts[i].temp = restrict_flt(pt, MIN_TEMP, MAX_TEMP);
 					for (j=0; j<8; j++)
 					{
@@ -5223,6 +5231,13 @@ bool Simulation::IsHeatInsulator(const Particle &p) const
 {
 	return elements[p.type].HeatConduct == 0 || (p.type == PT_HSWC && p.life != 10) ||
 		((p.type == PT_PIPE || p.type == PT_PPIP) && !(p.tmp & PFLAG_CAN_CONDUCT));
+}
+
+float Simulation::HeatCapacityOf(const Particle &p) const
+{
+	if ((p.type == PT_PIPE || p.type == PT_PPIP) && IsElement(p.ctype))
+		return elements[p.type].HeatCapacity + elements[p.ctype].HeatCapacity;
+	return elements[p.type].HeatCapacity;
 }
 
 int Simulation::GetParticleType(ByteString type)

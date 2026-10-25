@@ -72,8 +72,23 @@ static int update(UPDATE_FUNC_ARGS)
 					continue;
 				if (sim->elements[TYP(r)].Properties & (TYPE_PART | TYPE_LIQUID | TYPE_GAS | TYPE_ENERGY))
 				{
-					parts[ID(r)].vx *= multiplier;
-					parts[ID(r)].vy *= multiplier;
+					auto vx = parts[ID(r)].vx;
+					auto vy = parts[ID(r)].vy;
+
+					vx *= multiplier;
+					vy *= multiplier;
+
+					// Restrict velocity and try to preserve direction
+					auto mv = fmaxf(fabsf(vx), fabsf(vy));
+					if (mv > SIM_MAXVELOCITY)
+					{
+						vx *= SIM_MAXVELOCITY/mv;
+						vy *= SIM_MAXVELOCITY/mv;
+					}
+
+					parts[ID(r)].vx = vx;
+					parts[ID(r)].vy = vy;
+
 					parts[i].tmp = 1;
 				}
 			}

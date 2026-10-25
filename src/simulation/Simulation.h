@@ -176,6 +176,8 @@ public:
 	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
 	// not heat pipes
 	bool IsHeatInsulator(const Particle &p) const;
+	// a pipe with something in it holds the heat of both (upstream e7c708a0)
+	float HeatCapacityOf(const Particle &p) const;
 	// Challenge mode (Lua challenge.begin): limits on what the player's tools may change. GameController sets
 	// userAction while it applies a tool, so Lua scripts and reactions are never limited.
 	struct ChallengeRules

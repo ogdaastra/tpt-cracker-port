@@ -986,6 +986,7 @@ void LuaScriptInterface::initSimulationAPI()
 		{"waterEqualisation", simulation_waterEqualisation},
 		{"waterEqualization", simulation_waterEqualisation},
 		{"ambientAirTemp", simulation_ambientAirTemp},
+		{"vorticityCoeff", simulation_vorticityCoeff},
 		{"elementCount", simulation_elementCount},
 		{"can_move", simulation_canMove},
 		{"brush", simulation_brush},
@@ -2218,6 +2219,18 @@ int LuaScriptInterface::simulation_ambientAirTemp(lua_State * l)
 	}
 	float ambientAirTemp = restrict_flt(luaL_optnumber(l, 1, R_TEMP + 273.15f), MIN_TEMP, MAX_TEMP);
 	luacon_model->SetAmbientAirTemperature(ambientAirTemp);
+	return 0;
+}
+
+// sim.vorticityCoeff([0..1]): air vorticity confinement, 0 = off (upstream b77a1cba)
+int LuaScriptInterface::simulation_vorticityCoeff(lua_State * l)
+{
+	if (lua_gettop(l) == 0)
+	{
+		lua_pushnumber(l, luacon_sim->air->vorticityCoeff);
+		return 1;
+	}
+	luacon_sim->air->vorticityCoeff = restrict_flt(float(luaL_checknumber(l, 1)), 0.0f, 1.0f);
 	return 0;
 }
 

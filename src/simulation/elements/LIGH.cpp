@@ -114,7 +114,7 @@ static int update(UPDATE_FUNC_ARGS)
 				case PT_DEUT:
 				case PT_PLUT:
 					parts[ID(r)].temp = restrict_flt(parts[ID(r)].temp+powderful, MIN_TEMP, MAX_TEMP);
-					sim->pv[y/CELL][x/CELL] +=powderful/35;
+					sim->pv[y/CELL][x/CELL] = restrict_flt(sim->pv[y/CELL][x/CELL] + powderful/35, MIN_PRESSURE, MAX_PRESSURE);
 					if (RNG::Ref().chance(1, 3))
 					{
 						sim->part_change_type(ID(r),x+rx,y+ry,PT_NEUT);
@@ -149,7 +149,7 @@ static int update(UPDATE_FUNC_ARGS)
 				}
 				if ((sim->elements[TYP(r)].Properties&PROP_CONDUCTS) && parts[ID(r)].life==0)
 					sim->create_part(ID(r),x+rx,y+ry,PT_SPRK);
-				sim->pv[y/CELL][x/CELL] += powderful/400;
+				sim->pv[y/CELL][x/CELL] = restrict_flt(sim->pv[y/CELL][x/CELL] + powderful/400, MIN_PRESSURE, MAX_PRESSURE);
 				if (!sim->IsHeatInsulator(parts[ID(r)])) parts[ID(r)].temp = restrict_flt(parts[ID(r)].temp+powderful/1.3, MIN_TEMP, MAX_TEMP);
 			}
 	// Deferred branch or bend; or in removal countdown stage

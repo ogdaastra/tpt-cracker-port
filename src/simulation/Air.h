@@ -10,6 +10,8 @@ public:
 	Simulation & sim;
 	int airMode;
 	float ambientAirTemp;
+	// vorticity confinement (upstream b77a1cba): > 0 keeps swirls in the air going; 0 is off, the old behaviour
+	float vorticityCoeff;
 	//Arrays from the simulation
 	unsigned char (*bmap)[XRES/CELL];
 	unsigned char (*emap)[XRES/CELL];
@@ -28,6 +30,8 @@ public:
 	unsigned char bmap_blockairh[YRES/CELL][XRES/CELL];
 	float kernel[9];
 	void make_kernel(void);
+	// curl of the air velocity at a cell (dvy/dx - dvx/dy), 0 next to walls (upstream 4d1364b8)
+	float vorticity(int y, int x) const;
 	void update_airh(void);
 	void update_air(void);
 	void Clear();

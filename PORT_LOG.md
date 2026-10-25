@@ -528,3 +528,25 @@ equivalent edits, each marked with the upstream commit in a comment):
   All 50 challenges re-checked: ASan run 50/50 solutions win, no sanitizer reports in changed code; browser
   stress 3 solution + 1 do-nothing runs each, after widening Wildfire's firebreak (the unbiased fire spread
   further).
+
+## 20. Physics from newer official TPT, batch B
+
+- **Heat capacity** (upstream 74f6a129, 85ee427e, e0d14786, e7c708a0, df5d90cc): elements have a
+  `HeatCapacity` (1.0 by default, BASE 1.5 as upstream; Lua `elem.property(id, "HeatCapacity", v)`).
+  Neighbour heat exchange, air heat exchange, HEAC and heat pipes weight temperatures by it, and a pipe
+  with something in it counts the capacity of both. With every capacity at 1 the exchange is the plain
+  average it was before, so existing saves behave the same apart from BASE.
+- **Vorticity confinement** (b77a1cba, 4d1364b8): an air setting that keeps swirls going. Off by default
+  (0, the old behaviour; upstream now defaults to 0.1), `sim.vorticityCoeff([0..1])`, saved in saves as
+  `vorticityCoeff` when on. Upstream's display mode and options box are not ported.
+- **Caps:** ACEL keeps direction when capping velocity, FRAY and RPEL cap velocity (95b9d671, bfd1199b);
+  DEST, LIGH, SING, THDR and WARP clamp the pressure they add (0c47112c); air temperature is clamped to the
+  game's limits (feb3f9de).
+- **Not ported:** upstream's rewritten ambient heat convection and its settings, ambient air pressure and
+  velocity, gravity in saves: they sit on upstream's newer air and gravity code, which this version (with
+  Ultimata's time dilation inside the air loop) doesn't share. Porting them means porting that code first.
+- **Tests** (`upstream-fixes.spec.mjs`, now 5): a 1000 K METL block against a 300 K TTAN block settles at
+  650 K / 650 K; with TTAN's capacity set to 3 at 475 K / 475 K, which is the energy balance
+  (1000 + 3 x 300) / 4. The same air disturbance past a wall block leaves a total |curl| of 65 with
+  confinement off and 97 with 0.5; a stamp opened as a save brings the setting back (0.3). All 50 challenges
+  re-checked (ASan 50/50; browser 3 solution + 1 do-nothing runs each, all as expected).

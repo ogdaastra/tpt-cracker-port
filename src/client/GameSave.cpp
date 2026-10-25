@@ -535,6 +535,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 		CheckBsonFieldFloat(iter, "customGravityY", &customGravityY);
 		CheckBsonFieldInt(iter, "airMode", &airMode);
 		CheckBsonFieldFloat(iter, "ambientAirTemp", &ambientAirTemp);
+		CheckBsonFieldFloat(iter, "vorticityCoeff", &vorticityCoeff);
 		CheckBsonFieldInt(iter, "edgeMode", &edgeMode);
 		CheckBsonFieldInt(iter, "pmapbits", &pmapbits);
 		if (!strcmp(bson_iterator_key(&iter), "signs"))
@@ -2488,6 +2489,10 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	bson_append_bool(&b, "paused", paused);
 	bson_append_int(&b, "gravityMode", gravityMode);
 	bson_append_int(&b, "airMode", airMode);
+	if (vorticityCoeff > 0.0001f && vorticityCoeff <= 1.0f)
+	{
+		bson_append_double(&b, "vorticityCoeff", double(vorticityCoeff));
+	}
 	if (fabsf(ambientAirTemp - (R_TEMP + 273.15f)) > 0.0001f)
 	{
 		bson_append_double(&b, "ambientAirTemp", double(ambientAirTemp));
