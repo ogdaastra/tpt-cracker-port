@@ -27,11 +27,13 @@ protected:
 	Type type;
 	String icon;
 	String description;
-	QuickOption(String icon, String description, GameModel * m, Type type) :
+	bool left_bottom; // TPT Ultimata: shown in the second side-bar column
+	QuickOption(String icon, String description, GameModel * m, Type type, bool left_bottom=false) :
 		m(m),
 		type(type),
 		icon(icon),
-		description(description)
+		description(description),
+		left_bottom(left_bottom)
 	{
 
 	}
@@ -61,6 +63,7 @@ public:
 
 	String GetIcon() { return icon; }
 	void SetIcon(String icon) { this->icon = icon; }
+	bool GetBottomLeft() { return left_bottom; }
 	String GetDescription() { return description; }
 	void SetDescription(String description) { this->description = description; }
 	void Perform()

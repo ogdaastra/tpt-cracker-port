@@ -1,4 +1,5 @@
 #include "Brush.h"
+#include "client/Client.h"
 #include "graphics/Renderer.h"
 
 Brush::Brush(ui::Point size_):
@@ -115,6 +116,21 @@ void Brush::RenderPoint(Renderer * ren, ui::Point position)
 	if(!outline)
 		return;
 	ren->xor_bitmap(outline, position.X-radius.X, position.Y-radius.Y, size.X, size.Y);
+
+	// Render crosshair if large enough
+	if (drawCrosshair && radius.X > 15 && radius.Y > 15) {
+		ren->xor_line(position.X, position.Y - 5, position.X, position.Y + 5);
+		ren->xor_line(position.X - 5, position.Y, position.X + 5, position.Y);
+	}
+
+	// Hollow indicator
+	if (isHollow) {
+		bool shouldHideHUD = Client::Ref().GetPrefBool("autoHideHUD", false) && position.Y < 100;
+		int alpha = shouldHideHUD ? position.Y * 2 : 255;
+
+		ren->fillrect(12, 41, ren->g->textwidth("[HOLLOW BRUSH]") + 8, 15, 0, 0, 0, alpha * 0.5);
+		ren->drawtext(16, 43, "[HOLLOW BRUSH]", 32, 216, 255, alpha * 0.75);
+	}
 }
 
 void Brush::RenderFill(Renderer * ren, ui::Point position)

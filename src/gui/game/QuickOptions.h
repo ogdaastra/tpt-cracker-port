@@ -50,3 +50,47 @@ public:
 	bool GetToggle() override;
 	void perform() override;
 };
+
+// TPT Ultimata
+class TimeDilationOption: public QuickOption {
+public:
+	TimeDilationOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+
+class EMFieldOption: public QuickOption {
+public:
+	EMFieldOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+
+class EMFieldElectricOption: public QuickOption {
+public:
+	EMFieldElectricOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+
+class EMFieldMagneticOption: public QuickOption {
+public:
+	EMFieldMagneticOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+
+class StressOption: public QuickOption {
+public:
+	StressOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+
+class StressViewOption: public QuickOption {
+public:
+	StressViewOption(GameModel * m);
+	bool GetToggle() override;
+	void perform() override;
+};
+

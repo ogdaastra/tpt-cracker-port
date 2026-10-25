@@ -30,6 +30,8 @@
 #include "simulation/ElementClasses.h"
 #include "simulation/ElementGraphics.h"
 #include "simulation/ToolClasses.h"
+#include "simulation/magnetics/magnetics.h"
+#include "simulation/stress/stress.h"
 
 #include "gui/game/DecorationTool.h"
 #include "gui/interface/Engine.h"
@@ -233,6 +235,13 @@ void GameModel::BuildQuickOptionMenu(GameController * controller)
 	quickOptions.push_back(new NGravityOption(this));
 	quickOptions.push_back(new AHeatOption(this));
 	quickOptions.push_back(new ConsoleShowOption(this, controller));
+	// second column (TPT Ultimata)
+	quickOptions.push_back(new EMFieldOption(this));
+	quickOptions.push_back(new EMFieldElectricOption(this));
+	quickOptions.push_back(new EMFieldMagneticOption(this));
+	quickOptions.push_back(new StressOption(this));
+	quickOptions.push_back(new StressViewOption(this));
+	quickOptions.push_back(new TimeDilationOption(this));
 
 	notifyQuickOptionsChanged();
 	UpdateQuickOptions();
@@ -394,6 +403,12 @@ void GameModel::BuildMenus()
 	menuList[SC_TOOL]->AddTool(new PropertyTool(this));
 	menuList[SC_TOOL]->AddTool(new SignTool(this));
 	menuList[SC_TOOL]->AddTool(new SampleTool(this));
+	// TPT Ultimata
+	menuList[SC_TOOL]->AddTool(new TransformTool(this));
+	menuList[SC_TOOL]->AddTool(new ConfigTool(this));
+	menuList[SC_TOOL]->AddTool(new TextTool(this));
+	menuList[SC_TOOL]->AddTool(new RulerTool(this));
+	menuList[SC_TOOL]->AddTool(new PropertyTool2());
 	menuList[SC_LIFE]->AddTool(new GOLTool(this));
 
 	//Add decoration tools to menu
@@ -501,6 +516,12 @@ void GameModel::BuildBrushList()
 		}
 		brushList.push_back(new BitmapBrush(reinterpret_cast<unsigned char *>(&brushData[0]), ui::Point(dimension, dimension)));
 	}
+
+	brushList.push_back(new HollowEllipseBrush(ui::Point(4, 4), perfectCircle));
+	brushList.push_back(new HollowBrush(ui::Point(4, 4)));
+	brushList.push_back(new HollowTriangleBrush(ui::Point(4, 4)));
+	for (unsigned int i = 1; i <= HOLLOW_BRUSHES; i++)
+		brushList[brushList.size() - i]->SetHollow(true);
 
 	if (hasStoredRadius && (size_t)currentBrush < brushList.size())
 		brushList[currentBrush]->SetRadius(radius);
@@ -834,9 +855,15 @@ int GameModel::GetBrushID()
 	return currentBrush;
 }
 
-void GameModel::SetBrushID(int i)
+void GameModel::SetBrushID(int i, bool toggleHollow)
 {
-	currentBrush = i%brushList.size();
+	if (toggleHollow)
+		currentlySelectingHollow = !currentlySelectingHollow;
+	int solid = (int)brushList.size() - HOLLOW_BRUSHES;
+	if (currentlySelectingHollow)
+		currentBrush = solid + ((i - solid) % HOLLOW_BRUSHES + HOLLOW_BRUSHES) % HOLLOW_BRUSHES;
+	else
+		currentBrush = ((i % solid) + solid) % solid;
 	notifyBrushChanged();
 }
 
@@ -1333,6 +1360,72 @@ void GameModel::ShowGravityGrid(bool showGrid)
 		SetInfoTip("Gravity Grid: On");
 	else
 		SetInfoTip("Gravity Grid: Off");
+}
+
+void GameModel::ShowTimeDilation(bool show)
+{
+	ren->timeDilationFieldEnabled = show;
+	SetInfoTip(show ? String("Draw Time Dilation: On") : String("Draw Time Dilation: Off"));
+}
+
+bool GameModel::GetTimeDilation()
+{
+	return ren->timeDilationFieldEnabled;
+}
+
+void GameModel::ShowElectricField(bool show)
+{
+	ren->electricFieldEnabled = show;
+	SetInfoTip(show ? String("Draw Electric Field: On") : String("Draw Electric Field: Off"));
+}
+
+bool GameModel::GetElectricField()
+{
+	return ren->electricFieldEnabled;
+}
+
+void GameModel::ShowMagneticField(bool show)
+{
+	ren->magneticFieldEnabled = show;
+	SetInfoTip(show ? String("Draw Magnetic Field: On") : String("Draw Magnetic Field: Off"));
+}
+
+bool GameModel::GetMagneticField()
+{
+	return ren->magneticFieldEnabled;
+}
+
+void GameModel::SetEMEnabled(bool enabled)
+{
+	sim->emfield->isEnabled = enabled;
+	SetInfoTip(enabled ? String("Electromagnetism: On") : String("Electromagnetism: Off"));
+}
+
+bool GameModel::GetEMEnabled()
+{
+	return sim->emfield->isEnabled;
+}
+
+void GameModel::ToggleStress(bool enabled)
+{
+	sim->stressField->enabled = enabled;
+	SetInfoTip(enabled ? String("Stress Simulation: On") : String("Stress Simulation: Off"));
+}
+
+bool GameModel::GetStress()
+{
+	return sim->stressField->enabled;
+}
+
+void GameModel::ToggleStressView(bool enabled)
+{
+	ren->stressFieldEnabled = enabled;
+	SetInfoTip(enabled ? String("Stress View: On") : String("Stress View: Off"));
+}
+
+bool GameModel::GetStressView()
+{
+	return ren->stressFieldEnabled;
 }
 
 bool GameModel::GetGravityGrid()

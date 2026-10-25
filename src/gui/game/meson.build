@@ -14,4 +14,10 @@ powder_files += files(
 	'SignTool.cpp',
 	'ToolButton.cpp',
 	'Tool.cpp',
+	# TPT Ultimata
+	'ConfigTool.cpp',
+	'PropertyTool2.cpp',
+	'RulerTool.cpp',
+	'TextTool.cpp',
+	'TransformTool.cpp',
 )

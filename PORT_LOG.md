@@ -430,3 +430,27 @@ simulation area or whole window, 1x/2x, 5/10/20 s or until stopped (the button t
 - Tests (`tests/browser/record.spec.mjs`): a 5 s 2x MP4 (365 KB, decodes at 1224x768, 299 frames copied), a
   5 s GIF (97 frames, 612x384, valid structure), a whole-window PNG (646x424), and a GIF stopped by hand after
   2 s (40 frames). Full suite 28/28.
+
+## 17. TPT Ultimata's tools and switches
+
+Ported from Ultimata (same TPT base, so nearly unchanged; files in `src/gui/game/`):
+- **Tools menu:** TRFM (transform: select a rectangle, scale/rotate it), CNFG (click a particle for a proper
+  settings dialog: WIFI/portal channels, CRAY/DRAY, detectors, FFGN, FRME, PSTN, TRBN, CLUD, LIFE, quantum…),
+  TEXT (type text, placed as particles, several fonts), RULR (distance between two points), PRP2 (set several
+  properties at once while drawing, `prop:value` per line with + - * / & ^ | operations).
+- **Hollow brushes:** Shift+Tab switches between the solid brushes and hollow circle/square/triangle.
+- **Field switches** in the second side-bar column, above the new menus: EM simulation, electric view,
+  magnetic view, stress simulation, stress view, time-dilation view. Lua: `sim.emField([on])`,
+  `sim.stressField([on])`; tool constants `sim.TOOL_SLOW`, `TOOL_FAST`, `TOOL_NORM`, `TOOL_ERODE`,
+  `TOOL_DECO`, `TOOL_RSET`, `TOOL_AMBP`, `TOOL_AMBM` were missing and are added.
+- Small changes: `Textbox::GetCursor*` getters (Ultimata's arrow-key change to every text box is not taken),
+  the CNFG channel dialog checks the particle still exists, crackerk.lua frames the new buttons.
+- Known limitation (Ultimata's own): its circuit solver writes currents into the integer `tmp4`, so currents
+  under 1 A read as 0 and the electric field (made by RSPK from `tmp4`) only appears with strong currents.
+  Measured: 1000 V across 14 RSTR pixels gives 0.071 A in the solver, 0 in the particles.
+- Tests (`tests/browser/ultimata-tools.spec.mjs`, 8): tools listed in Tools; TEXT writes "HI" in DMND at the
+  clicked spot; RULR draws a 200 px line and creates nothing; TRFM turns a 20x10 block into 9x20 (180 of 200
+  pixels kept, Ultimata's nearest-pixel rotation; its "Auto-fill gaps" option fills them); CNFG sets WIFI to
+  channel 5 (473.15 K); Shift+Tab draws a ring with an empty centre and back; EM and stress switches change the
+  Lua state, the time-dilation view tints a SLOW field (14,785 pixels); PRP2 sets temp 500 and life 7 together.
+  Full suite 36/36.

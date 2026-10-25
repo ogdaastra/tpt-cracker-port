@@ -1112,6 +1112,8 @@ void GameController::SetActiveTool(int toolSelection, Tool * tool)
 	}
 	if(tool->GetIdentifier() == "DEFAULT_UI_PROPERTY")
 		((PropertyTool *)tool)->OpenWindow(gameModel->GetSimulation());
+	if(tool->GetIdentifier() == "DEFAULT_UI_PROPERTY2")
+		((PropertyTool2 *)tool)->OpenWindow(gameModel->GetSimulation());
 	if(tool->GetIdentifier() == "DEFAULT_UI_ADDLIFE")
 	{
 		((GOLTool *)tool)->OpenWindow(gameModel->GetSimulation(), toolSelection);
@@ -1491,10 +1493,10 @@ void GameController::Vote(int direction)
 	}
 }
 
-void GameController::ChangeBrush()
+void GameController::ChangeBrush(bool toggleHollow)
 {
 	auto prev_size = gameModel->GetBrush()->GetRadius();
-	gameModel->SetBrushID(gameModel->GetBrushID()+1);
+	gameModel->SetBrushID(gameModel->GetBrushID()+1, toggleHollow);
 	gameModel->GetBrush()->SetRadius(prev_size);
 }
 

@@ -31,6 +31,11 @@ public:
 	virtual ~Textbox() = default;
 
 	void SetText(String text) override;
+	// cursor position, used by the TPT Ultimata PRP2 tool
+	int GetCursorX() { return cursorPositionX; }
+	int GetCursorY() { return cursorPositionY; }
+	int GetCursor()  { return cursor; }
+
 	String GetText() override;
 
 	virtual void SetPlaceholder(String text);

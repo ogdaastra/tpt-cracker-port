@@ -381,10 +381,21 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 	}
 
 	int currentY = 1;
+	int secondColumnY = 1; // TPT Ultimata's field switches, above the menus of the second column
 	std::vector<QuickOption*> optionList = sender->GetQuickOptions();
 	for(auto *option : optionList)
 	{
-		ui::Button * tempButton = new ui::Button(ui::Point(CLASSIC_W-16, currentY), ui::Point(15, 15), option->GetIcon(), option->GetDescription());
+		ui::Point position(CLASSIC_W-16, currentY);
+		if (option->GetBottomLeft())
+		{
+			position = ui::Point(WINDOWW-16, secondColumnY);
+			secondColumnY += 16;
+		}
+		else
+		{
+			currentY += 16;
+		}
+		ui::Button * tempButton = new ui::Button(position, ui::Point(15, 15), option->GetIcon(), option->GetDescription());
 		//tempButton->Appearance.Margin = ui::Border(0, 2, 3, 2);
 		tempButton->SetTogglable(true);
 		tempButton->SetActionCallback({ [option] {
@@ -394,7 +405,6 @@ void GameView::NotifyQuickOptionsChanged(GameModel * sender)
 		AddComponent(tempButton);
 
 		quickOptionButtons.push_back(tempButton);
-		currentY += 16;
 	}
 }
 
@@ -1620,8 +1630,8 @@ void GameView::OnKeyPress(int key, int scan, bool repeat, bool shift, bool ctrl,
 	{
 		switch (key)
 		{
-		case SDLK_TAB: //Tab
-			c->ChangeBrush();
+		case SDLK_TAB: //Tab, Shift+Tab: switch between solid and hollow brushes
+			c->ChangeBrush(shift);
 			break;
 		case SDLK_INSERT:
 			if (ctrl)
