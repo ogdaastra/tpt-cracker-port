@@ -550,3 +550,36 @@ equivalent edits, each marked with the upstream commit in a comment):
   (1000 + 3 x 300) / 4. The same air disturbance past a wall block leaves a total |curl| of 65 with
   confinement off and 97 with 0.5; a stamp opened as a save brings the setting back (0.3). All 50 challenges
   re-checked (ASan 50/50; browser 3 solution + 1 do-nothing runs each, all as expected).
+
+## 21. Reactions from newer official TPT, batch C
+
+- **New reactions** (upstream 2d7f5fa2): PROT accelerated into TUNG makes AMTR (elsewhere still SING);
+  molten gold below -200 pressure turns into molten PTNM (1 in 20,000 per frame); molten SLCN touching
+  molten SALT becomes molten LITH.
+- **FOG and RIME absorb GAS** (56ede6ca): each soaks up to 10; RIME with more than 5 melts into ACID instead
+  of water, and ACID/CAUS don't eat such acidic FOG/RIME. BCLN/PBCN no longer freeze FOG, so they can
+  clone it (8ad965b1). CAUS's "life >= 50" is the same off-by-one as ACID's (fixed in batch A).
+- **LN2 condenses on chemically strengthened GLAS** in very cold, pressurised air (7fcc3a2c).
+- **STOR holds radiation particles** such as PHOT (68a8b055). **DRAY copies fighters** with their own
+  fighter slot (858a0bce). **Pipes keep the deco of what they carry** (e2e25682), using pipe flag 0x2;
+  saves with such pipes get the same "heatPipes" marker as heat pipes so the flag survives loading.
+- **Not ported:** RIME/FOG remembering DSTW (needs upstream's CarriesTypeIn data), ETRD tmp/tmp2 distances
+  (conflicts with this version's ETRD and HUD), TESC lightning deco (needs a renderer flag this version
+  lacks), PROP_PHOTPASS (a refactor), PSTN tmp3 (Ultimata uses tmp3 here), SEED (Cracker has its own).
+- **Tests** (`upstream-fixes.spec.mjs`, 6): molten SLCN/SALT checkerboard at 2500 K gives 12 LITH in 5 s;
+  molten gold in a sealed wall box at -256 pressure gives 170 PTNM in 10 s; RIME ringed by cold GAS ends
+  with 102 acidic RIME, melting into 93 ACID; STOR next to a PHOT holds it. On the production build (before
+  this) the LITH check fails with 0, and the heat capacity test fails as the property doesn't exist.
+  Challenges re-checked: ASan 50/50 solutions; browser 2 solution + 1 do-nothing runs each, all as expected.
+
+## 22. Batches D and E (views, tools, Lua): what was taken
+
+- **Taken:** binary values in PROP and PRP2 (`0b1011`, upstream ccb671bd, with the crash fix bff38ce6 done as
+  a strict parser that rejects anything but 0/1 digits). Test: PRP2 with `life:0b1011` and
+  `tmp:0b11111111` sets 11 and 255.
+- **Not taken, and why:** the dynamic/variable heat display and the destructibility view (they extend upstream's
+  rewritten renderer, which this mod replaced with Cracker's and Ultimata's own display modes); stamp search
+  (upstream's stamp browser was redesigned); FPS/draw cap settings (the browser sets the frame rate here);
+  `beforesimdraw`/`aftersimdraw` events (they need Lua drawing redirected into the simulation buffer; this
+  version draws Lua graphics on the interface layer); Lua-defined tools, `MenuSort` and `!get` (they build on
+  upstream's reworked Lua API, which this mod's scripts do not use). Each could be done on its own later.

@@ -62,7 +62,9 @@ static int update(UPDATE_FUNC_ARGS)
 			if (BOUNDS_CHECK && (rx || ry))
 			{
 				r = pmap[y+ry][x+rx];
-				if ((ID(r))>=NPART || !r)
+				if (!r)
+					r = sim->photons[y+ry][x+rx]; // STOR can hold radiation particles too (upstream 68a8b055)
+				if (!r)
 					continue;
 				if (!parts[i].tmp && !parts[i].life && TYP(r)!=PT_STOR && !(sim->elements[TYP(r)].Properties&TYPE_SOLID) && (!parts[i].ctype || TYP(r)==parts[i].ctype))
 				{

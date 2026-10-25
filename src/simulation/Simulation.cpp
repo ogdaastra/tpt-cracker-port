@@ -4285,6 +4285,18 @@ void Simulation::UpdateParticles(int start, int end)
 						else if (t == PT_SWTR) {
 							t = RNG::Ref().chance(1, 4) ? PT_SUGR : PT_WTRV;
 						}
+						else if (t == PT_RIME)
+						{
+							// RIME that soaked up enough GAS melts into ACID (upstream 56ede6ca)
+							if (parts[i].tmp > 5)
+							{
+								t = PT_ACID;
+								parts[i].life = 25 + 5 * parts[i].tmp;
+								parts[i].tmp = 0;
+							}
+							else
+								t = PT_WATR;
+						}
 						else if (t == PT_SLTW)
 						{
 #ifdef REALISTIC
@@ -4422,7 +4434,7 @@ void Simulation::UpdateParticles(int start, int end)
 					{
 						if (t==PT_ICEI || t==PT_LAVA || t==PT_SNOW || t==PT_BRKN || t==PT_LQUD)
 							parts[i].ctype = parts[i].type;
-						if (!(t==PT_ICEI && parts[i].ctype==PT_FRZW))
+						if (!(t==PT_ICEI && parts[i].ctype==PT_FRZW) && t!=PT_ACID)
 							parts[i].life = 0;
 						if (t == PT_FIRE)
 						{

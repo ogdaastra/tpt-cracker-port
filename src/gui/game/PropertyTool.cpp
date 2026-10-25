@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "Tool.h"
 
 #include "client/Client.h"
@@ -23,6 +24,21 @@
 #include "graphics/Graphics.h"
 
 #include <iostream>
+
+// "0b1001100110" in PROP/PRP2 values (upstream ccb671bd, bff38ce6)
+static unsigned int ParseBinary(const String &digits)
+{
+	if (digits.empty() || digits.length() > 32)
+		throw std::runtime_error("invalid binary value");
+	unsigned int v = 0;
+	for (auto c : digits)
+	{
+		if (c != '0' && c != '1')
+			throw std::runtime_error("invalid binary value");
+		v = (v << 1) | unsigned(c - '0');
+	}
+	return v;
+}
 
 class PropertyWindow: public ui::Window
 {
@@ -112,6 +128,10 @@ void PropertyWindow::SetProperty(bool warn)
 						//#C0FFEE
 						v = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
 					}
+					else if (value.length() > 2 && value.BeginsWith("0B"))
+					{
+						v = ParseBinary(value.Substr(2));
+					}
 					else
 					{
 						// Try to parse as particle name
@@ -182,6 +202,10 @@ void PropertyWindow::SetProperty(bool warn)
 					{
 						//#C0FFEE
 						v = value.Substr(1).ToNumber<unsigned int>(Format::Hex());
+					}
+					else if (value.length() > 2 && value.BeginsWith("0B"))
+					{
+						v = ParseBinary(value.Substr(2));
 					}
 					else
 					{

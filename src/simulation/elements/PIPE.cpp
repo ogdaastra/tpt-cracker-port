@@ -57,6 +57,7 @@ void Element::Element_PIPE()
 }
 
 // 0x00000001 heat pipe (Simulation::PFLAG_CAN_CONDUCT)
+// 0x00000002 deco carried from a particle (Simulation::PFLAG_PARTICLE_DECO)
 // 0x00000100 is single pixel pipe
 // 0x00000200 will transfer like a single pixel pipe when in forward mode
 // 0x00001C00 forward single pixel pipe direction
@@ -448,6 +449,13 @@ void Element_PIPE_transfer_pipe_to_part(Simulation * sim, Particle *pipe, Partic
 	{
 		part->type = TYP(pipe->ctype);
 		pipe->ctype = 0;
+
+		// If deco originated from particle, and not PIPE, then copy it
+		if (pipe->tmp & Simulation::PFLAG_PARTICLE_DECO)
+		{
+			part->dcolour = pipe->dcolour;
+			pipe->dcolour = 0;
+		}
 	}
 	part->temp = pipe->temp;
 	part->life = pipe->tmp2;
@@ -485,6 +493,12 @@ static void transfer_part_to_pipe(Simulation *sim, Particle *part, Particle *pip
 	pipe->tmp2 = part->life;
 	pipe->tmp3 = part->tmp;
 	pipe->tmp4 = part->ctype;
+
+	if (part->dcolour && !pipe->dcolour)
+	{
+		pipe->dcolour = part->dcolour;
+		pipe->tmp |= Simulation::PFLAG_PARTICLE_DECO;
+	}
 }
 
 static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest, bool STOR)
@@ -499,6 +513,18 @@ static void transfer_pipe_to_pipe(Simulation *sim, Particle *src, Particle *dest
 	{
 		dest->ctype = src->ctype;
 		src->ctype = 0;
+
+		if (src->tmp & Simulation::PFLAG_PARTICLE_DECO)
+		{
+			// Even if source pipe has particle deco, don't override existing pipe deco. Just delete source deco only.
+			if (!dest->dcolour)
+			{
+				dest->dcolour = src->dcolour;
+				dest->tmp |= Simulation::PFLAG_PARTICLE_DECO;
+			}
+			src->dcolour = 0;
+			src->tmp &= ~Simulation::PFLAG_PARTICLE_DECO;
+		}
 	}
 	if (dest->tmp & Simulation::PFLAG_CAN_CONDUCT)
 	{

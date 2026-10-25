@@ -212,6 +212,11 @@ part of the game, not user content).
 
 ## 4. Features from newer official TPT (#6)
 
+**Status: done for what applies** (PORT_LOG sections 19-22): batch A crash/correctness fixes, batch B heat
+capacity, vorticity confinement and caps, batch C reactions, and PROP binary values from batch D. The rest of D
+and E, and the parts of A-C that patch upstream's rewritten air/gravity/renderer code, are listed there as not
+ported, with the reason.
+
 This mod is based on official TPT from January 2023 (around snapshot 358, before 98.0). Official TPT has
 since released 98.0 to 100.1 (latest: snapshot 401, Oct 2026). Its new elements (RSST/RSSS, BASE, SEED,
 LITH) already exist here in Cracker's/Ultimata's own versions, so the useful part is fixes, physics,

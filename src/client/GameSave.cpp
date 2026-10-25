@@ -2319,7 +2319,8 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 				else if (particles[i].type == PT_PIPE || particles[i].type == PT_PPIP)
 				{
 					RESTRICTVERSION(93, 0);
-					if (particles[i].tmp & Simulation::PFLAG_CAN_CONDUCT)
+					// the "heatPipes" marker keeps the low byte of tmp (heat pipe and carried-deco flags) on loading
+					if (particles[i].tmp & (Simulation::PFLAG_CAN_CONDUCT | Simulation::PFLAG_PARTICLE_DECO))
 						heatPipeFlags = true;
 				}
 				if (particles[i].type == PT_TSNS || particles[i].type == PT_PSNS

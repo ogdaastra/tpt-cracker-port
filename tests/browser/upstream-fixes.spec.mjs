@@ -181,3 +181,108 @@ test('vorticity confinement keeps air swirling, and the setting is saved with th
 	expect(loaded).toBeCloseTo(0.3, 5);
 	await h.expectNoUnexplainedErrors(log);
 });
+
+// ---- batch C: reactions
+
+async function countWhere(page, lua) {
+	return Number(await h.luaFile(page, `local n = 0 for i in sim.parts() do if ${lua} then n = n + 1 end end return n`));
+}
+
+test('new reactions: LITH from molten SLCN + SALT, PTNM from molten gold in a vacuum, acid from gassy RIME, STOR holds a photon', async ({ page }) => {
+	test.setTimeout(180_000);
+	const log = h.collect(page);
+	await h.openGame(page);
+	// LAVA(SLCN) next to LAVA(SALT) -> LAVA(LITH) (upstream 2d7f5fa2)
+	await h.luaFile(page, `
+		sim.clearSim()
+		sim.createWallBox(200, 300, 420, 307, 8)
+		for x = 220, 400 do for y = 280, 299 do
+			local i = sim.partCreate(-1, x, y, elem.DEFAULT_PT_LAVA)
+			sim.partProperty(i, "ctype", (x + y) % 2 == 0 and elem.DEFAULT_PT_SLCN or elem.DEFAULT_PT_SALT)
+			sim.partProperty(i, "temp", 2500)
+		end end
+		return 0`);
+	await step(page, 300);
+	const lith = await countWhere(page, 'sim.partProperty(i, "type") == elem.DEFAULT_PT_LAVA and sim.partProperty(i, "ctype") == elem.DEFAULT_PT_LITH');
+	// LAVA(GOLD) at -256 pressure -> LAVA(PTNM)
+	await h.luaFile(page, `
+		sim.clearSim()
+		-- a sealed wall box keeps the vacuum in
+		sim.createWallBox(240, 140, 359, 143, 8) sim.createWallBox(240, 196, 359, 199, 8)
+		sim.createWallBox(240, 140, 243, 199, 8) sim.createWallBox(356, 140, 359, 199, 8)
+		for x = 250, 349 do for y = 150, 189 do
+			local i = sim.partCreate(-1, x, y, elem.DEFAULT_PT_LAVA)
+			sim.partProperty(i, "ctype", elem.DEFAULT_PT_GOLD)
+			sim.partProperty(i, "temp", 2500)
+			sim.partProperty(i, "vx", 0) sim.partProperty(i, "vy", 0)
+		end end
+		return 0`);
+	for (let k = 0; k < 20; k++) {
+		await h.luaFile(page, 'for cx = 61, 88 do for cy = 36, 48 do sim.pressure(cx, cy, -256) end end return 0');
+		await step(page, 30);
+	}
+	const ptnm = await countWhere(page, 'sim.partProperty(i, "ctype") == elem.DEFAULT_PT_PTNM');
+	// RIME surrounded by GAS soaks it up; melted, it turns into ACID (upstream 56ede6ca)
+	await h.luaFile(page, `
+		sim.clearSim()
+		for x = 280, 319 do for y = 180, 199 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_RIME) end end
+		return 0`);
+	// cold GAS (room-temperature gas would melt the RIME first)
+	const gasRing = `
+		for x = 278, 321 do
+			sim.partProperty(sim.partCreate(-1, x, 178, elem.DEFAULT_PT_GAS), "temp", 200)
+			sim.partProperty(sim.partCreate(-1, x, 201, elem.DEFAULT_PT_GAS), "temp", 200)
+		end
+		for y = 179, 200 do
+			sim.partProperty(sim.partCreate(-1, 278, y, elem.DEFAULT_PT_GAS), "temp", 200)
+			sim.partProperty(sim.partCreate(-1, 321, y, elem.DEFAULT_PT_GAS), "temp", 200)
+		end
+		return 0`;
+	for (let k = 0; k < 12; k++) {
+		await h.luaFile(page, gasRing);
+		await step(page, 10);
+	}
+	const acidicRime = await countWhere(page, 'sim.partProperty(i, "type") == elem.DEFAULT_PT_RIME and sim.partProperty(i, "tmp") > 5');
+	await h.luaFile(page, 'for i in sim.parts() do if sim.partProperty(i, "type") == elem.DEFAULT_PT_RIME then sim.partProperty(i, "temp", 300) end end return 0');
+	await step(page, 10);
+	const acid = await countWhere(page, 'sim.partProperty(i, "type") == elem.DEFAULT_PT_ACID');
+	// STOR takes a photon (upstream 68a8b055)
+	await h.luaFile(page, `
+		sim.clearSim()
+		sim.partCreate(-1, 300, 200, elem.DEFAULT_PT_STOR)
+		local p = sim.partCreate(-1, 301, 200, elem.DEFAULT_PT_PHOT)
+		sim.partProperty(p, "vx", 0) sim.partProperty(p, "vy", 0)
+		return 0`);
+	await step(page, 5);
+	const stor = await h.luaFile(page, 'return sim.partProperty(sim.partID(300, 200), "tmp")');
+	const photId = await h.luaFile(page, 'return elem.DEFAULT_PT_PHOT');
+	results.reactions = { lith, ptnm, acidicRime, acid, storHolds: stor };
+	expect(lith, 'LAVA(LITH) particles').toBeGreaterThan(5);
+	expect(ptnm, 'LAVA(PTNM) particles').toBeGreaterThan(0);
+	expect(acidicRime, 'RIME with more than 5 GAS soaked up').toBeGreaterThan(20);
+	expect(acid, 'ACID from melted acidic RIME').toBeGreaterThan(20);
+	expect(stor, 'STOR holds a PHOT').toBe(photId);
+	await h.expectNoUnexplainedErrors(log);
+});
+
+// ---- batch D: tools
+
+test('PROP values can be written in binary (0b...)', async ({ page }) => {
+	const log = h.collect(page);
+	await h.openGame(page);
+	await h.lua(page, 'sim.createBox(290, 190, 310, 210, elem.DEFAULT_PT_DMND) or 0');
+	// the multi-property tool PRP2 uses the same value syntax as PROP (upstream ccb671bd)
+	await page.evaluate(() => window.tptPage.module.ccall('tpt_select_tool', null, ['string', 'number'], ['DEFAULT_UI_PROPERTY2', 0]));
+	await h.waitFrames(page, 16);
+	await h.click(page, 260, 215);
+	await page.keyboard.type('life:0b1011');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('tmp:0b11111111');
+	await page.keyboard.press('Control+Enter');
+	await h.waitFrames(page, 10);
+	await h.click(page, 300, 200);
+	const props = await h.luaFile(page, 'local i = sim.partID(300, 200) return sim.partProperty(i, "life") .. "," .. sim.partProperty(i, "tmp")');
+	results.binaryProp = props;
+	expect(props).toBe('11,255');
+	await h.expectNoUnexplainedErrors(log);
+});

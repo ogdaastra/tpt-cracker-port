@@ -173,6 +173,7 @@ public:
 	bool IsWallBlocking(int x, int y, int type);
 	// PIPE/PPIP tmp flag: the pipe formed next to HEAC and conducts heat (heat pipe, as in TPT 100)
 	static constexpr int PFLAG_CAN_CONDUCT = 0x00000001;
+	static constexpr int PFLAG_PARTICLE_DECO = 0x00000002; // the pipe's deco came from what it carries (upstream e2e25682)
 	// Particles that take no part in heat conduction: HeatConduct 0, HSWC while off, and pipes that are
 	// not heat pipes
 	bool IsHeatInsulator(const Particle &p) const;

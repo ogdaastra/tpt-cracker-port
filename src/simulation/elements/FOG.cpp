@@ -56,7 +56,13 @@ static int update(UPDATE_FUNC_ARGS)
 				r = pmap[y+ry][x+rx];
 				if (!r)
 					continue;
-				if ((sim->elements[TYP(r)].Properties&TYPE_SOLID) && RNG::Ref().chance(1, 10) && parts[i].life==0 && !(TYP(r)==PT_CLNE || TYP(r)==PT_PCLN)) // TODO: should this also exclude BCLN?
+				if (TYP(r) == PT_GAS && parts[i].tmp < 10) // absorbs GAS and turns acidic (upstream 56ede6ca)
+				{
+					sim->kill_part(ID(r));
+					parts[i].tmp++;
+				}
+				// cloners don't freeze it, so BCLN/PBCN can clone FOG (upstream 8ad965b1)
+				if ((sim->elements[TYP(r)].Properties&TYPE_SOLID) && RNG::Ref().chance(1, 10) && parts[i].life==0 && !(TYP(r)==PT_CLNE || TYP(r)==PT_PCLN || TYP(r)==PT_BCLN || TYP(r)==PT_PBCN))
 				{
 					sim->part_change_type(i,x,y,PT_RIME);
 				}
