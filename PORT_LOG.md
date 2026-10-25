@@ -416,3 +416,17 @@ Upstream TPT added heat pipes after the version this mod is based on; ported her
   the far end of the heat pipe from 291 K to 951 K while the ordinary pipe stays at 273.15 K; a stamp round
   trip keeps both. Full suite 25/25 over HTTP; ASan+UBSan runs report nothing in changed code (C5's signed
   shifts and the STKM leg read are in unchanged original code).
+
+## 16. Recording (page)
+
+The header's **Record…** button records a video or a GIF of the game, or takes a PNG screenshot; options:
+simulation area or whole window, 1x/2x, 5/10/20 s or until stopped (the button turns into a red Stop timer).
+- The game canvas is WebGL, so it can only be read in the task that drew it: `tpt_set_frame_callback(1)`
+  makes `blit()` call `Module.tptOnFrame()` after presenting, and the page copies the frame into a 2D canvas
+  of the chosen area and size there (pixelated scaling). Off while not recording.
+- Video: `MediaRecorder` on that canvas's `captureStream(60)`, MP4/H.264 where supported (Chromium has it),
+  else WebM. GIF: gifenc 1.0.3 (MIT, `web/vendor/`, wrapped as a factory function) in a Worker built from a
+  Blob, so it also works when the page is opened from disk; 20 frames per second, 256-colour palette per frame.
+- Tests (`tests/browser/record.spec.mjs`): a 5 s 2x MP4 (365 KB, decodes at 1224x768, 299 frames copied), a
+  5 s GIF (97 frames, 612x384, valid structure), a whole-window PNG (646x424), and a GIF stopped by hand after
+  2 s (40 frames). Full suite 28/28.

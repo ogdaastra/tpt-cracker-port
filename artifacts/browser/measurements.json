@@ -1,14 +1,14 @@
 {
   "load": {
-    "msToRunning": 1011,
+    "msToRunning": 1122,
     "pageTimings": {
-      "start": 15.099999999627471,
-      "instantiated": 98.5,
-      "runtimeReady": 361.8999999994412,
-      "firstFrame": 381.8999999994412
+      "start": 19,
+      "instantiated": 131.40000000002328,
+      "runtimeReady": 436.30000000004657,
+      "firstFrame": 458.60000000009313
     },
-    "wasmBytes": 5215838,
-    "commit": "6cd0ff59d64611a6fee844f770a70e5730c6b082"
+    "wasmBytes": 5215326,
+    "commit": "a5e0bef7039264face1da1fa2c6091b9dce2de82"
   },
   "input": {
     "particlesAfterDraw": 1944,
@@ -17,11 +17,11 @@
   "roundTrip": {
     "rubrParticles": 4503,
     "totalParticles": 4503,
-    "saveBytes": 581
+    "saveBytes": 587
   },
   "modElements": {
     "placedParticles": 51,
-    "ticksIn5s": 312
+    "ticksIn5s": 313
   },
   "resize": [
     {
@@ -40,8 +40,8 @@
         640
       ],
       "canvas": [
-        388,
-        255
+        365,
+        240
       ]
     },
     {
@@ -56,17 +56,17 @@
     }
   ],
   "performance": {
-    "msToInteractive": 1041,
+    "msToInteractive": 1132,
     "pageTimingsMs": {
-      "start": 22,
-      "instantiated": 106.5,
-      "runtimeReady": 379.3999999994412,
-      "firstFrame": 399.09999999962747
+      "start": 33.39999999990687,
+      "instantiated": 152.29999999993015,
+      "runtimeReady": 432.79999999993015,
+      "firstFrame": 455.5
     },
-    "idleTicksPerSecond": 53.9,
-    "busyTicksPerSecond": 50.9,
-    "busyWithNewtonianGravityTicksPerSecond": 53.3,
-    "busyParticles": 32722,
+    "idleTicksPerSecond": 53.3,
+    "busyTicksPerSecond": 50.7,
+    "busyWithNewtonianGravityTicksPerSecond": 54,
+    "busyParticles": 36984,
     "gravityField5CellsFromBlackHole": 0.0026691998355091,
     "note": "fps cap is 60; headless Chromium, software WebGL (SwiftShader), 4 vCPU container"
   },
