@@ -68,4 +68,16 @@ public:
 	{
 
 	}
+
+	// Roughly how much memory the snapshot holds (signs and authors left out), for history and rewind caps
+	size_t Bytes() const
+	{
+		auto floats = AirPressure.size() + AirVelocityX.size() + AirVelocityY.size() + AmbientHeat.size() +
+			GravVelocityX.size() + GravVelocityY.size() + GravValue.size() + GravMap.size() +
+			FanVelocityX.size() + FanVelocityY.size();
+		return sizeof(*this) + floats * sizeof(float) + Particles.size() * sizeof(Particle) +
+			BlockMap.size() + ElecMap.size() + WirelessData.size() + TimeDilation.size() +
+			OneWayDir.size() * sizeof(short) + FaradayMap.size() * sizeof(unsigned short) +
+			PortalParticles.size() * sizeof(PortalBuffers::Entry) + stickmen.size() * sizeof(playerst);
+	}
 };

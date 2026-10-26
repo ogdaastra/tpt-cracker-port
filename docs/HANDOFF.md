@@ -49,7 +49,8 @@ Key technical facts:
 - GPL-3.0: keep `LICENSE`, the visible source link on the page, and source-availability info with any
   distributed binary or ZIP (assemble-dist and make-offline-zip already handle this).
 - The user likes plain, non-technical explanations, tables for status, and honesty about what failed.
-  They asked for a **phone notification** (`PushNotification` tool) when something they wait for goes live.
+  They asked for a **phone notification** (`PushNotification` tool) when something they wait for goes live,
+  and (26 Oct) **whenever you are waiting for them or need them**: ping the phone, don't wait quietly.
 - Commits end with the attribution lines the system gives (Co-Authored-By + Claude-Session). PR bodies end
   with the "Generated with Claude Code" line + session link. No model names in commits/PRs.
 
@@ -72,7 +73,8 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31; the next free section is **32**. All seven planned features are done.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33; the next free section
+  is **34**. All seven planned features are done; N8 (deep undo) was asked for on 26 Oct.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -218,6 +220,12 @@ drawing (SDL2 Emscripten maps touch to mouse? verify; else translate touch → S
 pinch zoom (game zoom or CSS), two-finger pan, on-screen buttons (pause, eraser, brush size +/-, undo,
 element picker opening the Elements panel). Test with Playwright `hasTouch` + `isMobile` device emulation
 (e.g. Pixel 7) using `page.touchscreen.tap` and CDP `Input.dispatchTouchEvent` for drags and pinches.
+
+### N8 Deep undo: DONE (Ember; `PORT_LOG.md` section 33)
+Asked for by the user on 26 Oct ("Ctrl+Z and Ctrl+Y to my heart's content, even to the first pixel"), with the
+rule: if it makes performance more than 5% worse in the worst case, keep it very finite. It doesn't (−1.5%,
+noise, on a 160,000-particle scene with a full 96 MB history), so the history is limited by memory only:
+100 MB (40 MB on low-memory devices), 10,000 steps.
 
 ## 5. Environment setup (a new container has none of this)
 

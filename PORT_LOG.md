@@ -859,3 +859,41 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   transformed canvas); Reset zoom; Brush + / Brush −; Pause twice; a stroke then Undo; the Eraser selects
   `DEFAULT_PT_NONE` and gives the previous tool back; Elements opens the element browser. New helper
   `helpers.loopLua`. Full suite: 60 passed, 2 skipped.
+
+## 32. Two test fixes found by CI on the rewind PR
+
+- **Clicks aimed half a pixel off.** `helpers.gamePoint` aimed at the centre of a game pixel. Emscripten
+  measures the mouse in whole CSS pixels from the canvas edge rounded down (`clientX - (rect.left | 0)`),
+  and on CI's fonts the canvas starts at 73.797 px, so clicks landed in the next pixel down: the CNFG test
+  clicked beside its WIFI particle on both runs. Reproduced locally by shifting the page so the canvas starts
+  at 67.797 px (fails; at .75 it passes). `gamePoint` now aims at a whole CSS pixel measured the same way and
+  checks it maps to the wanted game pixel; every shift tried passes, full suite 60 passed.
+- **"Hotter than the sun" reference solution fizzled** 5 times in 100 seeds (once on CI): plutonium only
+  reaches MAX_TEMP when a neutron hits it under pressure, which comes from deuterium reacting, and the open
+  tank lost it. Packed in deuterium with the neutrons on top it won 500 of 500 seeds (760 ink, budget 800).
+
+## 33. Deep undo (Ctrl+Z back to the first pixel)
+
+- **Before**: 5 undo steps by default (`Simulation.UndoHistoryLimit`, capped at 200 for memory), no setting
+  for it in the game.
+- **Now**: the history is limited by memory instead: `GameModel` adds up each step's size
+  (`SnapshotDelta::Bytes`, and `Snapshot::Bytes`, moved there from the rewind buffer) and drops the oldest
+  steps while it holds more than the cap. The page sets the cap at start with the new export
+  `tpt_undo_setup(capMB, maxSteps)`: 100 MB, or 40 MB when `navigator.deviceMemory` ≤ 4. The step limit's
+  default is now 10,000 (pref still honoured, cap 100,000). `tpt_undo_info()` returns
+  "count position bytes capBytes". Ctrl+Y redoes forward through all of it as before.
+- **How far back**: the steps are differences, so it depends on what changed between two clicks. 60 dust
+  clicks on a paused screen took 0.9 MB (more than 6,000 such steps fit); with a whole screen of water moving,
+  each step is about 3 MB, so about 30 steps fit in 100 MB.
+- **Cost** (Orlando's limit: no more than 5% slower in the worst case, or keep it very finite). Nothing in
+  the history runs per frame, and a click does the same work at any depth (copy the scene, store what
+  changed); only the number of steps kept differs. Measured:
+  - simulation time, heaviest scene (≈160,000 particles of water and dust, 78 ms a frame), the same scene
+    reloaded and seeded before each of 10 rounds: median 78.4 ms with a full 96 MB history (41 steps),
+    79.5 ms with it emptied: −1.5%, noise.
+  - old 5-step history vs deep, 40 clicks into a running scene: frame gaps while clicking 95th percentile
+    83 → 67 ms (water) and 33 → 33 ms (dust); Ctrl+Z 18 → 15 ms and 12 → 12 ms a step.
+- **Tests** (`undo.spec.mjs`): 60 dust clicks; Ctrl+Z 60 times leaves no particles; Ctrl+Y 10 times brings
+  some back, the rest brings back exactly the drawn state (hash of every particle property and the air);
+  with a 4 MB cap and a screen of moving water, 20 clicks keep the history under the cap by dropping the
+  oldest steps, and Ctrl+Z still goes back one step.

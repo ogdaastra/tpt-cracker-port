@@ -43,6 +43,7 @@ struct HistoryEntry
 {
 	std::unique_ptr<Snapshot> snap;
 	std::unique_ptr<SnapshotDelta> delta;
+	size_t bytes = 0;
 
 	~HistoryEntry();
 };
@@ -83,6 +84,8 @@ private:
 	std::unique_ptr<Snapshot> historyCurrent;
 	unsigned int historyPosition;
 	unsigned int undoHistoryLimit;
+	size_t historyBytes = 0;
+	size_t undoHistoryCapBytes = size_t(100) << 20;
 	bool mouseClickRequired;
 	bool includePressure;
 	bool perfectCircle = true;
@@ -174,6 +177,12 @@ public:
 	void HistoryPush(std::unique_ptr<Snapshot> last);
 	unsigned int GetUndoHistoryLimit();
 	void SetUndoHistoryLimit(unsigned int undoHistoryLimit_);
+	// The oldest undo steps are also dropped while the history holds more than this
+	void SetUndoHistoryCapBytes(size_t capBytes) { undoHistoryCapBytes = capBytes; }
+	size_t GetUndoHistoryCapBytes() const { return undoHistoryCapBytes; }
+	size_t HistoryCount() const { return history.size(); }
+	size_t HistoryBytes() const { return historyBytes; }
+	unsigned int HistoryPosition() const { return historyPosition; }
 
 	void UpdateQuickOptions();
 

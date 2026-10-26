@@ -1,0 +1,141 @@
+{
+  "start": {
+    "count": 0,
+    "position": 0,
+    "bytes": 0,
+    "cap": 104857600
+  },
+  "afterStrokes": {
+    "particles": 1260,
+    "count": 61,
+    "position": 61,
+    "bytes": 884336,
+    "cap": 104857600
+  },
+  "undoRedo": {
+    "partway": 210,
+    "redone": 1260
+  },
+  "capped": [
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2901632,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 1,
+      "position": 1,
+      "bytes": 2905496,
+      "cap": 4194304
+    },
+    {
+      "count": 2,
+      "position": 2,
+      "bytes": 4032504,
+      "cap": 4194304
+    },
+    {
+      "count": 2,
+      "position": 2,
+      "bytes": 3839320,
+      "cap": 4194304
+    },
+    {
+      "count": 2,
+      "position": 2,
+      "bytes": 3549624,
+      "cap": 4194304
+    },
+    {
+      "count": 3,
+      "position": 3,
+      "bytes": 3955296,
+      "cap": 4194304
+    },
+    {
+      "count": 3,
+      "position": 3,
+      "bytes": 3717392,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4123856,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4122928,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4121264,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4117568,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4108352,
+      "cap": 4194304
+    },
+    {
+      "count": 4,
+      "position": 4,
+      "bytes": 4097032,
+      "cap": 4194304
+    }
+  ]
+}

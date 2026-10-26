@@ -4,17 +4,6 @@
 #include "Snapshot.h"
 #include "SnapshotDelta.h"
 
-static size_t SnapshotBytes(const Snapshot &snap)
-{
-	auto floats = snap.AirPressure.size() + snap.AirVelocityX.size() + snap.AirVelocityY.size() + snap.AmbientHeat.size() +
-		snap.GravVelocityX.size() + snap.GravVelocityY.size() + snap.GravValue.size() + snap.GravMap.size() +
-		snap.FanVelocityX.size() + snap.FanVelocityY.size();
-	return sizeof(snap) + floats * sizeof(float) + snap.Particles.size() * sizeof(Particle) +
-		snap.BlockMap.size() + snap.ElecMap.size() + snap.WirelessData.size() + snap.TimeDilation.size() +
-		snap.OneWayDir.size() * sizeof(short) + snap.FaradayMap.size() * sizeof(unsigned short) +
-		snap.PortalParticles.size() * sizeof(PortalBuffers::Entry) + snap.stickmen.size() * sizeof(playerst);
-}
-
 RewindBuffer::RewindBuffer() = default;
 RewindBuffer::~RewindBuffer() = default;
 
@@ -52,7 +41,7 @@ void RewindBuffer::Capture(Simulation &sim)
 		olderBytes += bytes;
 	}
 	latest = std::move(snap);
-	latestBytes = SnapshotBytes(*latest);
+	latestBytes = latest->Bytes();
 	capturedTick = sim.currentTick;
 	Trim();
 }
@@ -124,7 +113,7 @@ void RewindBuffer::ContinueFromView()
 		older.pop_back();
 	}
 	latest = std::move(viewSnap);
-	latestBytes = SnapshotBytes(*latest);
+	latestBytes = latest->Bytes();
 	view = 0;
 	frames = 0;
 }
