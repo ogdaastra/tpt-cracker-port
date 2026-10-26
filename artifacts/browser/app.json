@@ -1,0 +1,69 @@
+{
+  "manifest": {
+    "name": "Cracker1000's Mod (The Powder Toy)",
+    "short_name": "Powder Toy",
+    "description": "Cracker1000's Mod for The Powder Toy, running in your browser. Works offline once installed.",
+    "id": "./",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "display_override": [
+      "fullscreen",
+      "standalone"
+    ],
+    "orientation": "any",
+    "background_color": "#0d0f12",
+    "theme_color": "#171a1f",
+    "icons": [
+      {
+        "src": "icons/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "icons/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "icons/icon-maskable-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
+    ]
+  },
+  "version": "041a216b4714270799259bb316031f5aff7d91ae-dirty-20261025191939",
+  "cached": [
+    "",
+    "LICENSE.txt",
+    "SOURCE.html",
+    "THIRD_PARTY_NOTICES.txt",
+    "build-info.json",
+    "gifenc.js",
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-512.png",
+    "index.html",
+    "manifest.webmanifest",
+    "powder-mt.js",
+    "powder-mt.wasm",
+    "style.css",
+    "tpt-web.js"
+  ],
+  "offline": {
+    "online": false,
+    "isolated": true,
+    "threads": true,
+    "commit": "041a216b4714270799259bb316031f5aff7d91ae"
+  },
+  "update": {
+    "from": "041a216b4714270799259bb316031f5aff7d91ae-dirty-20261025191939",
+    "to": "041a216b4714270799259bb316031f5aff7d91ae-dirty-20261025191939-next",
+    "caches": [
+      "tpt-041a216b4714270799259bb316031f5aff7d91ae-dirty-20261025191939-next"
+    ]
+  }
+}

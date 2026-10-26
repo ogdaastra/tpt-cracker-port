@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Assembles the static site in dist/ from a finished build directory:
 #   index.html, style.css, tpt-web.js         page (web/)
+#   manifest.webmanifest, icons/, sw.js       installable app and offline cache (sw.js named per build)
 #   powder.js, powder.wasm                    the game (Emscripten output)
 #   powder-mt.js, powder-mt.wasm              the threaded build, if build-wasm-mt/ (MT_BUILD_DIR) has one
 #   build-info.json                           provenance shown on the page
@@ -21,8 +22,9 @@ done
 
 rm -rf "$DIST"
 mkdir -p "$DIST/source"
-cp web/index.html web/style.css web/tpt-web.js "$DIST/"
+cp web/index.html web/style.css web/tpt-web.js web/manifest.webmanifest "$DIST/"
 mkdir -p "$DIST/vendor" && cp web/vendor/gifenc.js web/vendor/gifenc.LICENSE.md "$DIST/vendor/"
+mkdir -p "$DIST/icons" && cp web/icons/*.png "$DIST/icons/"
 cp "$BUILD_DIR/powder.js" "$BUILD_DIR/powder.wasm" "$DIST/"
 # The threaded build (wasm/build.sh with WASM_THREADS=1); the page loads it when cross-origin isolated.
 MT_BUILD_DIR="${MT_BUILD_DIR:-$ROOT/build-wasm-mt}"
@@ -66,6 +68,11 @@ if [ -f "$WORK/src/fftw-3.3.10.tar.gz" ]; then
 fi
 
 sed -e "s/@COMMIT@/$commit/g" -e "s/@EMSDK@/$emcc_version/g" web/SOURCE.html > "$DIST/SOURCE.html"
+# The service worker's cache is named after the build, so a new build replaces the cached files; builds of a
+# working tree with uncommitted changes get a unique name too.
+sw_version="$commit"
+[ "$dirty" = true ] && sw_version="$commit-dirty-$(date -u +%Y%m%d%H%M%S)"
+sed -e "s/@COMMIT@/$sw_version/g" web/sw.js > "$DIST/sw.js"
 
 # License texts of everything linked into powder.wasm.
 EM_PORTS="$(em-config CACHE 2>/dev/null)/ports"

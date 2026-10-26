@@ -28,6 +28,9 @@ export default defineConfig({
 		} : undefined,
 		viewport: { width: 1280, height: 800 },
 		acceptDownloads: true,
+		// The site's service worker (sw.js) caches files and can answer requests itself; tests see the network
+		// directly unless they opt in (app.spec.mjs tests the service worker).
+		serviceWorkers: 'block',
 		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
 	},
