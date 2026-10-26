@@ -333,3 +333,26 @@ std::unique_ptr<Snapshot> SnapshotDelta::Restore(const Snapshot &newSnap)
 
 	return ptr;
 }
+
+template<class Item>
+static size_t HunkBytes(const SnapshotDelta::HunkVector<Item> &hunks)
+{
+	size_t bytes = hunks.size() * sizeof(SnapshotDelta::Hunk<Item>);
+	for (auto &hunk : hunks)
+	{
+		bytes += hunk.diffs.size() * sizeof(SnapshotDelta::Diff<Item>);
+	}
+	return bytes;
+}
+
+size_t SnapshotDelta::Bytes() const
+{
+	return sizeof(*this) +
+		HunkBytes(AirPressure) + HunkBytes(AirVelocityX) + HunkBytes(AirVelocityY) + HunkBytes(AmbientHeat) +
+		HunkBytes(commonParticles) + (extraPartsOld.size() + extraPartsNew.size()) * sizeof(Particle) +
+		HunkBytes(GravVelocityX) + HunkBytes(GravVelocityY) + HunkBytes(GravValue) + HunkBytes(GravMap) +
+		HunkBytes(BlockMap) + HunkBytes(ElecMap) + HunkBytes(FanVelocityX) + HunkBytes(FanVelocityY) +
+		HunkBytes(OneWayDir) + HunkBytes(FaradayMap) + HunkBytes(TimeDilation) + HunkBytes(WirelessData) +
+		HunkBytes(stickmen) +
+		(PortalParticles.valid ? (PortalParticles.diff.oldItem.size() + PortalParticles.diff.newItem.size()) * sizeof(PortalBuffers::Entry) : 0);
+}

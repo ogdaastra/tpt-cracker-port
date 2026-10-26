@@ -10,21 +10,21 @@
       "scripts"
     ],
     "timings": {
-      "start": 65.65000000037253,
-      "instantiated": 261.4550000000745,
-      "runtimeReady": 670.5099999997765,
-      "firstFrame": 708.359999999404
+      "start": 89.05499999970198,
+      "instantiated": 330.11999999918044,
+      "runtimeReady": 813.8300000000745,
+      "firstFrame": 857.5800000000745
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "ebef961d5acfa2741bf6ece88f7287604ff10248",
+      "commit": "918340dce2e72b46cbb20542f7ae195e70f2a7c0",
       "dirty": false,
       "emscripten": "4.0.23",
-      "wasmBytes": 5631724,
+      "wasmBytes": 5642303,
       "threaded": {
-        "wasmBytes": 5740090
+        "wasmBytes": 5750670
       },
-      "built": "2026-10-26T04:10:08Z"
+      "built": "2026-10-26T05:08:19Z"
     }
   },
   "console": [
@@ -49,12 +49,12 @@
       "type": "text/css; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/vendor/gifenc.js",
+      "url": "http://127.0.0.1:8765/tpt-web.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/tpt-web.js",
+      "url": "http://127.0.0.1:8765/vendor/gifenc.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
     },
@@ -74,14 +74,14 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/powder-mt.wasm",
-      "status": 200,
-      "type": "application/wasm"
-    },
-    {
       "url": "http://127.0.0.1:8765/powder-mt.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.wasm",
+      "status": 200,
+      "type": "application/wasm"
     },
     {
       "url": "http://127.0.0.1:8765/powder-mt.js",

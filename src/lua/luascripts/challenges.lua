@@ -828,10 +828,13 @@ add{
 	-- the hottest moment can be a single frame: track the peak every frame
 	each = function(S, st) st.peak = math.max(st.peak or 0, C.maxTemp()) end,
 	check = function(C, st) return ((st.peak or 0) - 295.15) / (6273.15 - 295.15) end,
+	-- plutonium only reaches MAX_TEMP under pressure, which deuterium makes when neutrons hit it: packed in
+	-- deuterium with the neutrons on top it won 500 of 500 seeds; loose in the open tank, 95 of 100
 	solution = function(S)
-		S.box(256, 365, 355, 369, "DEUT")
-		S.box(296, 355, 305, 364, "PLUT")
-		S.box(300, 340, 309, 345, "NEUT")
+		S.box(256, 366, 355, 369, "DEUT")
+		S.box(286, 356, 315, 365, "DEUT")
+		S.box(296, 356, 305, 365, "PLUT")
+		S.box(296, 350, 305, 355, "NEUT")
 	end,
 }
 

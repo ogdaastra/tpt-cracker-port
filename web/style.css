@@ -392,3 +392,20 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 #btn-sound[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
 #sound-volume { width: 90px; accent-color: var(--accent); }
 #sound-volume[hidden] { display: none; }
+
+/* rewind */
+#rewind-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	background: var(--panel);
+	border-bottom: 1px solid var(--border);
+}
+#rewind-bar[hidden] { display: none; }
+#rewind-slider { flex: 1; min-width: 160px; accent-color: var(--accent); }
+#rewind-time { min-width: 4.5em; font-variant-numeric: tabular-nums; }
+#rewind-bar .rewind-actions { display: flex; gap: 6px; }
+#rewind-bar .rewind-note { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; }
+#btn-rewind[aria-expanded=true] { border-color: var(--accent); color: var(--accent); }

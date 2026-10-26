@@ -62,9 +62,22 @@ export async function waitFrames(page, n) {
 	await page.waitForTimeout(Math.ceil(n * 1000 / 60) + 50);
 }
 
+// Emscripten measures the mouse in whole CSS pixels from the canvas edge rounded down
+// (targetX = clientX - (rect.left | 0)), then SDL scales that by game size / CSS size. Aim at a whole CSS
+// pixel measured the same way, checked to land in the wanted game pixel: aiming at the pixel's centre on a
+// canvas at a fractional position (73.797 px with CI's fonts) tipped clicks into the next pixel.
+function aim(n, edge, size, gameSize) {
+	const toGame = (t) => Math.trunc(t * gameSize / size);
+	const want = Math.floor(n);
+	let t = Math.round((want + 0.5) * size / gameSize);
+	if (toGame(t) > want) t--;
+	else if (toGame(t) < want) t++;
+	return Math.trunc(edge) + t;
+}
+
 export async function gamePoint(page, x, y) {
 	const box = await page.locator('#canvas').boundingBox();
-	return { x: box.x + (x + 0.5) * box.width / GAME_W, y: box.y + (y + 0.5) * box.height / GAME_H };
+	return { x: aim(x, box.x, box.width, GAME_W), y: aim(y, box.y, box.height, GAME_H) };
 }
 
 export async function click(page, x, y, button = 'left') {
@@ -215,4 +228,32 @@ export async function luaFile(page, code, timeoutMs = 20_000) {
 	if (result === null) throw new Error(`Lua chunk ${src} produced no result`);
 	if (!result.startsWith('OK ')) throw new Error(`Lua error in ${src}: ${result}`);
 	return result.slice(3);
+}
+
+// Lua that writes every particle's properties (floats with 9 significant digits, enough for an exact float32) and
+// the air grids to path, one line each: comparing two of these tells whether two simulation states are the same
+// (same as docs/handoff/tools/samecheck.mjs).
+export function particleStateLua(path) {
+	return `
+	local props = { "type", "ctype", "life", "tmp", "tmp2", "x", "y", "vx", "vy", "temp", "flags", "dcolour" }
+	for _, extra in ipairs({ "tmp3", "tmp4", "pavg0", "pavg1" }) do
+		if pcall(sim.partProperty, 0, extra) then props[#props + 1] = extra end
+	end
+	local out = {}
+	for i in sim.parts() do
+		local row = { i }
+		for _, p in ipairs(props) do
+			local ok, v = pcall(sim.partProperty, i, p)
+			row[#row + 1] = ok and (math.floor(v) == v and string.format("%d", v) or string.format("%.9g", v)) or "-"
+		end
+		out[#out + 1] = table.concat(row, " ")
+	end
+	for y = 0, 95 do
+		local row = { "air", y }
+		for x = 0, 152 do
+			row[#row + 1] = string.format("%.9g %.9g %.9g", sim.pressure(x, y), sim.velocityX(x, y), sim.velocityY(x, y))
+		end
+		out[#out + 1] = table.concat(row, " ")
+	end
+	local f = io.open("${path}", "w") f:write(table.concat(out, "\\n")) f:close()`;
 }

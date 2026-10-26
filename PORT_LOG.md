@@ -803,3 +803,35 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   (peaks: spark 0.27, fire 0.06, explosion 0.76, steam 0.13, acid 0.09); the volume slider sets the gain;
   turned off, the context is suspended and nothing more plays; after a reload the choice and the volume are
   kept and the audio starts at the first key press. Full suite: 58 passed, 2 skipped.
+
+## 30. Rewind the last 30 seconds (N6)
+
+- **Rewind** button in the page header opens a bar under it: a slider (left is the past), the time shown
+  ("−10.0 s" or "now"), **Resume from here**, **Back to now**, **Close**, and "Keep the last 30 seconds" (on
+  by default, kept in the browser as `tptRewind`) with how much is kept ("24.5 s kept, 112 MB").
+  **Shift+Backspace** opens it and goes back about a second; Backspace alone stays with the game's text boxes
+  (the game and the mod script don't use Backspace otherwise).
+- **How** (`src/simulation/Rewind.{h,cpp}`, `RewindBuffer`): after every simulated frame (new
+  `Simulation::afterSimHook`, called at the end of `AfterSim`, so frames stepped by `tpt_benchmark` count
+  too) a snapshot every 30 frames (`Simulation::CreateSnapshot`, the one undo uses: particles, air, ambient
+  heat, gravity, walls, fans, Ultimata's fields, portals, wireless, stickmen, signs). The newest is kept
+  whole, older ones as `SnapshotDelta`s to the next newer one; going k back applies k deltas (20 deltas,
+  10 seconds, took 88 ms in a busy scene). At most 61 snapshots (30 s) and a memory cap: 150 MB, or 60 MB
+  on devices that report 4 GB of memory or less (`navigator.deviceMemory`); the oldest go first. New
+  `SnapshotDelta::Bytes()` estimates a delta's memory for the cap.
+- Moving the slider pauses the game and restores that snapshot (`Simulation::Restore`, as undo does). Before
+  the first step back, the present is captured if the simulation moved since the newest snapshot, so
+  "Back to now" loses nothing. When the game goes on from a snapshot in the past (Resume, or unpausing in
+  the game), everything newer is dropped.
+- Exports: `tpt_rewind_setup(on, intervalFrames, maxEntries, capMB)`, `tpt_rewind_info()` ("snapshots bytes
+  view interval"), `tpt_rewind_show(stepsBack)`, `tpt_rewind_resume()`.
+- **Cost**: water, sand, fire and plasma (about 65,000 particles) plus wires, 600 frames each way: rewind
+  off 36.2 / 30.7 ms per frame, on 33.3 / 29.6: no difference beyond the scene's own noise. Memory there:
+  about 3 MB per snapshot, so the 150 MB cap kept about 25 s of that scene; lighter scenes keep the full 30 s.
+- **Tests** (`rewind.spec.mjs`): water, sand, wood, dust, fire, plasma and powered wires; after 900 frames the
+  whole state (every particle property and the air, `helpers.particleStateLua`) is recorded, 600 frames
+  later the slider goes back 20 snapshots ("−10.0 s"): the game is paused and the state is exactly the one
+  recorded; further back and forward again: still exact; the newest snapshot is exactly frame 1500; Back to
+  now unpauses; Resume from a moment in the past drops the newer snapshots; Shift+Backspace opens the bar at
+  "−1.0 s"; turned off, nothing is kept, and the choice survives a reload. That scene kept 50 snapshots in
+  112 MB (within the cap). Full suite: 59 passed, 2 skipped.

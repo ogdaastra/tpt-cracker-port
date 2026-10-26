@@ -12,6 +12,7 @@ simulation_files = files(
 	'ToolClasses.cpp',
 	'Simulation.cpp',
 	'SnapshotDelta.cpp',
+	'Rewind.cpp',
 	'Spaceship.cpp',
 	'Stasis.cpp',
 )

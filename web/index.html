@@ -20,6 +20,7 @@
 		<button type="button" id="btn-export" disabled title="Your saves and stamps: open, rename, download or delete them">My saves…</button>
 		<button type="button" id="btn-record" disabled title="Record a video or GIF of the game, or take a screenshot">Record…</button>
 		<button type="button" id="btn-challenges" disabled title="Puzzles to solve with a limited set of elements">Challenges…</button>
+		<button type="button" id="btn-rewind" disabled aria-controls="rewind-bar" aria-expanded="false" title="Go back up to 30 seconds (Shift+Backspace)">Rewind</button>
 		<button type="button" id="btn-sound" disabled aria-pressed="false" title="Sound effects for sparks, fire, explosions, steam and acid">Sound: off</button>
 		<input type="range" id="sound-volume" min="0" max="100" value="60" aria-label="Sound volume" title="Sound volume" hidden>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
@@ -32,6 +33,19 @@
 	A new version of the game is ready.
 	<button type="button" id="update-reload" title="Save your simulation first: reloading starts a new game">Reload to update</button>
 	<button type="button" id="update-later">Later</button>
+</section>
+
+<section id="rewind-bar" aria-label="Rewind" hidden>
+	<label for="rewind-slider">Rewind</label>
+	<input type="range" id="rewind-slider" min="0" max="0" value="0" step="1" aria-describedby="rewind-time">
+	<output id="rewind-time" for="rewind-slider">now</output>
+	<span class="rewind-actions">
+		<button type="button" id="rewind-resume" title="Carry on from the moment shown; everything after it is forgotten">Resume from here</button>
+		<button type="button" id="rewind-now">Back to now</button>
+		<button type="button" id="rewind-close">Close</button>
+	</span>
+	<p class="rewind-note"><label><input type="checkbox" id="rewind-on"> Keep the last 30 seconds</label>
+		· <span id="rewind-info"></span> · Shift+Backspace goes back a second.</p>
 </section>
 
 <section id="challenge-bar" aria-label="Current challenge" aria-live="polite" hidden>

@@ -72,7 +72,7 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29; the next free section is **30**.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30; the next free section is **31**.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -199,7 +199,9 @@ Simplest robust route: game emits events (count of explosions etc. per frame) to
 an AudioContext is running (Chromium in tests can run AudioContext with
 `--autoplay-policy=no-user-gesture-required` or after a click); with sound off, nothing plays.
 
-### N6 Rewind (last ~30 s)
+### N6 Rewind (last ~30 s): DONE (Ember; `PORT_LOG.md` section 30)
+The plan below is the original one, for reference.
+
 GameModel already has undo history built on `Snapshot` (`src/gui/game/GameModel.h`: `HistoryPush`,
 `historyCurrent`, `SnapshotDelta`; `Simulation::CreateSnapshot/Restore`). Plan: a ring buffer of
 snapshots every N frames (e.g. every 30 frames for 30 s = 60 snapshots; use `SnapshotDelta` to save
