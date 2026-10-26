@@ -62,9 +62,22 @@ export async function waitFrames(page, n) {
 	await page.waitForTimeout(Math.ceil(n * 1000 / 60) + 50);
 }
 
+// Emscripten measures the mouse in whole CSS pixels from the canvas edge rounded down
+// (targetX = clientX - (rect.left | 0)), then SDL scales that by game size / CSS size. Aim at a whole CSS
+// pixel measured the same way, checked to land in the wanted game pixel: aiming at the pixel's centre on a
+// canvas at a fractional position (73.797 px with CI's fonts) tipped clicks into the next pixel.
+function aim(n, edge, size, gameSize) {
+	const toGame = (t) => Math.trunc(t * gameSize / size);
+	const want = Math.floor(n);
+	let t = Math.round((want + 0.5) * size / gameSize);
+	if (toGame(t) > want) t--;
+	else if (toGame(t) < want) t++;
+	return Math.trunc(edge) + t;
+}
+
 export async function gamePoint(page, x, y) {
 	const box = await page.locator('#canvas').boundingBox();
-	return { x: box.x + (x + 0.5) * box.width / GAME_W, y: box.y + (y + 0.5) * box.height / GAME_H };
+	return { x: aim(x, box.x, box.width, GAME_W), y: aim(y, box.y, box.height, GAME_H) };
 }
 
 export async function click(page, x, y, button = 'left') {
