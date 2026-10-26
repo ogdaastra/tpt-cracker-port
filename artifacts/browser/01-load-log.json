@@ -10,21 +10,21 @@
       "scripts"
     ],
     "timings": {
-      "start": 82.7949999999255,
-      "instantiated": 308.9949999996461,
-      "runtimeReady": 891.8699999996461,
-      "firstFrame": 939.125
+      "start": 59.34999999962747,
+      "instantiated": 225.33499999996275,
+      "runtimeReady": 575.8499999996275,
+      "firstFrame": 602.6899999999441
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "868028bb4759d5c48b1e6433d7404933a99ab6ff",
-      "dirty": false,
+      "commit": "02bf5f3e8f7a3bb257c3554e51937475cdfe7621",
+      "dirty": true,
       "emscripten": "4.0.23",
-      "wasmBytes": 5644377,
+      "wasmBytes": 5644974,
       "threaded": {
-        "wasmBytes": 5752743
+        "wasmBytes": 5753479
       },
-      "built": "2026-10-26T09:10:12Z"
+      "built": "2026-10-26T12:56:24Z"
     }
   },
   "console": [

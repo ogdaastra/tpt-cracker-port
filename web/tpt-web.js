@@ -1501,6 +1501,81 @@
 		}, { capture: true, passive: false });
 	}
 
+	// ------------------------------------------------------------------ tilt to pour
+	// The Tilt button turns the device's tilt into the game's custom gravity (tpt_tilt): "down" is wherever the
+	// device's lowest edge is, as strong as normal gravity when the device stands upright and fading to nothing
+	// when it lies flat. A hard shake pushes every loose particle (tpt_shake). Off puts the old gravity back.
+	const TILT_SMOOTHING = 0.3; // share of the way to the new direction each reading moves
+	const SHAKE_ACCELERATION = 15; // m/s², without gravity: a deliberate shake, not a bump
+	const SHAKE_PAUSE = 400; // ms between two shakes
+	const tilt = { on: false, gx: 0, gy: 1, readings: 0, shakes: 0, lastShake: 0, toGame: tiltToGame };
+	window.tptPage.tilt = tilt;
+
+	// beta/gamma (degrees, as deviceorientation gives them) and the screen's rotation → the direction things fall
+	// on screen, as game x (right) and y (down). The fall direction in the device's own axes (x right, y towards
+	// its top) is (sin γ cos β, −sin β) for the W3C angle order; turning the screen by θ rotates it.
+	function tiltToGame(beta, gamma, angle = 0) {
+		const r = Math.PI / 180;
+		const dx = Math.sin(gamma * r) * Math.cos(beta * r);
+		const dy = -Math.sin(beta * r);
+		const a = angle * r;
+		const sx = dx * Math.cos(a) - dy * Math.sin(a);
+		const sy = dx * Math.sin(a) + dy * Math.cos(a);
+		return { x: sx, y: -sy };
+	}
+
+	function onOrientation(e) {
+		if (!tilt.on || e.beta === null || e.gamma === null) {
+			return;
+		}
+		const angle = (screen.orientation && screen.orientation.angle) || 0;
+		const want = tiltToGame(e.beta, e.gamma, angle);
+		tilt.gx += (want.x - tilt.gx) * TILT_SMOOTHING;
+		tilt.gy += (want.y - tilt.gy) * TILT_SMOOTHING;
+		tilt.readings++;
+		mod.ccall('tpt_tilt', null, ['number', 'number', 'number'], [1, tilt.gx, tilt.gy]);
+	}
+
+	function onMotion(e) {
+		const a = e.acceleration;
+		if (!tilt.on || !a || a.x === null) {
+			return;
+		}
+		const strength = Math.hypot(a.x, a.y, a.z || 0);
+		const now = performance.now();
+		if (strength >= SHAKE_ACCELERATION && now - tilt.lastShake > SHAKE_PAUSE) {
+			tilt.lastShake = now;
+			tilt.shakes++;
+			mod.ccall('tpt_shake', 'number', ['number'], [Math.min(6, strength / 5)]);
+		}
+	}
+
+	async function setTilt(b, on) {
+		if (on) {
+			// iOS asks the player first, and only from a tap
+			for (const E of [window.DeviceOrientationEvent, window.DeviceMotionEvent]) {
+				if (E && typeof E.requestPermission === 'function' && await E.requestPermission().catch(() => 'denied') !== 'granted') {
+					// on a phone a title never shows: say it on the button for a moment
+					b.textContent = 'No sensor access';
+					setTimeout(() => { b.textContent = 'Tilt'; }, 3000);
+					return;
+				}
+			}
+			Object.assign(tilt, { on: true, gx: 0, gy: 1, readings: 0 });
+			addEventListener('deviceorientation', onOrientation);
+			addEventListener('devicemotion', onMotion);
+			// keep the screen from turning while the device is tilted (only where the browser allows it)
+			screen.orientation?.lock?.(screen.orientation.type).catch(() => {});
+		} else {
+			tilt.on = false;
+			removeEventListener('deviceorientation', onOrientation);
+			removeEventListener('devicemotion', onMotion);
+			screen.orientation?.unlock?.();
+			mod.ccall('tpt_tilt', null, ['number', 'number', 'number'], [0, 0, 0]);
+		}
+		b.setAttribute('aria-pressed', String(on));
+	}
+
 	// the bar
 	const touchActions = {
 		pause: () => mod.ccall('tpt_lua_command', null, ['string'], ['tpt.set_pause(1 - tpt.set_pause())']),
@@ -1517,6 +1592,7 @@
 		undo: () => mod.ccall('tpt_undo', 'number', [], []),
 		elements: () => $('btn-elements').click(),
 		'zoom-reset': resetView,
+		tilt: (b) => setTilt(b, b.getAttribute('aria-pressed') !== 'true'),
 	};
 	for (const b of document.querySelectorAll('#touch-bar button')) {
 		b.addEventListener('click', () => {
@@ -1527,6 +1603,7 @@
 	}
 	if (touchScreen) {
 		$('touch-bar').hidden = false;
+		document.querySelector('#touch-bar [data-touch=tilt]').hidden = !('DeviceOrientationEvent' in window);
 	}
 
 	// ------------------------------------------------------------------ loading
