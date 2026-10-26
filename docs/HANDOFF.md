@@ -72,7 +72,7 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30; the next free section is **31**.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31; the next free section is **32**. All seven planned features are done.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -210,7 +210,9 @@ R / Ctrl+Z long-press), scrubbing pauses the sim and restores the chosen snapsho
 gravity, Ultimata fields as `Snapshot` does. Tests: run a scene, rewind 10 s, particle state equals the
 state recorded at that time (hash), memory stays under the cap, then resume works.
 
-### N7 Phone/tablet controls
+### N7 Phone/tablet controls: DONE (Ember; `PORT_LOG.md` section 31)
+The plan below is the original one, for reference.
+
 The page fits phone width already (`categories.spec.mjs` checks no horizontal scroll). Missing: touch
 drawing (SDL2 Emscripten maps touch to mouse? verify; else translate touch → SDL mouse events in the page),
 pinch zoom (game zoom or CSS), two-finger pan, on-screen buttons (pause, eraser, brush size +/-, undo,

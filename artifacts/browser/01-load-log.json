@@ -10,21 +10,21 @@
       "scripts"
     ],
     "timings": {
-      "start": 89.05499999970198,
-      "instantiated": 330.11999999918044,
-      "runtimeReady": 813.8300000000745,
-      "firstFrame": 857.5800000000745
+      "start": 67.75,
+      "instantiated": 261.02999999932945,
+      "runtimeReady": 715.109999999404,
+      "firstFrame": 747.9599999990314
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "918340dce2e72b46cbb20542f7ae195e70f2a7c0",
-      "dirty": false,
+      "commit": "0e8c38d176ab959ac52fa0b77b4efd4c56470942",
+      "dirty": true,
       "emscripten": "4.0.23",
-      "wasmBytes": 5642303,
+      "wasmBytes": 5642342,
       "threaded": {
-        "wasmBytes": 5750670
+        "wasmBytes": 5750709
       },
-      "built": "2026-10-26T05:08:19Z"
+      "built": "2026-10-26T05:37:55Z"
     }
   },
   "console": [
@@ -49,12 +49,12 @@
       "type": "text/css; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/tpt-web.js",
+      "url": "http://127.0.0.1:8765/vendor/gifenc.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/vendor/gifenc.js",
+      "url": "http://127.0.0.1:8765/tpt-web.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
     },
@@ -69,19 +69,19 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/powder-mt.js",
-      "status": 200,
-      "type": "text/javascript; charset=utf-8"
-    },
-    {
-      "url": "http://127.0.0.1:8765/powder-mt.js",
-      "status": 200,
-      "type": "text/javascript; charset=utf-8"
-    },
-    {
       "url": "http://127.0.0.1:8765/powder-mt.wasm",
       "status": 200,
       "type": "application/wasm"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.js",
+      "status": 200,
+      "type": "text/javascript; charset=utf-8"
     },
     {
       "url": "http://127.0.0.1:8765/powder-mt.js",

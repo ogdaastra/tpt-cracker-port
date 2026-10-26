@@ -61,6 +61,17 @@
 	<p id="challenge-text"></p>
 </section>
 
+<nav id="touch-bar" aria-label="Touch controls" hidden>
+	<button type="button" data-touch="pause" title="Pause or carry on">Pause</button>
+	<button type="button" data-touch="eraser" aria-pressed="false" title="Draw with the eraser">Eraser</button>
+	<button type="button" data-touch="brush-down" title="Smaller brush">Brush −</button>
+	<button type="button" data-touch="brush-up" title="Bigger brush">Brush +</button>
+	<button type="button" data-touch="undo" title="Undo">Undo</button>
+	<button type="button" data-touch="elements" title="Pick an element">Elements</button>
+	<button type="button" data-touch="zoom-reset" hidden title="Show the whole game again">Reset zoom</button>
+	<span class="touch-hint">Two fingers: zoom and move</span>
+</nav>
+
 <main id="stage">
 	<div id="game">
 		<canvas id="canvas" tabindex="0" aria-label="The Powder Toy simulation"></canvas>

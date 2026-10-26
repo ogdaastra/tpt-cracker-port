@@ -1334,6 +1334,12 @@ extern "C"
 		return text;
 	}
 
+	// Undo, as Ctrl+Z does (the page's touch bar); 1 if there was something to undo
+	EMSCRIPTEN_KEEPALIVE int tpt_undo()
+	{
+		return webGameController && webGameController->HistoryRestore() ? 1 : 0;
+	}
+
 	// Rewind (the page's Rewind bar): the buffer of recent snapshots, filled after every simulated frame
 	static RewindBuffer webRewind;
 	static void WebRewindAfterSim(Simulation *sim)

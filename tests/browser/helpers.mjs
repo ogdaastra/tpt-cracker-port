@@ -257,3 +257,18 @@ export function particleStateLua(path) {
 	end
 	local f = io.open("${path}", "w") f:write(table.concat(out, "\\n")) f:close()`;
 }
+
+// Runs a Lua expression in the game loop (tpt_lua_command; the console's window would stop the simulation while
+// it is open) and returns its value as a string.
+let loopLuaRuns = 0;
+export async function loopLua(page, expression) {
+	const out = `/tmp/looplua${++loopLuaRuns}.txt`;
+	await page.evaluate(([e, p]) => window.tptPage.module.ccall('tpt_lua_command', null, ['string'],
+		[`local f = io.open("${p}", "w") f:write(tostring((function() return ${e} end)())) f:close()`]), [expression, out]);
+	for (let k = 0; k < 600; k++) {
+		const text = await page.evaluate((p) => { try { return new TextDecoder().decode(window.tptPage.module.FS.readFile(p)); } catch (e) { return null; } }, out);
+		if (text !== null) return text;
+		await page.waitForTimeout(5);
+	}
+	throw new Error('Lua did not run: ' + expression);
+}

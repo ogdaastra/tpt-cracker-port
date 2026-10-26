@@ -1363,6 +1363,171 @@
 		rewindShow(rewind.view + Math.round(60 / REWIND_INTERVAL));
 	}, true);
 
+	// ------------------------------------------------------------------ touch: bar, pinch zoom, two-finger pan
+	// One finger draws (SDL turns touches into mouse input). Two fingers zoom and move the view, a CSS transform
+	// on the canvas; SDL maps touches through the canvas's on-screen rectangle, so a touch still lands where the
+	// finger is. To keep a two-finger gesture from drawing, the first touch is held back for a moment: if a
+	// second finger comes within GESTURE_WAIT ms it is a gesture and the game never sees it, else the held
+	// touch is passed on unchanged.
+	const GESTURE_WAIT = 70;
+	const MAX_ZOOM = 4;
+	const view = { scale: 1, x: 0, y: 0 };
+	const gesture = { held: null, timer: 0, active: false, start: null };
+	window.tptPage.touch = { view, gesture };
+	const params = new URLSearchParams(location.search);
+	const touchScreen = params.get('touch') === '1' || (params.get('touch') !== '0' && matchMedia('(pointer: coarse)').matches);
+
+	function applyView() {
+		canvas.style.transform = view.scale === 1 && !view.x && !view.y ? '' : `translate(${view.x}px, ${view.y}px) scale(${view.scale})`;
+		document.querySelector('#touch-bar [data-touch=zoom-reset]').hidden = view.scale === 1;
+	}
+
+	function resetView() {
+		Object.assign(view, { scale: 1, x: 0, y: 0 });
+		applyView();
+	}
+
+	function forward(type, e) {
+		const copy = new TouchEvent(type, {
+			bubbles: true, cancelable: true, composed: true,
+			touches: Array.from(e.touches), targetTouches: Array.from(e.targetTouches), changedTouches: Array.from(e.changedTouches),
+			ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey,
+		});
+		copy.tptForwarded = true;
+		canvas.dispatchEvent(copy);
+	}
+
+	function releaseHeld() {
+		clearTimeout(gesture.timer);
+		const held = gesture.held;
+		gesture.held = null;
+		if (held) {
+			forward('touchstart', held);
+		}
+	}
+
+	function twoFingers(e) {
+		const [a, b] = e.touches;
+		return { d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1, x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+	}
+
+	// remembers the fingers and the view when two fingers are down (again)
+	function startGesture(e) {
+		const f = twoFingers(e);
+		gesture.active = true;
+		gesture.start = { d: f.d, mx: f.x, my: f.y, scale: view.scale, x0: view.x, y0: view.y };
+	}
+
+	function moveGesture(e) {
+		const now = twoFingers(e), s0 = gesture.start;
+		const box = game.getBoundingClientRect();
+		const cx = box.left + box.width / 2, cy = box.top + box.height / 2; // the canvas is centred in #game
+		const scale = Math.min(MAX_ZOOM, Math.max(1, s0.scale * now.d / s0.d));
+		// the canvas point under the fingers at the start stays under them
+		const px = (s0.mx - cx - s0.x0) / s0.scale, py = (s0.my - cy - s0.y0) / s0.scale;
+		let x = now.x - cx - px * scale, y = now.y - cy - py * scale;
+		// don't let the game move out of view
+		const w = canvas.offsetWidth, hgt = canvas.offsetHeight;
+		const mx = Math.max(0, (w * scale - w) / 2), my = Math.max(0, (hgt * scale - hgt) / 2);
+		x = Math.min(mx, Math.max(-mx, x));
+		y = Math.min(my, Math.max(-my, y));
+		Object.assign(view, { scale, x, y });
+		applyView();
+	}
+
+	function swallow(e) {
+		e.stopImmediatePropagation();
+		e.preventDefault();
+	}
+
+	game.addEventListener('touchstart', (e) => {
+		if (e.tptForwarded) {
+			return;
+		}
+		if (e.touches.length === 1 && !gesture.active) {
+			swallow(e);
+			gesture.held = e;
+			gesture.timer = setTimeout(releaseHeld, GESTURE_WAIT);
+			return;
+		}
+		swallow(e);
+		if (gesture.held) {
+			// the second finger came in time: a gesture, the first touch never reaches the game
+			clearTimeout(gesture.timer);
+			gesture.held = null;
+		} else if (!gesture.active) {
+			// the first finger was already drawing: end its stroke where it is
+			forward('touchend', e);
+		}
+		if (e.touches.length >= 2) {
+			startGesture(e);
+		}
+	}, { capture: true, passive: false });
+
+	game.addEventListener('touchmove', (e) => {
+		if (e.tptForwarded) {
+			return;
+		}
+		if (gesture.active) {
+			swallow(e);
+			if (e.touches.length >= 2) {
+				moveGesture(e);
+			}
+			return;
+		}
+		if (gesture.held) {
+			releaseHeld(); // moving before the wait is over: it's a stroke, let it draw
+		}
+	}, { capture: true, passive: false });
+
+	for (const type of ['touchend', 'touchcancel']) {
+		game.addEventListener(type, (e) => {
+			if (e.tptForwarded) {
+				return;
+			}
+			if (gesture.active) {
+				swallow(e);
+				if (e.touches.length === 0) {
+					gesture.active = false;
+				} else if (e.touches.length >= 2) {
+					startGesture(e);
+				}
+				return;
+			}
+			if (gesture.held) {
+				releaseHeld(); // a quick tap: the game gets the start, then this end
+			}
+		}, { capture: true, passive: false });
+	}
+
+	// the bar
+	const touchActions = {
+		pause: () => mod.ccall('tpt_lua_command', null, ['string'], ['tpt.set_pause(1 - tpt.set_pause())']),
+		eraser: (b) => {
+			const on = b.getAttribute('aria-pressed') !== 'true';
+			if (on) {
+				touchActions.previousTool = mod.ccall('tpt_active_tools', 'string', [], []).split('\n')[0];
+			}
+			mod.ccall('tpt_select_tool', null, ['string', 'number'], [on ? 'DEFAULT_PT_NONE' : (touchActions.previousTool || 'DEFAULT_PT_DUST'), 0]);
+			b.setAttribute('aria-pressed', String(on));
+		},
+		'brush-down': () => mod.ccall('tpt_lua_command', null, ['string'], ['local r = math.floor(tpt.brushx * 0.75) tpt.brushx = r tpt.brushy = r']),
+		'brush-up': () => mod.ccall('tpt_lua_command', null, ['string'], ['local r = math.min(100, math.max(tpt.brushx + 1, math.ceil(tpt.brushx * 1.33))) tpt.brushx = r tpt.brushy = r']),
+		undo: () => mod.ccall('tpt_undo', 'number', [], []),
+		elements: () => $('btn-elements').click(),
+		'zoom-reset': resetView,
+	};
+	for (const b of document.querySelectorAll('#touch-bar button')) {
+		b.addEventListener('click', () => {
+			if (mod && window.tptPage.state === 'running') {
+				touchActions[b.dataset.touch](b);
+			}
+		});
+	}
+	if (touchScreen) {
+		$('touch-bar').hidden = false;
+	}
+
 	// ------------------------------------------------------------------ loading
 	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
 	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by

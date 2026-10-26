@@ -32,7 +32,10 @@ async function loopLua(page, code, out = `/tmp/rewind${++runs}.txt`) {
 }
 
 async function stateHash(page) {
-	const file = await loopLua(page, h.particleStateLua(`/tmp/state${runs + 1}.txt`), `/tmp/state${runs + 1}`);
+	// a new name every time: with the same name, the previous call's .done marker let this one return before
+	// its Lua ran (it runs on the next frame) and read the previous state (failed once on CI)
+	const n = ++runs;
+	const file = await loopLua(page, h.particleStateLua(`/tmp/state${n}.txt`), `/tmp/state${n}`);
 	const text = await page.evaluate((p) => new TextDecoder().decode(window.tptPage.module.FS.readFile(p + '.txt')), file);
 	return createHash('sha256').update(text).digest('hex');
 }
