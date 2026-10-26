@@ -1,30 +1,30 @@
 {
   "video": {
-    "name": "tpt-recording-20261026-055202.mp4",
-    "bytes": 439367,
+    "name": "tpt-recording-20261026-093812.mp4",
+    "bytes": 443329,
     "w": 1224,
     "h": 768,
-    "frames": 212,
+    "frames": 182,
     "videoType": "video/mp4;codecs=avc1"
   },
   "gif": {
-    "name": "tpt-recording-20261026-055211.gif",
-    "bytes": 147959,
+    "name": "tpt-recording-20261026-093822.gif",
+    "bytes": 111638,
     "sig": "GIF89a",
     "width": 612,
     "height": 384,
-    "frames": 93,
+    "frames": 87,
     "complete": true
   },
   "screenshot": {
-    "name": "tpt-screenshot-20261026-055215.png",
+    "name": "tpt-screenshot-20261026-093826.png",
     "bytes": 7062
   },
   "stopped": {
     "sig": "GIF89a",
     "width": 646,
     "height": 424,
-    "frames": 40,
+    "frames": 38,
     "complete": true
   }
 }

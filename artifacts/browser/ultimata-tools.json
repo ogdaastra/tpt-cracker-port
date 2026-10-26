@@ -4,15 +4,15 @@
     "w": 8,
     "h": 4,
     "minx": 96,
-    "miny": 299
+    "miny": 300
   },
   "ruler": {
-    "litOnLine": 301
+    "litOnLine": 302
   },
   "transform": {
-    "n": 180,
+    "n": 171,
     "w": 9,
-    "h": 20,
+    "h": 19,
     "minx": 205,
     "miny": 145
   },
@@ -25,7 +25,7 @@
   },
   "fields": {
     "greenBefore": 0,
-    "greenAfter": 14785
+    "greenAfter": 15032
   },
   "prp2": "500,7"
 }
