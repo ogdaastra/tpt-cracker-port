@@ -409,3 +409,20 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 #rewind-bar .rewind-actions { display: flex; gap: 6px; }
 #rewind-bar .rewind-note { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; }
 #btn-rewind[aria-expanded=true] { border-color: var(--accent); color: var(--accent); }
+
+/* touch controls (shown on touch screens, or with ?touch=1) */
+#touch-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 8px;
+	background: var(--panel);
+	border-bottom: 1px solid var(--border);
+}
+#touch-bar[hidden] { display: none; }
+#touch-bar button { min-height: 40px; padding: 4px 12px; }
+#touch-bar button[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+#touch-bar button[hidden] { display: none; }
+#touch-bar .touch-hint { color: var(--muted); font-size: 12px; }
+#canvas { touch-action: none; transform-origin: center center; }

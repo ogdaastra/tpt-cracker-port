@@ -4,26 +4,26 @@
     "ctx": "running",
     "gain": 0.6000000238418579,
     "played": {
-      "spark": 47,
-      "fire": 23,
+      "spark": 46,
+      "fire": 19,
       "explosion": 1,
-      "steam": 12,
-      "acid": 15
+      "steam": 13,
+      "acid": 16
     },
     "heard": {
-      "spark": 3560,
-      "fire": 2537,
+      "spark": 3580,
+      "fire": 2445,
       "explosion": 231,
-      "steam": 445,
-      "acid": 570
+      "steam": 450,
+      "acid": 572
     }
   },
   "peaks": {
-    "spark": 0.24973362684249878,
-    "fire": 0.06012699007987976,
-    "explosion": 0.7411361932754517,
-    "steam": 0.11606144160032272,
-    "acid": 0.0830838680267334
+    "spark": 0.25039902329444885,
+    "fire": 0.07838121801614761,
+    "explosion": 0.70005202293396,
+    "steam": 0.10547962039709091,
+    "acid": 0.08262542635202408
   },
   "afterReload": {
     "on": true,
@@ -33,15 +33,15 @@
       "spark": 29,
       "fire": 17,
       "explosion": 1,
-      "steam": 10,
-      "acid": 15
+      "steam": 8,
+      "acid": 14
     },
     "heard": {
-      "spark": 1840,
-      "fire": 2257,
+      "spark": 2080,
+      "fire": 2367,
       "explosion": 231,
-      "steam": 400,
-      "acid": 557
+      "steam": 440,
+      "acid": 561
     }
   }
 }

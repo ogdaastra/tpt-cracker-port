@@ -835,3 +835,27 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   now unpauses; Resume from a moment in the past drops the newer snapshots; Shift+Backspace opens the bar at
   "−1.0 s"; turned off, nothing is kept, and the choice survives a reload. That scene kept 50 snapshots in
   112 MB (within the cap). Full suite: 59 passed, 2 skipped.
+
+## 31. Phone and tablet controls (N7)
+
+- **Drawing already worked**: SDL turns touches into mouse input (checked on an emulated Pixel 7: a tap drew
+  69 particles, a drag about 2,400), so no translation layer was needed.
+- **Touch bar** (`#touch-bar`, shown when the main pointer is coarse, or with `?touch=1`; `?touch=0` hides
+  it): Pause (`tpt.set_pause`), Eraser (left tool `DEFAULT_PT_NONE`, pressed again goes back to the tool
+  before), Brush − / Brush + (`tpt.brushx`/`brushy`, ×0.75 / ×1.33), Undo (new export `tpt_undo()`,
+  `GameController::HistoryRestore` as Ctrl+Z), Elements (opens the element browser) and, when zoomed, Reset
+  zoom. Buttons at least 40 px tall.
+- **Pinch zoom and two-finger pan**: a CSS transform on the canvas (`translate` + `scale` up to 4×, the
+  point under the fingers stays under them, the game can't be moved out of view). Emscripten's SDL maps a
+  touch through the canvas's on-screen rectangle, which includes the transform, so touches still land where
+  the finger is. To keep a two-finger gesture from drawing, a capture listener on `#game` holds back the
+  first touch for 70 ms: a second finger within that time makes it a gesture the game never sees; otherwise
+  the held touch (or, if the finger moves first, at once) is passed on unchanged as a new `TouchEvent`. A
+  second finger that comes later ends the first finger's stroke where it is. `#canvas` has
+  `touch-action: none`, so the browser doesn't scroll or zoom the page instead.
+- **Tests** (`touch.spec.mjs`, emulated Pixel 7, CDP touch events for several fingers): one finger draws; a
+  pinch zooms in (to 4×) and draws nothing; two fingers moving together move the view and draw nothing;
+  zoomed in, a one-pixel tap creates its particle exactly under the finger ((258, 190), as computed from the
+  transformed canvas); Reset zoom; Brush + / Brush −; Pause twice; a stroke then Undo; the Eraser selects
+  `DEFAULT_PT_NONE` and gives the previous tool back; Elements opens the element browser. New helper
+  `helpers.loopLua`. Full suite: 60 passed, 2 skipped.
