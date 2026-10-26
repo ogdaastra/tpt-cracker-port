@@ -185,28 +185,217 @@
 		setTimeout(() => URL.revokeObjectURL(url), 10000);
 	}
 
-	function showExportDialog() {
+	// "My saves": every save and stamp in the browser's storage, with thumbnails drawn by the game itself
+	// (tpt_save_thumbnail renders a save like the game's own save browser does).
+	const gallery = { kind: 'save', thumbs: new Map(), queue: [], rendering: false };
+	window.tptPage.gallery = gallery;
+	const THUMB_W = 204, THUMB_H = 128;
+	const GALLERY_HINT = $('export-dialog').querySelector('.hint').textContent;
+
+	function formatDate(d) {
+		return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+	}
+
+	// thumbnails are drawn one at a time between game frames, so a long list never freezes the game
+	function pumpThumbnails() {
+		if (gallery.rendering) {
+			return;
+		}
+		const job = gallery.queue.shift();
+		if (!job) {
+			return;
+		}
+		gallery.rendering = true;
+		setTimeout(() => {
+			let url = null;
+			try {
+				const out = '/tmp/tpt-thumb.png';
+				if (mod.ccall('tpt_save_thumbnail', 'number', ['string', 'string', 'number', 'number'], [job.file.path, out, THUMB_W, THUMB_H])) {
+					url = URL.createObjectURL(new Blob([mod.FS.readFile(out)], { type: 'image/png' }));
+					mod.FS.unlink(out);
+				}
+			} catch (e) {
+				rememberError('thumbnail: ' + e);
+			}
+			gallery.thumbs.set(job.key, url);
+			job.waiting.forEach((done) => done(url));
+			gallery.rendering = false;
+			pumpThumbnails();
+		}, 0);
+	}
+
+	function thumbnailFor(file, img) {
+		const key = `${file.path}|${+file.mtime}|${file.size}`;
+		if (gallery.thumbs.has(key)) {
+			const url = gallery.thumbs.get(key);
+			url ? (img.src = url) : img.classList.add('broken');
+			return;
+		}
+		const done = (url) => (url ? (img.src = url) : img.classList.add('broken'));
+		const queued = gallery.queue.find((job) => job.key === key);
+		if (queued) {
+			queued.waiting.push(done); // the list was redrawn before this one was drawn
+			return;
+		}
+		gallery.queue.push({ key, file, waiting: [done] });
+		pumpThumbnails();
+	}
+
+	function sortedFiles() {
+		const query = $('saves-search').value.trim().toLowerCase();
+		const files = listSaves().filter((f) => f.kind === gallery.kind && (!query || f.name.toLowerCase().includes(query)));
+		const by = $('saves-sort').value;
+		const cmp = {
+			newest: (a, b) => b.mtime - a.mtime,
+			oldest: (a, b) => a.mtime - b.mtime,
+			name: (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }),
+			size: (a, b) => b.size - a.size,
+		}[by];
+		return files.sort(cmp);
+	}
+
+	function cardButton(text, action, handler) {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.textContent = text;
+		b.dataset.action = action;
+		b.addEventListener('click', handler);
+		return b;
+	}
+
+	function renameFile(file, li) {
+		const dot = file.name.lastIndexOf('.');
+		const ext = file.name.slice(dot);
+		const input = document.createElement('input');
+		input.type = 'text';
+		input.value = file.name.slice(0, dot);
+		input.setAttribute('aria-label', 'New name');
+		const name = li.querySelector('.save-name');
+		name.replaceWith(input);
+		input.focus();
+		input.select();
+		let finished = false;
+		const finish = (save) => {
+			if (finished) {
+				return;
+			}
+			finished = true;
+			const wanted = input.value.trim().replace(/[\\/:*?"<>|]/g, '_');
+			if (save && wanted && wanted + ext !== file.name) {
+				const dir = file.path.slice(0, file.path.lastIndexOf('/'));
+				const target = `${dir}/${wanted}${ext}`;
+				if (exists(target)) {
+					setGalleryMessage(`There is already a file called ${wanted}${ext}.`);
+				} else {
+					mod.FS.rename(file.path, target);
+				}
+			}
+			renderGallery();
+		};
+		input.addEventListener('keydown', (e) => {
+			e.stopPropagation();
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				finish(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				finish(false);
+			}
+		});
+		input.addEventListener('blur', () => finish(true));
+	}
+
+	function confirmDelete(file, li) {
+		const actions = li.querySelector('.save-actions');
+		actions.textContent = '';
+		const label = document.createElement('span');
+		label.textContent = 'Delete it?';
+		actions.append(label,
+			cardButton('Delete', 'confirm-delete', () => {
+				if (file.kind === 'stamp') {
+					// through the game's stamp list, so the in-game stamp browser doesn't keep a missing stamp
+					mod.ccall('tpt_delete_stamp', null, ['string'], [file.name.replace(/\.stm$/i, '')]);
+				} else {
+					mod.FS.unlink(file.path);
+				}
+				renderGallery();
+			}),
+			cardButton('Keep', 'cancel-delete', () => renderGallery()));
+	}
+
+	function setGalleryMessage(text) {
+		const hint = $('export-dialog').querySelector('.hint');
+		hint.textContent = text;
+		hint.classList.add('message');
+	}
+
+	function renderGallery() {
 		const list = $('export-list');
 		list.textContent = '';
-		const files = listSaves();
+		const all = listSaves();
+		for (const b of $('saves-kinds').querySelectorAll('button')) {
+			b.classList.toggle('active', b.dataset.kind === gallery.kind);
+			b.querySelector('span').textContent = `(${all.filter((f) => f.kind === b.dataset.kind).length})`;
+		}
+		const files = sortedFiles();
 		if (!files.length) {
 			const li = document.createElement('li');
-			li.textContent = 'No saves yet.';
+			li.className = 'empty';
+			li.textContent = $('saves-search').value.trim() ? 'Nothing matches.' :
+				gallery.kind === 'save' ? 'No saves yet.' : 'No stamps yet.';
 			list.append(li);
 		}
 		for (const f of files) {
 			const li = document.createElement('li');
-			const label = document.createElement('span');
-			label.textContent = `${f.name} (${f.kind}, ${(f.size / 1024).toFixed(1)} KiB)`;
-			const btn = document.createElement('button');
-			btn.type = 'button';
-			btn.textContent = 'Download';
-			btn.addEventListener('click', () => download(f.path, f.name));
-			li.append(label, btn);
+			li.dataset.name = f.name;
+			const img = document.createElement('img');
+			img.className = 'save-thumb';
+			img.alt = '';
+			img.width = THUMB_W;
+			img.height = THUMB_H;
+			thumbnailFor(f, img);
+			const name = document.createElement('span');
+			name.className = 'save-name';
+			name.textContent = f.name.replace(/\.(cps|stm)$/i, '');
+			name.title = f.name;
+			const meta = document.createElement('span');
+			meta.className = 'save-meta';
+			meta.textContent = `${formatDate(f.mtime)} · ${(f.size / 1024).toFixed(1)} KiB`;
+			const actions = document.createElement('span');
+			actions.className = 'save-actions';
+			actions.append(
+				cardButton('Open', 'open', () => {
+					$('export-dialog').close();
+					mod.ccall('tpt_open_file', null, ['string'], [f.path]);
+				}),
+				cardButton('Download', 'download', () => download(f.path, f.name)),
+				cardButton('Delete', 'delete', () => confirmDelete(f, li)));
+			if (f.kind === 'save') {
+				// stamps keep the names the game gave them: its stamp list refers to them by name
+				actions.insertBefore(cardButton('Rename', 'rename', () => renameFile(f, li)), actions.children[1]);
+			}
+			li.append(img, name, meta, actions);
 			list.append(li);
 		}
+	}
+
+	function showExportDialog() {
+		const hint = $('export-dialog').querySelector('.hint');
+		hint.textContent = GALLERY_HINT;
+		hint.classList.remove('message');
+		renderGallery();
 		$('export-dialog').showModal();
 	}
+
+	for (const b of $('saves-kinds').querySelectorAll('button')) {
+		b.addEventListener('click', () => {
+			gallery.kind = b.dataset.kind;
+			renderGallery();
+		});
+	}
+	$('saves-search').addEventListener('input', renderGallery);
+	$('saves-search').addEventListener('keydown', (e) => e.stopPropagation());
+	$('saves-sort').addEventListener('change', renderGallery);
 
 	// ------------------------------------------------------------------ controls
 	$('btn-import').addEventListener('click', () => $('file-import').click());

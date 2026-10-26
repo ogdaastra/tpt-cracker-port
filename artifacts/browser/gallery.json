@@ -1,0 +1,31 @@
+{
+  "saves": {
+    "thumbs": {
+      "loaded": 4,
+      "broken": 0,
+      "size": [
+        204,
+        128
+      ]
+    },
+    "rubrParticles": 3600,
+    "watrParticles": 800,
+    "afterReload": [
+      ".",
+      "..",
+      "alpha.cps",
+      "gamma.cps",
+      "save 10.cps"
+    ]
+  },
+  "stamps": {
+    "deleted": "6ade8d8000",
+    "kept": "6ade8d8200"
+  },
+  "twenty": {
+    "totalMs": 1227,
+    "perThumbMs": 61,
+    "maxFrameGapMs": 83,
+    "frames": 41
+  }
+}
