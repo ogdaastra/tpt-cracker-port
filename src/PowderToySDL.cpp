@@ -58,6 +58,7 @@
 #include "gui/game/Tool.h"
 #include "graphics/Renderer.h"
 #include "simulation/Simulation.h"
+#include "simulation/ElementClasses.h"
 #include "common/tpt-rand.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
@@ -1307,6 +1308,29 @@ extern "C"
 		}
 		sim->framerender = 0;
 		return emscripten_get_now() - start;
+	}
+
+	// What happened in the simulation since the last call, for the page's sound effects: particles that appeared
+	// or vanished, summed into "sparks fire explosions steam acid", then reset. The string stays valid until the
+	// next call.
+	EMSCRIPTEN_KEEPALIVE const char *tpt_sound_events()
+	{
+		static char text[80];
+		unsigned int out[5] = {};
+		if (!webGameController)
+			return "0 0 0 0 0";
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		auto &appeared = sim->soundAppeared;
+		auto &vanished = sim->soundVanished;
+		out[0] = appeared[PT_SPRK];
+		out[1] = appeared[PT_FIRE] + appeared[PT_PLSM] + appeared[PT_CFLM] + appeared[PT_BFLM] + appeared[PT_DFLM];
+		out[2] = appeared[PT_EMBR]; // sparks thrown by explosions (BOMB, TNT, fireworks and friends)
+		out[3] = appeared[PT_WTRV]; // steam: water boiling on something hot
+		out[4] = vanished[PT_ACID] + appeared[PT_CAUS]; // acid used up dissolving things, acid fumes
+		std::fill(std::begin(sim->soundAppeared), std::end(sim->soundAppeared), 0U);
+		std::fill(std::begin(sim->soundVanished), std::end(sim->soundVanished), 0U);
+		snprintf(text, sizeof(text), "%u %u %u %u %u", out[0], out[1], out[2], out[3], out[4]);
+		return text;
 	}
 
 	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock

@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound']) {
 			$(id).disabled = true;
 		}
 	}
@@ -1056,6 +1056,219 @@
 	});
 	window.tptPage.recorder = { start: startRecording, stop: stopRecording, screenshot: takeScreenshot, videoType };
 
+	// ------------------------------------------------------------------ sound effects
+	// Off by default. The game counts the particles that appear and vanish (tpt_sound_events); every 50 ms the
+	// page reads the counts and plays at most one sound of each kind, louder for more, made with WebAudio from
+	// filtered noise and tones (no sound files). The AudioContext only starts after a click or key press,
+	// as browsers require.
+	const SOUND_KEY = 'tptSound';
+	const SOUND_KINDS = ['spark', 'fire', 'explosion', 'steam', 'acid'];
+	const sound = {
+		on: false,
+		volume: 0.6,
+		ctx: null,
+		master: null,
+		noise: null,
+		timer: 0,
+		last: {}, // when each kind last played (AudioContext time)
+		played: Object.fromEntries(SOUND_KINDS.map((k) => [k, 0])),
+		heard: Object.fromEntries(SOUND_KINDS.map((k) => [k, 0])), // event counts read from the game
+	};
+	window.tptPage.sound = sound;
+
+	try {
+		const saved = JSON.parse(storageGet(SOUND_KEY));
+		if (saved && typeof saved === 'object') {
+			sound.on = saved.on === true;
+			if (typeof saved.volume === 'number' && saved.volume >= 0 && saved.volume <= 1) {
+				sound.volume = saved.volume;
+			}
+		}
+	} catch (e) {
+		// nothing saved, or not readable: defaults
+	}
+
+	function saveSound() {
+		storageSet(SOUND_KEY, JSON.stringify({ on: sound.on, volume: sound.volume }));
+	}
+
+	// Called from a click or key press; returns false if the browser has no WebAudio
+	function startAudio() {
+		if (!sound.ctx) {
+			const Ctx = window.AudioContext || window.webkitAudioContext;
+			if (!Ctx) {
+				return false;
+			}
+			sound.ctx = new Ctx();
+			sound.master = sound.ctx.createGain();
+			sound.master.gain.value = sound.volume;
+			sound.master.connect(sound.ctx.destination);
+			// one second of white noise, the raw material of every sound here
+			const rate = sound.ctx.sampleRate;
+			sound.noise = sound.ctx.createBuffer(1, rate, rate);
+			const data = sound.noise.getChannelData(0);
+			for (let i = 0; i < rate; i++) {
+				data[i] = Math.random() * 2 - 1;
+			}
+		}
+		if (sound.ctx.state === 'suspended') {
+			sound.ctx.resume();
+		}
+		return true;
+	}
+
+	// filtered noise with an attack and an exponential decay
+	function noiseBurst(at, { type, freq, q = 1, duration, gain, attack = 0.005 }) {
+		const ctx = sound.ctx;
+		const src = ctx.createBufferSource();
+		src.buffer = sound.noise;
+		src.loop = true;
+		const filter = ctx.createBiquadFilter();
+		filter.type = type;
+		filter.frequency.value = freq;
+		filter.Q.value = q;
+		const env = ctx.createGain();
+		env.gain.setValueAtTime(0.0001, at);
+		env.gain.exponentialRampToValueAtTime(gain, at + attack);
+		env.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+		src.connect(filter).connect(env).connect(sound.master);
+		src.start(at, Math.random() * 0.5);
+		src.stop(at + duration + 0.05);
+	}
+
+	function tone(at, { wave, freq, endFreq = freq, duration, gain }) {
+		const ctx = sound.ctx;
+		const osc = ctx.createOscillator();
+		osc.type = wave;
+		osc.frequency.setValueAtTime(freq, at);
+		osc.frequency.exponentialRampToValueAtTime(endFreq, at + duration);
+		const env = ctx.createGain();
+		env.gain.setValueAtTime(gain, at);
+		env.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+		osc.connect(env).connect(sound.master);
+		osc.start(at);
+		osc.stop(at + duration + 0.05);
+	}
+
+	// at least this long between two sounds of a kind (seconds), and how each one sounds; level is 0..1
+	const SOUNDS = {
+		spark: [0.06, (at, level) => {
+			noiseBurst(at, { type: 'highpass', freq: 3500, duration: 0.04, gain: 0.08 + 0.12 * level });
+			tone(at, { wave: 'square', freq: 1800 + Math.random() * 600, duration: 0.025, gain: 0.03 + 0.04 * level });
+		}],
+		fire: [0.15, (at, level) => {
+			noiseBurst(at, { type: 'lowpass', freq: 500 + 400 * level, duration: 0.25, gain: 0.05 + 0.15 * level, attack: 0.04 });
+		}],
+		explosion: [0.25, (at, level) => {
+			noiseBurst(at, { type: 'lowpass', freq: 200 + 500 * level, duration: 0.4 + 0.6 * level, gain: 0.25 + 0.5 * level, attack: 0.008 });
+			tone(at, { wave: 'sine', freq: 90, endFreq: 35, duration: 0.3 + 0.4 * level, gain: 0.2 + 0.4 * level });
+		}],
+		steam: [0.2, (at, level) => {
+			noiseBurst(at, { type: 'bandpass', freq: 5000, q: 0.8, duration: 0.3, gain: 0.04 + 0.12 * level, attack: 0.03 });
+		}],
+		acid: [0.12, (at, level) => {
+			for (let k = 0; k < 3; k++) {
+				const t = at + Math.random() * 0.12;
+				tone(t, { wave: 'sine', freq: 600 + Math.random() * 900, endFreq: 1400 + Math.random() * 900, duration: 0.03, gain: 0.03 + 0.06 * level });
+			}
+		}],
+	};
+
+	// Renders one sound at full level without playing it and returns its loudest sample (0..1): for the tests,
+	// which can't listen. Uses an OfflineAudioContext in place of the live one while the sound is scheduled.
+	sound.preview = async (kind) => {
+		const offline = new OfflineAudioContext(1, 44100, 44100);
+		const saved = [sound.ctx, sound.master, sound.noise];
+		sound.ctx = offline;
+		sound.master = offline.createGain();
+		sound.master.connect(offline.destination);
+		sound.noise = offline.createBuffer(1, 44100, 44100);
+		sound.noise.getChannelData(0).forEach((_, i, a) => { a[i] = Math.random() * 2 - 1; });
+		try {
+			SOUNDS[kind][1](0.01, 1);
+		} finally {
+			[sound.ctx, sound.master, sound.noise] = saved;
+		}
+		const data = (await offline.startRendering()).getChannelData(0);
+		return data.reduce((peak, v) => Math.max(peak, Math.abs(v)), 0);
+	};
+
+	function pollSound() {
+		if (!mod || window.tptPage.state !== 'running') {
+			return;
+		}
+		const counts = mod.ccall('tpt_sound_events', 'string', [], []).split(' ').map(Number);
+		if (!sound.ctx || sound.ctx.state !== 'running') {
+			return; // waiting for a click or key press to start the audio
+		}
+		const now = sound.ctx.currentTime;
+		SOUND_KINDS.forEach((kind, i) => {
+			const count = counts[i];
+			if (!count) {
+				return;
+			}
+			sound.heard[kind] += count;
+			const [gap, play] = SOUNDS[kind];
+			if (now - (sound.last[kind] || -1) < gap) {
+				return;
+			}
+			sound.last[kind] = now;
+			sound.played[kind]++;
+			// 1 particle is quiet, 1000 or more is full volume
+			play(now + 0.01, Math.min(1, Math.log10(1 + count) / 3));
+		});
+	}
+
+	function showSound() {
+		const b = $('btn-sound');
+		b.textContent = sound.on ? 'Sound: on' : 'Sound: off';
+		b.setAttribute('aria-pressed', String(sound.on));
+		$('sound-volume').hidden = !sound.on;
+		$('sound-volume').value = String(Math.round(sound.volume * 100));
+	}
+
+	function setSoundOn(on) {
+		sound.on = on;
+		clearInterval(sound.timer);
+		sound.timer = 0;
+		if (on) {
+			if (mod) {
+				mod.ccall('tpt_sound_events', 'string', [], []); // forget what happened while it was off
+			}
+			sound.timer = setInterval(pollSound, 50);
+		} else if (sound.ctx) {
+			sound.ctx.suspend();
+		}
+		saveSound();
+		showSound();
+	}
+
+	$('btn-sound').addEventListener('click', () => {
+		if (!sound.on && !startAudio()) {
+			$('btn-sound').textContent = 'Sound: not supported';
+			return;
+		}
+		setSoundOn(!sound.on);
+		canvas.focus();
+	});
+	$('sound-volume').addEventListener('input', () => {
+		sound.volume = Number($('sound-volume').value) / 100;
+		if (sound.master) {
+			sound.master.gain.value = sound.volume;
+		}
+		saveSound();
+	});
+	$('sound-volume').addEventListener('keydown', (e) => e.stopPropagation());
+	// sound was left on last time: start the audio at the first click or key press on the page
+	const resumeOnGesture = () => {
+		if (sound.on) {
+			startAudio();
+		}
+	};
+	window.addEventListener('pointerdown', resumeOnGesture, true);
+	window.addEventListener('keydown', resumeOnGesture, true);
+	showSound();
+
 	// ------------------------------------------------------------------ loading
 	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
 	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by
@@ -1153,8 +1366,11 @@
 				window.tptPage.state = 'running';
 				window.tptPage.timings.firstFrame = performance.now();
 				statusBox.hidden = true;
-				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges']) {
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges', 'btn-sound']) {
 					$(id).disabled = false;
+				}
+				if (sound.on) {
+					setSoundOn(true); // left on last time; the audio itself starts at the first click or key press
 				}
 				initPanel();
 				fit();

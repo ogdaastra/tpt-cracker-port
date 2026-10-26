@@ -19,13 +19,13 @@
     ]
   },
   "stamps": {
-    "deleted": "6adec8bb00",
-    "kept": "6adec8bd00"
+    "deleted": "6aded57100",
+    "kept": "6aded57300"
   },
   "twenty": {
-    "totalMs": 2091,
-    "perThumbMs": 105,
-    "maxFrameGapMs": 117,
-    "frames": 42
+    "totalMs": 2051,
+    "perThumbMs": 103,
+    "maxFrameGapMs": 133,
+    "frames": 40
   }
 }

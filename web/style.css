@@ -387,3 +387,8 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 .save-actions { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .save-actions button { padding: 2px 8px; }
 .saves-grid input[type=text] { width: 100%; }
+
+/* sound effects */
+#btn-sound[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+#sound-volume { width: 90px; accent-color: var(--accent); }
+#sound-volume[hidden] { display: none; }
