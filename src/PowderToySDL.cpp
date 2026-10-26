@@ -58,6 +58,7 @@
 #include "gui/game/Tool.h"
 #include "graphics/Renderer.h"
 #include "simulation/Simulation.h"
+#include "common/tpt-rand.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
 #include "gui/game/GameView.h"
@@ -1263,6 +1264,15 @@ extern "C"
 		}
 		sim->framerender = 0;
 		return emscripten_get_now() - start;
+	}
+
+	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock
+	// at start), so a scene stepped with tpt_benchmark replays exactly; for checking that a speed-up leaves
+	// the results unchanged (docs/handoff/tools/samecheck.mjs).
+	EMSCRIPTEN_KEEPALIVE void tpt_rng_seed(unsigned int seed)
+	{
+		RNG::Ref().seed(seed);
+		random_gen.seed(seed);
 	}
 }
 
