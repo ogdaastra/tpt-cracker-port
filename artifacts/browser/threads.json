@@ -1,15 +1,15 @@
 {
   "threaded": {
-    "off": 1.722,
-    "on": 2.384
+    "off": 0.906,
+    "on": 0.955
   },
   "single": {
-    "off": 1.786,
-    "on": 5.603
+    "off": 1.47,
+    "on": 3.076
   },
   "gravityExtraMs": {
-    "threaded": 0.6619999999999999,
-    "single": 3.8169999999999997
+    "threaded": 0.04899999999999993,
+    "single": 1.606
   },
   "fallback": {
     "isolated": false,
