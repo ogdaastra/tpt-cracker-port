@@ -27,6 +27,8 @@ void EMField::Clear() {
 }
 
 EMField::EMField(Simulation &simulation) : sim(simulation) {
+    for (auto *field : { &mx, &my, &magnetic, &pmagnetic, &change_magnetic, &ex, &ey, &pex, &pey, &electric, &pelectric })
+        field->resize(EM_FIELD_SIZE);
     Clear();
 }
 

@@ -151,19 +151,28 @@ inline ui::Button * make_center_button(const ui::Point &pos, const ui::Point &si
 }
 
 // Align windows
-inline void align_window_near(ui::Point &Position, const ui::Point &partpos, const ui::Point &Size) {
+// Previews drawn from a config window are in simulation pixels; a small world's pixels are SIMSCALE screen
+// pixels across. A point goes to the middle of its pixel's square, a length or an area is SIMSCALE times
+// longer. At SIMSCALE 1 they're the numbers given.
+inline int sim_point(int v) { return v * SIMSCALE + SIMSCALE / 2; }
+inline int sim_length(int v) { return v * SIMSCALE; }
+
+// partpos is the particle's position in the simulation; the window is placed on the screen
+inline void align_window_near(ui::Point &Position, const ui::Point &simpos, const ui::Point &Size) {
+    const ui::Point partpos = simpos * SIMSCALE;
     Position.X = partpos.X - Size.X / 2; // Default: center align x
-    if (partpos.X < XRES / 4)
+    if (partpos.X < SCREENW / 4)
         Position.X = partpos.X + 10;
-    else if (partpos.X > 3 * XRES / 4)
+    else if (partpos.X > 3 * SCREENW / 4)
         Position.X = partpos.X - Size.X - 10;
-    Position.Y = partpos.Y < YRES / 2 ? partpos.Y + 10 : partpos.Y - 10 - Size.Y; // Align Y depending on height
+    Position.Y = partpos.Y < SCREENH / 2 ? partpos.Y + 10 : partpos.Y - 10 - Size.Y; // Align Y depending on height
 }
 
-inline void align_window_far(ui::Point &Position, const ui::Point &partpos, const ui::Point &Size) {
-    if (partpos.X < XRES / 2) Position.X = XRES - Size.X - 10;
+inline void align_window_far(ui::Point &Position, const ui::Point &simpos, const ui::Point &Size) {
+    const ui::Point partpos = simpos * SIMSCALE;
+    if (partpos.X < SCREENW / 2) Position.X = SCREENW - Size.X - 10;
 	else Position.X = 10;
-	if (partpos.Y < YRES / 2) Position.Y = YRES - Size.Y - 10;
+	if (partpos.Y < SCREENH / 2) Position.Y = SCREENH - Size.Y - 10;
 	else Position.Y = 10;
 }
 

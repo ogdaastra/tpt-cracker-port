@@ -1,4 +1,8 @@
 --Cracker1000 mod interface script--
+-- This port's World size setting: the simulation area on screen can be bigger than the classic 612x384 the
+-- positions below were made for. What is right of it moves CRX to the right, what is below it CRY down.
+CRX = graphics.WIDTH - 646
+CRY = graphics.HEIGHT - 424
 local passreal = "12345678"
 local crackversion = 55.0 --Next version: 55.1 
 local passreal2 = "DMND"
@@ -185,13 +189,13 @@ end
 if PLNEFUEL > 4000 then
 PLNEFUEL = 4000
 end
-if tpt.get_property("x",i) > 605 then
-pcall(tpt.set_property, "x", 600, i)
+if tpt.get_property("x",i) > sim.XRES - 7 then
+pcall(tpt.set_property, "x", sim.XRES - 12, i)
 elseif tpt.get_property("x",i) < 15 then
 pcall(tpt.set_property, "x", 16, i)
 end
-if tpt.get_property("y",i) > 368 then
-pcall(tpt.set_property, "y", 367, i)
+if tpt.get_property("y",i) > sim.YRES - 16 then
+pcall(tpt.set_property, "y", sim.YRES - 17, i)
 elseif tpt.get_property("y",i) < 15 then
 pcall(tpt.set_property, "y", 16, i)
 end
@@ -322,7 +326,7 @@ platform.openLink("https://powdertoy.co.uk/Discussions/Thread/View.html?Thread=2
 end)
 end
 
-local toggle = Button:new(419,408,50,15, "Cr-Menu", "Open Mod Settings.")
+local toggle = Button:new(419,408+CRY,50,15, "Cr-Menu", "Open Mod Settings.")
 local newmenu = Window:new(-15,-15, 609, 255)
 
 local deletesparkButton =  Button:new(10,28,80,25,"Focus Mode", "shows UI related stuff.")
@@ -664,22 +668,22 @@ end
 end
 
 function clicktomsg()
-if tpt.mousex >389 and tpt.mousex < 528 and tpt.mousey > 365 and tpt.mousey < 379 then
+if tpt.mousex >389 and tpt.mousex < 528 and tpt.mousey > 365+CRY and tpt.mousey < 379+CRY then
 open()
 return false
 end
 end
 
 function showmotdnot()
-tpt.fillrect(390,365,138,14,10,10,10,250)
-if tpt.mousex >389 and tpt.mousex < 528 and tpt.mousey > 365 and tpt.mousey < 379 then
-tpt.fillrect(390,365,138,14,255,255,0,120)
+tpt.fillrect(390,365+CRY,138,14,10,10,10,250)
+if tpt.mousex >389 and tpt.mousex < 528 and tpt.mousey > 365+CRY and tpt.mousey < 379+CRY then
+tpt.fillrect(390,365+CRY,138,14,255,255,0,120)
 else
-tpt.fillrect(390,365,138,14,255,255,0,20)
+tpt.fillrect(390,365+CRY,138,14,255,255,0,20)
 end
-tpt.drawrect(390,365,138,14,255,255,0,255)
-tpt.drawrect(418,408,51,14,255-ar,255-ag,255-ab,255)
-gfx.drawText(395,369,"New message, click to view.",245,225,0,255)
+tpt.drawrect(390,365+CRY,138,14,255,255,0,255)
+tpt.drawrect(418,408+CRY,51,14,255-ar,255-ag,255-ab,255)
+gfx.drawText(395,369+CRY,"New message, click to view.",245,225,0,255)
 end
 
 local function strtelemgraph()
@@ -1257,7 +1261,7 @@ tpt.message_box(" Notification feature help", "Turning it on will notify you whe
 end)
 
 function cbrightness()
-tpt.fillrect(-1,-1,630,425,0,0,0,255-MANAGER.getsetting("CRK", "brightness"))
+tpt.fillrect(-1,-1,630+CRX,425+CRY,0,0,0,255-MANAGER.getsetting("CRK", "brightness"))
 end
 
 brightness:action(function(sender)
@@ -1968,13 +1972,13 @@ gfx.drawText(10,370,"You are running an outdated version, please update when pos
 end
 --Filters
 if filterval == 1 then
-tpt.drawrect(2,2,607,379,ar,ag,ab,50)
-tpt.fillrect(1,1,609,381,ar,ag,ab,50)
+tpt.drawrect(2,2,607+CRX,379+CRY,ar,ag,ab,50)
+tpt.fillrect(1,1,609+CRX,381+CRY,ar,ag,ab,50)
 end
 --Borders
 if borderval == "1" then
-tpt.drawrect(2,2,607,379,ar,ag,ab,al)
-tpt.drawrect(1,1,609,381,ar,ag,ab,al)
+tpt.drawrect(2,2,607+CRX,379+CRY,ar,ag,ab,al)
+tpt.drawrect(1,1,609+CRX,381+CRY,ar,ag,ab,al)
 end
 --Autosave
 if stamplb == "1" then
@@ -1996,70 +2000,70 @@ barlength = barlength + "5"
 end
 tpt.fillrect(tonumber(barlength),-1,tonumber(barlength),3, ar,ag,ab,al)
 elseif barval == "2" then
-tpt.fillrect(2,-1,302,3, ar,ag,ab,al)
-tpt.fillrect(305,-1,305,3, spr, spg, spb, al)
+tpt.fillrect(2,-1,302+math.floor(CRX/2),3, ar,ag,ab,al)
+tpt.fillrect(305+math.floor(CRX/2),-1,305+math.ceil(CRX/2),3, spr, spg, spb, al)
 end
 end
 --Topbarend
 --split theme
 --top
-tpt.drawrect(613,17,14,14,spr,spg,spb,al)
-tpt.drawrect(613,49,14,14,spr,spg,spb,al)
-tpt.drawrect(613,81,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,17,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,49,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,81,14,14,spr,spg,spb,al)
 --right
-tpt.drawrect(613,152,14,14,spr,spg,spb,al)
-tpt.drawrect(613,184,14,14,spr,spg,spb,al)
-tpt.drawrect(613,216,14,14,spr,spg,spb,al)
-tpt.drawrect(613,248,14,14,spr,spg,spb,al)
-tpt.drawrect(613,280,14,14,spr,spg,spb,al)
-tpt.drawrect(613,312,14,14,spr,spg,spb,al)
-tpt.drawrect(613,344,14,14,spr,spg,spb,al)
-tpt.drawrect(613,376,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,152+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,184+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,216+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,248+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,280+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,312+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,344+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(613+CRX,376+CRY,14,14,spr,spg,spb,al)
 --second column (menus added by the web port)
-tpt.drawrect(630,152,14,14,spr,spg,spb,al)
-tpt.drawrect(630,17,14,14,spr,spg,spb,al)
-tpt.drawrect(630,49,14,14,spr,spg,spb,al)
-tpt.drawrect(630,81,14,14,spr,spg,spb,al)
-tpt.drawrect(630,184,14,14,spr,spg,spb,al)
+tpt.drawrect(630+CRX,152+CRY,14,14,spr,spg,spb,al)
+tpt.drawrect(630+CRX,17,14,14,spr,spg,spb,al)
+tpt.drawrect(630+CRX,49,14,14,spr,spg,spb,al)
+tpt.drawrect(630+CRX,81,14,14,spr,spg,spb,al)
+tpt.drawrect(630+CRX,184+CRY,14,14,spr,spg,spb,al)
 --Lua manager
-tpt.drawrect(613,119,14,15,spr,spg,spb,al)
+tpt.drawrect(613+CRX,119+CRY,14,15,spr,spg,spb,al)
 --Bottom
-tpt.drawrect(1,408,626,14,spr,spg,spb,al)
+tpt.drawrect(1,408+CRY,626+CRX,14,spr,spg,spb,al)
 --split theme end
 --top
-tpt.drawrect(613,1,14,14,ar,ag,ab,al)
-tpt.drawrect(613,33,14,14,ar,ag,ab,al)
-tpt.drawrect(613,65,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,1,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,33,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,65,14,14,ar,ag,ab,al)
 --MP and manager
-tpt.drawrect(613,103,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,103+CRY,14,14,ar,ag,ab,al)
 --right
-tpt.drawrect(613,136,14,14,ar,ag,ab,al)
-tpt.drawrect(613,168,14,14,ar,ag,ab,al)
-tpt.drawrect(613,200,14,14,ar,ag,ab,al)
-tpt.drawrect(613,232,14,14,ar,ag,ab,al)
-tpt.drawrect(613,264,14,14,ar,ag,ab,al)
-tpt.drawrect(613,296,14,14,ar,ag,ab,al)
-tpt.drawrect(613,328,14,14,ar,ag,ab,al)
-tpt.drawrect(613,360,14,14,ar,ag,ab,al)
-tpt.drawrect(613,392,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,136+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,168+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,200+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,232+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,264+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,296+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,328+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,360+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(613+CRX,392+CRY,14,14,ar,ag,ab,al)
 --second column (menus added by the web port)
-tpt.drawrect(630,136,14,14,ar,ag,ab,al)
-tpt.drawrect(630,1,14,14,ar,ag,ab,al)
-tpt.drawrect(630,33,14,14,ar,ag,ab,al)
-tpt.drawrect(630,65,14,14,ar,ag,ab,al)
-tpt.drawrect(630,168,14,14,ar,ag,ab,al)
-tpt.drawrect(630,200,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,136+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,1,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,33,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,65,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,168+CRY,14,14,ar,ag,ab,al)
+tpt.drawrect(630+CRX,200+CRY,14,14,ar,ag,ab,al)
 --bottom
-tpt.drawline(612,409,612,421,ar,ag,ab,al)
-tpt.drawline(187,409,187,421,ar,ag,ab,al)
-tpt.drawline(487,409,487,421,ar,ag,ab,al)
-tpt.drawline(241,409,241,421,ar,ag,ab,al)
-tpt.drawline(469,409,469,421,ar,ag,ab,al)
-tpt.drawline(36,409,36,421,ar,ag,ab,al)
-tpt.drawline(18,409,18,421,ar,ag,ab,al)
-tpt.drawline(580,409,580,421,ar,ag,ab,al)
-tpt.drawline(596,409,596,421,ar,ag,ab,al)
-tpt.drawline(418,409,418,421,ar,ag,ab,al)
+tpt.drawline(612+CRX,409+CRY,612+CRX,421+CRY,ar,ag,ab,al)
+tpt.drawline(187,409+CRY,187,421+CRY,ar,ag,ab,al)
+tpt.drawline(487+CRX,409+CRY,487+CRX,421+CRY,ar,ag,ab,al)
+tpt.drawline(241,409+CRY,241,421+CRY,ar,ag,ab,al)
+tpt.drawline(469,409+CRY,469,421+CRY,ar,ag,ab,al)
+tpt.drawline(36,409+CRY,36,421+CRY,ar,ag,ab,al)
+tpt.drawline(18,409+CRY,18,421+CRY,ar,ag,ab,al)
+tpt.drawline(580+CRX,409+CRY,580+CRX,421+CRY,ar,ag,ab,al)
+tpt.drawline(596+CRX,409+CRY,596+CRX,421+CRY,ar,ag,ab,al)
+tpt.drawline(418,409+CRY,418,421+CRY,ar,ag,ab,al)
 
 if MANAGER.getsetting("CRK", "savergb") == "1" then
  colourRGB = {colourRED,colourGRN,colourBLU}
@@ -2561,13 +2565,13 @@ function UIhide()
 if focustime < 190 then
 focustime = focustime + 3
 end
-if tpt.mousey > 380 or tpt.mousex > 610 then
+if tpt.mousey > 380+CRY or tpt.mousex > 610+CRX then
 if focustime > 15 then
 focustime = focustime - 7
 end
 end
-tpt.fillrect(-1,382,614,42,0,0,0,focustime)
-tpt.fillrect(612,0,17,424,0,0,0,focustime)
+tpt.fillrect(-1,382+CRY,614+CRX,42,0,0,0,focustime)
+tpt.fillrect(612+CRX,0,17,424+CRY,0,0,0,focustime)
 end
 
 deletesparkButton:action(function(sender)

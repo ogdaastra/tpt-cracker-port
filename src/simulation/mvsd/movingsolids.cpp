@@ -50,7 +50,7 @@ void MOVINGSOLID::MVSDGroup::assign_center(int _cx, int _cy) {
 }
 
 // Compute forces due to gravity, pressure, etc...
-void MOVINGSOLID::MVSDGroup::calc_forces(Particle *parts, int pmap[YRES][XRES], Simulation *sim) {
+void MOVINGSOLID::MVSDGroup::calc_forces(Particle *parts, GridView<int> pmap, Simulation *sim) {
     // calculate net torque on solid and net force and
     // move particles with the force and rotate the entire solid
 
@@ -92,7 +92,7 @@ void MOVINGSOLID::MVSDGroup::calc_forces(Particle *parts, int pmap[YRES][XRES], 
     vy += fy;
 }
 
-void MOVINGSOLID::MVSDGroup::update(Particle *parts, int pmap[YRES][XRES], Simulation *sim) {
+void MOVINGSOLID::MVSDGroup::update(Particle *parts, GridView<int> pmap, Simulation *sim) {
     if (particle_ids.size() == 0)
         return;
 
@@ -317,7 +317,7 @@ int get_new_state() {
 
 // Floodfill creation
 // Helper to floodfill
-void floodfill_helper(Particle *parts, int x, int y, int pmap[YRES][XRES], int state_id,
+void floodfill_helper(Particle *parts, int x, int y, GridView<int> pmap, int state_id,
         std::vector<int> &to_add_id, int &sumx, int &sumy, int &count, int type=PT_MVSD) {
     if (x < 0 || y < 0 || x > XRES || y > YRES)
         return;
@@ -344,7 +344,7 @@ void floodfill_helper(Particle *parts, int x, int y, int pmap[YRES][XRES], int s
 }
 
 
-void create_moving_solid(Particle *parts, int pmap[YRES][XRES], int i, int type) {
+void create_moving_solid(Particle *parts, GridView<int> pmap, int i, int type) {
     const int state_id = get_new_state();
     std::vector<int> particle_ids;
 

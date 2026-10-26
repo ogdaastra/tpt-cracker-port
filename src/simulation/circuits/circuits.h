@@ -10,7 +10,7 @@
 class Branch;
 class Component;
 
-extern Circuit * circuit_map[NPART]; // ID to Circuit *
+extern Circuit * circuit_map[NPART_MAX]; // ID to Circuit * (the first NPART are used)
 extern std::vector<Circuit *> all_circuits;
 
 namespace CIRCUITS {

@@ -741,10 +741,6 @@ int main(int argc, char * argv[])
 #if defined(DEBUG) && defined(_MSC_VER)
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
 #endif
-	currentWidth = WINDOWW;
-	currentHeight = WINDOWH;
-
-
 	// https://bugzilla.libsdl.org/show_bug.cgi?id=3796
 	if (SDL_Init(0) < 0)
 	{
@@ -793,6 +789,33 @@ int main(int argc, char * argv[])
 			arguments.insert({ str, "" }); // so .has_value() is true
 		}
 	}
+
+	// The world's size, before anything is sized from it: world:WIDTHxHEIGHTxSCALE (the page's World size
+	// setting). Width and height round down to whole CELLs within XRES_MAX x YRES_MAX; SCALE (1-4) draws each
+	// simulation pixel as a SCALE x SCALE square. On screen the world must be at least the classic 612x384, or
+	// the menus wouldn't fit beside and below it. Anything unusable keeps the classic 612x384.
+	auto worldArg = arguments["world"];
+	if (worldArg.has_value())
+	{
+		int w = 0, h = 0, s = 1;
+		if (sscanf(worldArg.value().c_str(), "%dx%dx%d", &w, &h, &s) >= 2)
+		{
+			w -= w % CELL;
+			h -= h % CELL;
+			if (w >= 16 * CELL && w <= XRES_MAX && h >= 16 * CELL && h <= YRES_MAX && s >= 1 && s <= 4 && w * s >= 612 && h * s >= 384)
+			{
+				tptXRES = w;
+				tptYRES = h;
+				tptSimScale = s;
+			}
+			else
+			{
+				std::cerr << "unusable world size " << worldArg.value() << ", keeping 612x384" << std::endl;
+			}
+		}
+	}
+	currentWidth = WINDOWW;
+	currentHeight = WINDOWH;
 
 	auto ddirArg = arguments["ddir"];
 	if (ddirArg.has_value())

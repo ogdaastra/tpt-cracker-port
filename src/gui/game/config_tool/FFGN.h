@@ -159,11 +159,11 @@ void ConfigFFGNWindow::DoDraw() {
     Graphics * g = GetGraphics();
 
     if (shape->GetOption().second == 0) // Circle
-        g->drawcircle(pos.X, pos.Y, distance, distance, 25, 200, 255, 185);
+        g->drawcircle(sim_point(pos.X), sim_point(pos.Y), sim_length(distance), sim_length(distance), 25, 200, 255, 185);
     else if (shape->GetOption().second == 1) // Rectangle
-        g->drawrect(pos.X - distance, pos.Y - distance, 2 * distance, 2 * distance, 25, 200, 255, 185);
-    g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-    g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+        g->drawrect(sim_length(pos.X - distance), sim_length(pos.Y - distance), sim_length(2 * distance), sim_length(2 * distance), 25, 200, 255, 185);
+    g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+    g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
     
     ui::Window::DoDraw();
 }
@@ -182,8 +182,8 @@ void ConfigFFGNWindow::DoMouseMove(int x, int y, int dx, int dy) {
 
 		if (Position.X < 0) Position.X = 0;
 		if (Position.Y < 0) Position.Y = 0;
-		if (Position.X + Size.X > XRES) Position.X = XRES - Size.X;
-		if (Position.Y + Size.Y > YRES) Position.Y = YRES - Size.Y;
+		if (Position.X + Size.X > SCREENW) Position.X = SCREENW - Size.X;
+		if (Position.Y + Size.Y > SCREENH) Position.Y = SCREENH - Size.Y;
 		messageLabel->ClearSelection(); // Avoid selecting while dragging
 	} else if (setting_dir) {
 		distance = sqrt((x - pos.X) * (x - pos.X) + (y - pos.Y) * (y - pos.Y));

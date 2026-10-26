@@ -11,7 +11,7 @@
 #include "Format.h"
 
 SaveIDMessage::SaveIDMessage(int id):
-	ui::Window(ui::Point((XRES-244)/2, (YRES-90)/2), ui::Point(244, 90))
+	ui::Window(ui::Point((SCREENW-244)/2, (SCREENH-90)/2), ui::Point(244, 90))
 {
 	int textWidth = Graphics::textwidth("Save ID");
 	ui::Label * titleLabel = new ui::Label(ui::Point(4, 5), ui::Point(textWidth+20, 16), "Save ID");

@@ -4,6 +4,7 @@
 #include "Config.h"
 #include <map>
 #include <set>
+#include <vector>
 
 #define EMCELL 4
 #define EM_FIELD_SIZE (YRES / EMCELL) * (XRES / EMCELL)
@@ -27,17 +28,9 @@ public:
       // Magnetic field: scalar
       // Electric fields: x, y, px, py (previous x and y), stored as vectors <x ,y>
       // Use XY to convert x, y
-      float mx[EM_FIELD_SIZE],
-            my[EM_FIELD_SIZE],
-            magnetic[EM_FIELD_SIZE],
-            pmagnetic[EM_FIELD_SIZE],
-            change_magnetic[EM_FIELD_SIZE];
-      float ex[EM_FIELD_SIZE],
-            ey[EM_FIELD_SIZE],
-            pex[EM_FIELD_SIZE],
-            pey[EM_FIELD_SIZE],
-            electric[EM_FIELD_SIZE],
-            pelectric[EM_FIELD_SIZE];
+      // EM_FIELD_SIZE items each (the world's size is chosen at startup)
+      std::vector<float> mx, my, magnetic, pmagnetic, change_magnetic;
+      std::vector<float> ex, ey, pex, pey, electric, pelectric;
 
       int XY(int x, int y) { return FASTXY(x, y); };
       int distance_2(int index1, int index2);

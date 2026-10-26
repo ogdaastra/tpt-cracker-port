@@ -178,8 +178,7 @@ void Circuit::mark_nodes(const coord_vec &skeleton, coord_vec &nodes) {
  * in ids */
 void Circuit::trim_nodes(const coord_vec &nodes) {
     NodeId new_node_id = 2;
-    bool visited[YRES][XRES];
-    std::fill(&visited[0][0], &visited[0][0] + YRES * XRES, false);
+    WorldGrid<unsigned char> visited(XRES, YRES); // on the heap: the world can be bigger than the stack allows
 
     for (const auto &pos : nodes) {
         if (node_skeleton_map[YX(pos.y, pos.x)] <= CircuitParams::SKELETON || visited[pos.y][pos.x]) // Already cleared, skip

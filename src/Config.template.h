@@ -108,15 +108,32 @@
 // second column of menu buttons right of the classic side bar, for the menus added by this port
 #define EXTRABARSIZE 17
 #endif
-#define XRES	612
-#define YRES	384
+// The world's size is chosen when the game starts (WorldSize.cpp: the "world" argument, from the page's World
+// size setting) and can't change while it runs. Grids are allocated for the largest world, XRES_MAX by
+// YRES_MAX; loops and bounds use the chosen size. SIMSCALE draws each simulation pixel as a SIMSCALE x SIMSCALE
+// square, so a small world fills the screen without zooming; SCREENW/SCREENH are the simulation area on screen.
+#define XRES_MAX 1224
+#define YRES_MAX 768
+#define NPART_MAX (XRES_MAX*YRES_MAX)
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int tptXRES, tptYRES, tptSimScale;
+#ifdef __cplusplus
+}
+#endif
+#define XRES	tptXRES
+#define YRES	tptYRES
 #define NPART XRES*YRES
 
 #define XCNTR   XRES/2
 #define YCNTR   YRES/2
 
-#define WINDOWW (XRES+BARSIZE+EXTRABARSIZE)
-#define WINDOWH (YRES+MENUSIZE)
+#define SIMSCALE tptSimScale
+#define SCREENW (XRES*SIMSCALE)
+#define SCREENH (YRES*SIMSCALE)
+#define WINDOWW (SCREENW+BARSIZE+EXTRABARSIZE)
+#define WINDOWH (SCREENH+MENUSIZE)
 
 #define GRAV_DIFF
 

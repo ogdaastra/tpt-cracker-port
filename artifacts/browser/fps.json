@@ -1,14 +1,14 @@
 {
   "default": {
-    "simPerSecond": 57,
+    "simPerSecond": 59,
     "drawnPerSecond": 58
   },
   "unlimited": {
-    "simPerSecond": 645,
-    "drawnPerSecond": 28
+    "simPerSecond": 619,
+    "drawnPerSecond": 29
   },
   "backTo60": {
     "simPerSecond": 58,
-    "drawnPerSecond": 57
+    "drawnPerSecond": 58
   }
 }

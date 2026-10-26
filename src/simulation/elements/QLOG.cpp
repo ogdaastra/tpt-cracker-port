@@ -54,7 +54,7 @@ void Element::Element_QLOG() {
 	Graphics = &graphics;
 }
 
-static int update_scan(Particle *parts, int pmap[YRES][XRES], int i, int tx, int ty, bool multi_check) {
+static int update_scan(Particle *parts, GridView<int> pmap, int i, int tx, int ty, bool multi_check) {
 	// Func when sparking, sets life and determines a gate's other inputs
 	int id = ID(pmap[ty][tx]);
 
@@ -69,7 +69,7 @@ static int update_scan(Particle *parts, int pmap[YRES][XRES], int i, int tx, int
 	return 0;
 }
 
-static int find_ion(Particle *parts, int photons[YRES][XRES], int pmap[YRES][XRES], int i) {
+static int find_ion(Particle *parts, GridView<int> photons, GridView<int> pmap, int i) {
 	int dx, dy; dx = dy = 0;
 	int tx = parts[i].x;
 	int ty = parts[i].y;

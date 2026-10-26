@@ -134,22 +134,22 @@ ConfigForceWindow::ConfigForceWindow(ConfigTool * tool_, Simulation * sim_, ui::
 void ConfigForceWindow::DoDraw() {
     if (rt == PT_FRAY || rt == PT_RPEL) {
         Graphics * g = GetGraphics();
-        g->drawcircle(pos.X, pos.Y, 1, 1, 255, 255, 255, 255);
+        g->drawcircle(sim_point(pos.X), sim_point(pos.Y), 1, 1, 255, 255, 255, 255);
 
         // FRAY: draw the lines around it
         if (rt == PT_FRAY) {
-            g->draw_line(pos.X, pos.Y + 1, pos.X, pos.Y + val, 255, 0, 0, 160);
-            g->draw_line(pos.X, pos.Y - 1, pos.X, pos.Y - val, 255, 0, 0, 160);
-            g->draw_line(pos.X - 1, pos.Y, pos.X + val, pos.Y, 255, 0, 0, 160);
-            g->draw_line(pos.X + 1, pos.Y, pos.X - val, pos.Y, 255, 0, 0, 160);
+            g->draw_line(sim_point(pos.X), sim_point(pos.Y + 1), sim_point(pos.X), sim_point(pos.Y + val), 255, 0, 0, 160);
+            g->draw_line(sim_point(pos.X), sim_point(pos.Y - 1), sim_point(pos.X), sim_point(pos.Y - val), 255, 0, 0, 160);
+            g->draw_line(sim_point(pos.X - 1), sim_point(pos.Y), sim_point(pos.X + val), sim_point(pos.Y), 255, 0, 0, 160);
+            g->draw_line(sim_point(pos.X + 1), sim_point(pos.Y), sim_point(pos.X - val), sim_point(pos.Y), 255, 0, 0, 160);
         }
         // RPEL: Draw the affected region
         else if (rt == PT_RPEL) {
-            g->fillrect(pos.X - 10, pos.Y - 10, 21, 21, 0, 255, 0, 160);
+            g->fillrect(sim_length(pos.X - 10), sim_length(pos.Y - 10), sim_length(21), sim_length(21), 0, 255, 0, 160);
         }
 
-        g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-        g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+        g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+        g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
     }
 
 	ui::Window::DoDraw();

@@ -129,13 +129,13 @@ void ConfigPSTNWindow::DoDraw() {
     // Draw the line indicating direction
     Graphics *g = GetGraphics();
 
-    g->drawcircle(pos.X, pos.Y, 1, 1, 255, 255, 255, 255);
-    g->draw_line(pos.X, pos.Y + 1, pos.X, pos.Y + tmp2_val, 255, 0, 0, 160);
-    g->draw_line(pos.X, pos.Y - 1, pos.X, pos.Y - tmp2_val, 255, 0, 0, 160);
-    g->draw_line(pos.X - 1, pos.Y, pos.X + tmp2_val, pos.Y, 255, 0, 0, 160);
-    g->draw_line(pos.X + 1, pos.Y, pos.X - tmp2_val, pos.Y, 255, 0, 0, 160);
+    g->drawcircle(sim_point(pos.X), sim_point(pos.Y), 1, 1, 255, 255, 255, 255);
+    g->draw_line(sim_point(pos.X), sim_point(pos.Y + 1), sim_point(pos.X), sim_point(pos.Y + tmp2_val), 255, 0, 0, 160);
+    g->draw_line(sim_point(pos.X), sim_point(pos.Y - 1), sim_point(pos.X), sim_point(pos.Y - tmp2_val), 255, 0, 0, 160);
+    g->draw_line(sim_point(pos.X - 1), sim_point(pos.Y), sim_point(pos.X + tmp2_val), sim_point(pos.Y), 255, 0, 0, 160);
+    g->draw_line(sim_point(pos.X + 1), sim_point(pos.Y), sim_point(pos.X - tmp2_val), sim_point(pos.Y), 255, 0, 0, 160);
 
-    g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-    g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+    g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+    g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
     ui::Window::DoDraw();
 }

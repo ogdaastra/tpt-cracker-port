@@ -9,7 +9,7 @@ static int update(UPDATE_FUNC_ARGS);
 static int graphics(GRAPHICS_FUNC_ARGS);
 
 namespace MVSD {
-	void reset(int x, int y, Particle *parts, int pmap[YRES][XRES], int state_id) {
+	void reset(int x, int y, Particle *parts, GridView<int> pmap, int state_id) {
 		if (x < 0 || y < 0 || x > XRES || y > YRES)
         	return;
 		int id = ID(pmap[y][x]);

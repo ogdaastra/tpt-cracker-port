@@ -2,6 +2,7 @@
 #define STRESS_H
 
 #include "Config.h"
+#include "simulation/WorldGrid.h"
 
 class Simulation;
 
@@ -9,11 +10,11 @@ class StressField {
 public:
     Simulation * sim;
     bool enabled = false;
-    float stress_map[YRES][XRES];
-    float stress_map_x[YRES][XRES];
-    float stress_map_y[YRES][XRES];
+    WorldGrid<float> stress_map;
+    WorldGrid<float> stress_map_x;
+    WorldGrid<float> stress_map_y;
 
-    int gravitational_stress_map[YRES / CELL][XRES / CELL];
+    WorldGrid<int> gravitational_stress_map;
 
     const float max_stress = 2.0f;
 

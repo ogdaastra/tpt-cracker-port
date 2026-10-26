@@ -59,7 +59,7 @@ int Element_MONY_RuleTable[9][9] = {
 	{0,0,0,0,0,0,0,0,0}
 };
 
-int Element_MONY_mony[XRES / 9][YRES / 9];
+int Element_MONY_mony[XRES_MAX/9][YRES_MAX/9];
 
 static int update(UPDATE_FUNC_ARGS) {
 	// Attract

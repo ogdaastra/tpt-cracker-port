@@ -1,6 +1,7 @@
 #ifndef GRAVITY_H
 #define GRAVITY_H
 #include "Config.h"
+#include "simulation/WorldGrid.h"
 
 #include <thread>
 #include <mutex>
@@ -53,7 +54,7 @@ private:
 	};
 	using mask_el = struct mask_el;
 
-	bool grav_mask_r(int x, int y, char checkmap[YRES/CELL][XRES/CELL], char shape[YRES/CELL][XRES/CELL]);
+	bool grav_mask_r(int x, int y, GridView<char> checkmap, GridView<char> shape);
 	void mask_free(mask_el *c_mask_el);
 
 	void update_grav();
@@ -73,7 +74,7 @@ public:
 	float *gravx = nullptr;
 	unsigned *gravmask = nullptr;
 
-	unsigned char (*bmap)[XRES/CELL];
+	GridView<unsigned char> bmap;
 
 	bool IsEnabled() { return enabled; }
 

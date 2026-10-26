@@ -1,6 +1,7 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
 #include "Config.h"
+#include "simulation/WorldGrid.h"
 
 #include <cstring>
 #include <cstddef>
@@ -104,7 +105,7 @@ public:
 	int portal_rx[8];
 	int portal_ry[8];
 	unsigned char wireless[FARADAY_CHANNELS][CHANNELS];
-	unsigned short faraday_map[YRES / CELL][XRES / CELL];
+	WorldGrid<unsigned short> faraday_map;
 	bool faraday_updated = false;
 
 	//Stress sim
@@ -112,34 +113,35 @@ public:
 	//Gol sim
 	int CGOL;
 	int GSPEED;
-	unsigned int gol[YRES][XRES][5];
+	WorldGrid<std::array<unsigned int, 5>> gol;
 	//Air sim
-	float (*vx)[XRES/CELL];
-	float (*vy)[XRES/CELL];
-	float (*pv)[XRES/CELL];
-	float (*hv)[XRES/CELL];
+	GridView<float> vx;
+	GridView<float> vy;
+	GridView<float> pv;
+	GridView<float> hv;
 	//Gravity sim
 	float *gravx;//gravx[(YRES/CELL) * (XRES/CELL)];
 	float *gravy;//gravy[(YRES/CELL) * (XRES/CELL)];
 	float *gravp;//gravp[(YRES/CELL) * (XRES/CELL)];
 	float *gravmap;//gravmap[(YRES/CELL) * (XRES/CELL)];
 	// Time dilation, smaller = more updates
-	char time_dilation[YRES / CELL][XRES / CELL];
+	WorldGrid<char> time_dilation;
 	// false only while every time_dilation cell is 0; lets the per-particle and per-cell checks be skipped
 	bool anyTimeDilation = false;
 	const char MAX_TIME_DILATION = 8;
 	const char MIN_TIME_DILATION = -16;
 	//Walls
-	unsigned char bmap[YRES/CELL][XRES/CELL];
-	unsigned char emap[YRES/CELL][XRES/CELL];
-	float fvx[YRES/CELL][XRES/CELL];
-	float fvy[YRES/CELL][XRES/CELL];
-	short oneWayDir[YRES/CELL][XRES/CELL]; // 0 = nothing, 1 = up, 2 = left, 3 = down, 4 = right
+	WorldGrid<unsigned char> bmap;
+	WorldGrid<unsigned char> emap;
+	WorldGrid<float> fvx;
+	WorldGrid<float> fvy;
+	WorldGrid<short> oneWayDir; // 0 = nothing, 1 = up, 2 = left, 3 = down, 4 = right
 	//Particles
-	Particle parts[NPART];
-	int pmap[YRES][XRES];
-	int photons[YRES][XRES];
-	unsigned int pmap_count[YRES][XRES];
+	std::vector<Particle> partsStorage; // NPART of them; parts points at the first
+	Particle *parts;
+	WorldGrid<int> pmap;
+	WorldGrid<int> photons;
+	WorldGrid<unsigned int> pmap_count;
 	//Simulation Settings
 	int edgeMode;
 	int gravityMode;

@@ -44,8 +44,7 @@ coord_vec floodfill(Simulation *sim, int x, int y) {
     coord_vec output;
     int crx, cry; // Temp rx and ry from offsets for junctions
 
-    bool visited[YRES][XRES];
-    std::fill(&visited[0][0], &visited[0][0] + YRES * XRES, false);
+    WorldGrid<unsigned char> visited(XRES, YRES); // on the heap: the world can be bigger than the stack allows
  
     coords.push(x, y);
     offsets.push(0, 0);
@@ -94,7 +93,7 @@ coord_vec floodfill(Simulation *sim, int x, int y) {
  * (Zhang-Suen algorithm for image thinning)
  */
 void coord_stack_to_skeleton_iteration(Simulation *sim, coord_vec &output,
-        int (&output_map)[YRES][XRES], short iter) {
+        GridView<int> output_map, short iter) {
     std::vector<int> delete_these_indices;
     short x, y, p2, p3, p4, p5, p6, p7, p8, p9, typ;
     delete_these_indices.reserve(output.size() / 2);
@@ -167,10 +166,9 @@ void coord_stack_to_skeleton_iteration(Simulation *sim, coord_vec &output,
 coord_vec coord_vec_to_skeleton(Simulation *sim, const coord_vec &floodfill) {
     coord_vec output(floodfill);
     size_t prev_size = 0;
-    int output_map[YRES][XRES];
+    WorldGrid<int> output_map(XRES, YRES); // on the heap: the world can be bigger than the stack allows
     int diff;
 
-    std::fill(&output_map[0][0], &output_map[0][0] + YRES * XRES, 0);
     for (Pos p : floodfill)
         output_map[p.y][p.x] = 1;
 

@@ -156,8 +156,8 @@ void ConfigDetectorWindow::DoMouseMove(int x, int y, int dx, int dy) {
 
 		if (Position.X < 0) Position.X = 0;
 		if (Position.Y < 0) Position.Y = 0;
-		if (Position.X + Size.X > XRES) Position.X = XRES - Size.X;
-		if (Position.Y + Size.Y > YRES) Position.Y = YRES - Size.Y;
+		if (Position.X + Size.X > SCREENW) Position.X = SCREENW - Size.X;
+		if (Position.Y + Size.Y > SCREENH) Position.Y = SCREENH - Size.Y;
 		messageLabel->ClearSelection(); // Avoid selecting while dragging
 	} else if (setting_dir) {
         distance_val = abs(x - pos.X) > abs(y - pos.Y) ? abs(x - pos.X) : abs(y - pos.Y);
@@ -183,9 +183,9 @@ void ConfigDetectorWindow::DoMouseDown(int x, int y, unsigned button) {
 void ConfigDetectorWindow::DoDraw()  {
     ui::Window::DoDraw();
     Graphics * g = GetGraphics();
-    g->fillrect(pos.X - distance_val, pos.Y - distance_val, distance_val * 2 + 1, distance_val * 2 + 1,
+    g->fillrect(sim_length(pos.X - distance_val), sim_length(pos.Y - distance_val), sim_length(distance_val * 2 + 1), sim_length(distance_val * 2 + 1),
         0, 255, 100, 150);
 
-    g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-    g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+    g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+    g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
 }

@@ -345,6 +345,7 @@ void GameController::AdjustZoomSize(int delta, bool logarithmic)
 
 bool GameController::MouseInZoom(ui::Point position)
 {
+	position = position / SIMSCALE; // from the screen
 	if(position.X >= XRES)
 		position.X = XRES-1;
 	if(position.Y >= YRES)
@@ -359,6 +360,9 @@ bool GameController::MouseInZoom(ui::Point position)
 
 ui::Point GameController::PointTranslate(ui::Point point)
 {
+	// from the screen: a small world's pixels are SIMSCALE screen pixels across
+	point.X /= SIMSCALE;
+	point.Y /= SIMSCALE;
 	if(point.X >= XRES)
 		point.X = XRES-1;
 	if(point.Y >= YRES)
@@ -539,9 +543,9 @@ bool GameController::MouseDown(int x, int y, unsigned button)
 {
 	MouseDownEvent ev(x, y, button);
 	bool ret = commandInterface->HandleEvent(LuaEvents::mousedown, &ev);
-	if (ret && y<YRES && x<XRES && !gameView->GetPlacingSave() && !gameView->GetPlacingZoom())
+	if (ret && y<SCREENH && x<SCREENW && !gameView->GetPlacingSave() && !gameView->GetPlacingZoom())
 	{
-		ui::Point point = gameModel->AdjustZoomCoords(ui::Point(x, y));
+		ui::Point point = gameModel->AdjustZoomCoords(ui::Point(x, y) / SIMSCALE);
 		x = point.X;
 		y = point.Y;
 		if (!gameModel->GetActiveTool(0) || gameModel->GetActiveTool(0)->GetIdentifier() != "DEFAULT_UI_SIGN" || button != SDL_BUTTON_LEFT) //If it's not a sign tool or you are right/middle clicking
@@ -565,9 +569,9 @@ bool GameController::MouseUp(int x, int y, unsigned button, MouseupReason reason
 	bool ret = commandInterface->HandleEvent(LuaEvents::mouseup, &ev);
 	if (reason != mouseUpNormal)
 		return ret;
-	if (ret && foundSignID != -1 && y<YRES && x<XRES && !gameView->GetPlacingSave())
+	if (ret && foundSignID != -1 && y<SCREENH && x<SCREENW && !gameView->GetPlacingSave())
 	{
-		ui::Point point = gameModel->AdjustZoomCoords(ui::Point(x, y));
+		ui::Point point = gameModel->AdjustZoomCoords(ui::Point(x, y) / SIMSCALE);
 		x = point.X;
 		y = point.Y;
 		if (!gameModel->GetActiveTool(0) || gameModel->GetActiveTool(0)->GetIdentifier() != "DEFAULT_UI_SIGN" || button != SDL_BUTTON_LEFT) //If it's not a sign tool or you are right/middle clicking
@@ -900,7 +904,7 @@ void GameController::Update()
 {
 	ui::Point pos = gameView->GetMousePosition();
 	gameModel->GetRenderer()->mousePos = PointTranslate(pos);
-	if (pos.X < XRES && pos.Y < YRES)
+	if (pos.X < SCREENW && pos.Y < SCREENH)
 		gameView->SetSample(gameModel->GetSimulation()->GetSample(PointTranslate(pos).X, PointTranslate(pos).Y));
 	else
 		gameView->SetSample(gameModel->GetSimulation()->GetSample(pos.X, pos.Y));
@@ -975,6 +979,7 @@ void GameController::SetToolStrength(float value)
 
 void GameController::SetZoomPosition(ui::Point position)
 {
+	position = position / SIMSCALE; // from the screen
 	ui::Point zoomPosition = position-(gameModel->GetZoomSize()/2);
 	if(zoomPosition.X < 0)
 			zoomPosition.X = 0;

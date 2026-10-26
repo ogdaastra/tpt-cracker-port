@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world']) {
 			$(id).disabled = true;
 		}
 	}
@@ -859,9 +859,7 @@
 	// Video (MediaRecorder) or GIF (gifenc in a worker) of the game canvas, and PNG screenshots. The game's
 	// canvas is WebGL, so frames are copied from Module.tptOnFrame, which the game calls right after it
 	// draws (tpt_set_frame_callback), into a 2D canvas that holds the chosen area and size.
-	const GAME_W = 646;
-	const SIM_W = 612;
-	const SIM_H = 384;
+	const SIDE_BARS = 34; // the game's side bar columns (BARSIZE + EXTRABARSIZE), right of the simulation
 	const recordButton = $('btn-record');
 	const recordDialog = $('record-dialog');
 	const VIDEO_TYPES = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
@@ -890,9 +888,13 @@
 
 	// A 2D canvas the size of the chosen area, and a function that copies the current game frame into it.
 	function frameCopier(area, scale) {
-		const ratio = canvas.width / GAME_W; // the game's own scale option makes the canvas 2x, 3x...
-		const sw = (area === 'sim' ? SIM_W : canvas.width / ratio) * ratio;
-		const sh = (area === 'sim' ? SIM_H : canvas.height / ratio) * ratio;
+		// the simulation area on screen: the world's size times its pixel size (World size setting)
+		const world = window.tptPage.world;
+		const simW = world.w * world.scale;
+		const simH = world.h * world.scale;
+		const ratio = canvas.width / (simW + SIDE_BARS); // the game's own scale option makes the canvas 2x, 3x...
+		const sw = (area === 'sim' ? simW : canvas.width / ratio) * ratio;
+		const sh = (area === 'sim' ? simH : canvas.height / ratio) * ratio;
 		const out = document.createElement('canvas');
 		out.width = Math.round(sw / ratio * scale);
 		out.height = Math.round(sh / ratio * scale);
@@ -1684,10 +1686,199 @@
 		return {};
 	}
 
+	// ------------------------------------------------------------------ world size
+	// The game's world size is fixed when it starts (the "world" argument, WIDTHxHEIGHTxSCALE): from ?world= or
+	// the World size setting, else the classic 612x384.
+	const WORLD_KEY = 'tptWorld';
+	const WORLD_MAX = { w: 1224, h: 768 }; // XRES_MAX x YRES_MAX in Config.h
+
+	// The game's own rules (PowderToySDL.cpp, the world argument): whole cells of 4 pixels, at most 1224x768,
+	// and at least the classic 612x384 on screen so the menus fit beside and below it.
+	function worldProblem(w, h, scale) {
+		if (!(w >= 64 && h >= 64)) {
+			return 'Width and height need to be at least 64.';
+		}
+		if (w > WORLD_MAX.w || h > WORLD_MAX.h) {
+			return `The biggest world is ${WORLD_MAX.w} × ${WORLD_MAX.h}.`;
+		}
+		if (!(scale >= 1 && scale <= 4)) {
+			return 'Pixel size is 1× to 4×.';
+		}
+		if (w * scale < 612 || h * scale < 384) {
+			return `On screen that is ${w * scale} × ${h * scale}; it needs at least 612 × 384 for the menus. ` +
+				'Choose bigger pixels or a bigger world.';
+		}
+		return '';
+	}
+
+	const world = (() => {
+		let text = new URLSearchParams(location.search).get('world');
+		try {
+			text = text || localStorage.getItem(WORLD_KEY);
+		} catch (e) {
+			// storage unavailable: the classic size
+		}
+		const m = /^(\d+)x(\d+)(?:x(\d))?$/.exec(text || '');
+		if (m) {
+			// as the game does: whole cells, and the classic size if the game would refuse it
+			const w = Math.floor(+m[1] / 4) * 4, h = Math.floor(+m[2] / 4) * 4, scale = +(m[3] || 1);
+			if (!worldProblem(w, h, scale)) {
+				return { w, h, scale };
+			}
+		}
+		return { w: 612, h: 384, scale: 1 };
+	})();
+	window.tptPage.world = world;
+
+	const WORLD_PRESETS = [
+		{ name: 'Tiny', w: 156, h: 96, scale: 4, note: 'pixels 4× bigger' },
+		{ name: 'Small', w: 204, h: 128, scale: 3, note: 'pixels 3× bigger' },
+		{ name: 'Medium', w: 308, h: 192, scale: 2, note: 'pixels 2× bigger' },
+		{ name: 'Classic', w: 612, h: 384, scale: 1, note: 'the usual size' },
+		{ name: 'Large', w: 916, h: 576, scale: 1, note: '2¼ times the room' },
+		{ name: 'Huge', w: 1224, h: 768, scale: 1, note: '4 times the room; needs a fast computer' },
+	];
+	const CARRY_FILE = `${DATA_DIR}/world-carry.stm`; // the world brought along to the next start
+	const CARRY_KEY = 'tptWorldCarry'; // the size it was made in, to centre it
+
+	// Runs Lua in the game loop (it runs on the next frame) and resolves with what the expression gives, as text
+	let pageLuaRuns = 0;
+	function luaValue(expression) {
+		const out = `/tmp/page-lua-${++pageLuaRuns}.txt`;
+		mod.ccall('tpt_lua_command', null, ['string'], [`local f = io.open("${out}", "w") f:write(tostring(${expression})) f:close()`]);
+		const started = performance.now();
+		return new Promise((resolve, reject) => {
+			(function poll() {
+				try {
+					const text = new TextDecoder().decode(mod.FS.readFile(out));
+					mod.FS.unlink(out);
+					resolve(text);
+				} catch (e) {
+					if (performance.now() - started > 10000) {
+						reject(new Error('the game did not answer'));
+					} else {
+						setTimeout(poll, 20);
+					}
+				}
+			})();
+		});
+	}
+
+	function chosenWorld(form) {
+		const preset = form.querySelector('input[name=preset]:checked');
+		if (preset && preset.value !== 'custom') {
+			return { ...WORLD_PRESETS[Number(preset.value)] };
+		}
+		const cell = (v) => Math.floor(Number(v) / 4) * 4;
+		return { w: cell(form.w.value), h: cell(form.h.value), scale: Number(form.scale.value) };
+	}
+
+	function updateWorldSummary() {
+		const form = $('world-form');
+		const custom = form.querySelector('input[name=preset][value=custom]').checked;
+		$('world-custom').disabled = !custom;
+		const next = chosenWorld(form);
+		const problem = worldProblem(next.w, next.h, next.scale);
+		const summary = $('world-summary');
+		summary.classList.toggle('message', Boolean(problem));
+		const same = next.w === world.w && next.h === world.h && next.scale === world.scale;
+		summary.textContent = problem || (same ? 'This is the size the game has now.' :
+			`${next.w} × ${next.h} simulation pixels, ${next.w * next.scale} × ${next.h * next.scale} on screen.`);
+		$('world-apply').disabled = Boolean(problem) || same;
+	}
+
+	function showWorldDialog() {
+		const box = $('world-presets');
+		if (!box.querySelector('input')) {
+			WORLD_PRESETS.forEach((p, i) => {
+				const label = document.createElement('label');
+				label.innerHTML = `<input type="radio" name="preset" value="${i}"> ${p.name}: ${p.w} × ${p.h} <span class="hint">(${p.note})</span>`;
+				box.append(label);
+			});
+			const label = document.createElement('label');
+			label.innerHTML = '<input type="radio" name="preset" value="custom"> Custom';
+			box.append(label);
+			$('world-form').addEventListener('input', updateWorldSummary);
+		}
+		const current = WORLD_PRESETS.findIndex((p) => p.w === world.w && p.h === world.h && p.scale === world.scale);
+		box.querySelector(`input[value="${current >= 0 ? current : 'custom'}"]`).checked = true;
+		const form = $('world-form');
+		form.w.value = world.w;
+		form.h.value = world.h;
+		form.scale.value = String(world.scale);
+		updateWorldSummary();
+		$('world-dialog').showModal();
+	}
+
+	// Saves the setting and restarts; the current world goes along as a stamp, put back by restoreCarriedWorld
+	async function applyWorld(next, carry) {
+		const summary = $('world-summary');
+		try {
+			if (carry) {
+				// the whole world as a stamp, moved out of the stamps list
+				const name = await luaValue('sim.saveStamp(0, 0)');
+				const stamp = `${DATA_DIR}/stamps/${name}.stm`;
+				mod.FS.writeFile(CARRY_FILE, mod.FS.readFile(stamp));
+				mod.ccall('tpt_delete_stamp', null, ['string'], [name]);
+				localStorage.setItem(CARRY_KEY, JSON.stringify({ w: world.w, h: world.h }));
+			}
+			localStorage.setItem(WORLD_KEY, `${next.w}x${next.h}x${next.scale}`);
+			if (mod.tptSyncNow) {
+				await mod.tptSyncNow();
+			}
+		} catch (e) {
+			summary.textContent = 'Could not change the world size: ' + (e && e.message || e);
+			summary.classList.add('message');
+			return;
+		}
+		// without ?world= the new setting applies
+		const url = new URL(location.href);
+		url.searchParams.delete('world');
+		location.replace(url.href);
+	}
+
+	// After a restart with a new size: the world brought along, centred (cut off where it doesn't fit)
+	async function restoreCarriedWorld() {
+		let from = null;
+		try {
+			from = JSON.parse(localStorage.getItem(CARRY_KEY) || 'null');
+			mod.FS.stat(CARRY_FILE);
+		} catch (e) {
+			return;
+		}
+		const cell = (v) => Math.round(v / 4) * 4;
+		const x = from ? cell((world.w - from.w) / 2) : 0;
+		const y = from ? cell((world.h - from.h) / 2) : 0;
+		// Simulation::Load places at (v + 2) / 4 whole cells, rounded towards zero: 2 less lands exactly on a
+		// negative v
+		const at = (v) => v < 0 ? v - 2 : v;
+		try {
+			const result = await luaValue(`sim.loadStamp("${CARRY_FILE}", ${at(x)}, ${at(y)})`);
+			window.tptPage.worldCarried = { x, y, result };
+		} finally {
+			try {
+				mod.FS.unlink(CARRY_FILE);
+				localStorage.removeItem(CARRY_KEY);
+			} catch (e) {
+				// already gone
+			}
+		}
+	}
+	window.tptPage.worldSize = { presets: WORLD_PRESETS, problem: worldProblem, apply: applyWorld };
+
+	$('btn-world').addEventListener('click', showWorldDialog);
+	$('world-dialog').addEventListener('close', () => {
+		if ($('world-dialog').returnValue === 'apply') {
+			const form = $('world-form');
+			applyWorld(chosenWorld(form), form.carry.checked);
+		}
+	});
+
 	function start() {
 		setStatus('Starting…');
 		window.createPowderToy({
 			canvas,
+			arguments: [`world:${world.w}x${world.h}x${world.scale}`],
 			print: (text) => console.log(text),
 			printErr: (text) => {
 				console.warn(text);
@@ -1703,9 +1894,15 @@
 				window.tptPage.state = 'running';
 				window.tptPage.timings.firstFrame = performance.now();
 				statusBox.hidden = true;
-				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind']) {
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world']) {
 					$(id).disabled = false;
 				}
+				if (world.w !== 612 || world.h !== 384) {
+					// the challenges are built for the classic world
+					$('btn-challenges').disabled = true;
+					$('btn-challenges').title = 'Challenges need the Classic world size (World size…)';
+				}
+				restoreCarriedWorld().catch((e) => rememberError('world size: ' + e));
 				rewindSetup();
 				// Ctrl+Z goes back as far as this much memory of undo steps allows (thousands of steps in most
 				// sessions, fewer when the whole screen keeps changing); less on devices with little memory

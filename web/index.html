@@ -23,6 +23,7 @@
 		<button type="button" id="btn-rewind" disabled aria-controls="rewind-bar" aria-expanded="false" title="Go back up to 30 seconds (Shift+Backspace)">Rewind</button>
 		<button type="button" id="btn-sound" disabled aria-pressed="false" title="Sound effects for sparks, fire, explosions, steam and acid">Sound: off</button>
 		<input type="range" id="sound-volume" min="0" max="100" value="60" aria-label="Sound volume" title="Sound volume" hidden>
+		<button type="button" id="btn-world" disabled title="Make the world smaller (bigger pixels, no zooming) or bigger">World size…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
 		<button type="button" id="btn-install" hidden title="Install the game as an app: its own window and icon, and it works offline">Install app</button>
@@ -163,6 +164,29 @@
 			<button value="screenshot" id="record-screenshot">Screenshot (PNG)</button>
 			<button value="cancel">Cancel</button>
 			<button value="start" id="record-start" class="primary">Start recording</button>
+		</p>
+	</form>
+</dialog>
+
+<dialog id="world-dialog" aria-labelledby="world-title">
+	<form method="dialog" id="world-form">
+		<h2 id="world-title">World size</h2>
+		<p class="hint">A smaller world shows its pixels bigger, so it fills the screen without zooming; a bigger one
+			has more room. The menus stay the same size. Changing it restarts the game.</p>
+		<fieldset id="world-presets">
+			<legend>Size</legend>
+		</fieldset>
+		<fieldset id="world-custom" disabled>
+			<legend>Custom</legend>
+			<label>Width <input type="number" name="w" min="16" max="1224" step="4" value="612"></label>
+			<label>Height <input type="number" name="h" min="16" max="768" step="4" value="384"></label>
+			<label>Pixel size <select name="scale"><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+		</fieldset>
+		<p class="hint" id="world-summary"></p>
+		<label><input type="checkbox" name="carry" checked> Bring the current world along (centred; cut off if it doesn't fit)</label>
+		<p class="dialog-buttons">
+			<button value="cancel">Cancel</button>
+			<button value="apply" id="world-apply" class="primary">Restart with this size</button>
 		</p>
 	</form>
 </dialog>

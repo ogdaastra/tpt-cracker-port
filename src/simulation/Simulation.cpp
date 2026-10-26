@@ -52,11 +52,11 @@
 
 extern int Element_PPIP_ppip_changed;
 extern int Element_LOLZ_RuleTable[9][9];
-extern int Element_LOLZ_lolz[XRES/9][YRES/9];
+extern int Element_LOLZ_lolz[XRES_MAX/9][YRES_MAX/9];
 extern int Element_LOVE_RuleTable[9][9];
-extern int Element_LOVE_love[XRES/9][YRES/9];
+extern int Element_LOVE_love[XRES_MAX/9][YRES_MAX/9];
 extern int Element_MONY_RuleTable[9][9];
-extern int Element_MONY_mony[XRES/9][YRES/9];
+extern int Element_MONY_mony[XRES_MAX/9][YRES_MAX/9];
 
 int Simulation::Load(const GameSave * save, bool includePressure)
 {
@@ -105,7 +105,7 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 	RecalcFreeParticles(false);
 
 	bool doFullScan = false;
-	for (int n = 0; n < NPART && n < save->particlesCount; n++)
+	for (int n = 0; n < save->particlesCount; n++)
 	{
 		Particle *tempPart = &save->particles[n];
 		tempPart->x += (float)fullX;
@@ -187,7 +187,7 @@ int Simulation::Load(const GameSave * originalSave, bool includePressure, int fu
 
 	// Map of soap particles loaded into this save, old ID -> new ID
 	std::map<unsigned int, unsigned int> soapList;
-	for (int n = 0; n < NPART && n < save->particlesCount; n++)
+	for (int n = 0; n < save->particlesCount; n++)
 	{
 		Particle tempPart = save->particles[n];
 		if (tempPart.type > 0 && tempPart.type < PT_NUM)
@@ -607,7 +607,7 @@ void Simulation::Restore(const Snapshot &snap)
 	std::fill(elementCount, elementCount + PT_NUM, 0);
 	elementRecount = true;
 	force_stacking_check = true;
-	for (auto &part : parts)
+	for (auto &part : partsStorage)
 	{
 		part.type = 0;
 	}
@@ -2393,22 +2393,22 @@ void Simulation::clear_sim(void)
 	emp_decor = 0;
 	emp_trigger_count = 0;
 	signs.clear();
-	memset(bmap, 0, sizeof(bmap));
-	memset(emap, 0, sizeof(emap));
+	bmap.Clear();
+	emap.Clear();
 	memset(parts, 0, sizeof(Particle)*NPART);
 	for (int i = 0; i < NPART-1; i++)
 		parts[i].life = i+1;
 	parts[NPART-1].life = -1;
 	pfree = 0;
 	parts_lastActiveIndex = 0;
-	memset(pmap, 0, sizeof(pmap));
-	memset(fvx, 0, sizeof(fvx));
-	memset(fvy, 0, sizeof(fvy));
-	memset(oneWayDir, 0, sizeof(oneWayDir));
-	memset(photons, 0, sizeof(photons));
+	pmap.Clear();
+	fvx.Clear();
+	fvy.Clear();
+	oneWayDir.Clear();
+	photons.Clear();
 	memset(wireless, 0, sizeof(wireless));
-	memset(faraday_map, 0, sizeof(faraday_map));
-	memset(gol, 0, sizeof(gol));
+	faraday_map.Clear();
+	gol.Clear();
 	portalp.Clear();
 	memset(fighters, 0, sizeof(fighters));
 	memset(&player, 0, sizeof(player));
@@ -5262,9 +5262,9 @@ void Simulation::RecalcFreeParticles(bool do_life_dec)
 	int lastPartUsed = 0;
 	int lastPartUnused = -1;
 
-	memset(pmap, 0, sizeof(pmap));
-	memset(pmap_count, 0, sizeof(pmap_count));
-	memset(photons, 0, sizeof(photons));
+	pmap.Clear();
+	pmap_count.Clear();
+	photons.Clear();
 
 	NUM_PARTS = 0;
 	//the particle loop that resets the pmap/photon maps every frame, to update them.
@@ -5399,7 +5399,7 @@ void Simulation::SimulateGoL()
 						{
 							continue;
 						}
-						unsigned int (&neighbourList)[5] = gol[ay][ax];
+						auto &neighbourList = gol[ay][ax];
 						// * Bump overall neighbour counter (bits 30..28) for the entire list.
 						neighbourList[0] += 1U << 28;
 						for (int l = 0; l < 5; ++l)
@@ -5449,7 +5449,7 @@ void Simulation::SimulateGoL()
 			{
 				continue;
 			}
-			unsigned int (&neighbourList)[5] = gol[y][x];
+			auto &neighbourList = gol[y][x];
 			auto nl0 = neighbourList[0];
 			if (r || nl0)
 			{
@@ -5904,10 +5904,25 @@ Simulation::Simulation():
 	std::fill(elementCount, elementCount+PT_NUM, 0);
 	elementRecount = true;
 
+	// the world's grids, now that its size is known (Config.h)
+	partsStorage.resize(NPART);
+	parts = partsStorage.data();
+	pmap.Resize(XRES, YRES);
+	photons.Resize(XRES, YRES);
+	pmap_count.Resize(XRES, YRES);
+	gol.Resize(XRES, YRES);
+	faraday_map.Resize(XRES/CELL, YRES/CELL);
+	time_dilation.Resize(XRES/CELL, YRES/CELL);
+	bmap.Resize(XRES/CELL, YRES/CELL);
+	emap.Resize(XRES/CELL, YRES/CELL);
+	fvx.Resize(XRES/CELL, YRES/CELL);
+	fvy.Resize(XRES/CELL, YRES/CELL);
+	oneWayDir.Resize(XRES/CELL, YRES/CELL);
+
 	//Create and attach gravity simulation
 	grav = new Gravity();
 	//Give air sim references to our data
-	grav->bmap = bmap;
+	grav->bmap = bmap.View();
 	//Gravity sim gives us maps to use
 	gravx = grav->gravx;
 	gravy = grav->gravy;
@@ -5917,15 +5932,15 @@ Simulation::Simulation():
 	//Create and attach air simulation
 	air = new Air(*this);
 	//Give air sim references to our data
-	air->bmap = bmap;
-	air->emap = emap;
-	air->fvx = fvx;
-	air->fvy = fvy;
+	air->bmap = bmap.View();
+	air->emap = emap.View();
+	air->fvx = fvx.View();
+	air->fvy = fvy.View();
 	//Air sim gives us maps to use
-	vx = air->vx;
-	vy = air->vy;
-	pv = air->pv;
-	hv = air->hv;
+	vx = air->vx.View();
+	vy = air->vy.View();
+	pv = air->pv.View();
+	hv = air->hv.View();
 
 	// Create stasis map
 	stasis = new Stasis(*this);
@@ -6043,4 +6058,4 @@ static_assert(PMAPBITS <= 16, "PMAPBITS is too large");
 //   fit in 31 bits but multiplication is evil and wraps around without you knowing it.
 // * Whoever runs into a problem with this (e.g. with XRES = 612, YRES = 384 and
 //   PMAPBITS = 13) should just remove the check and take responsibility otherwise.
-static_assert(ce_log2(XRES) + ce_log2(YRES) + PMAPBITS <= 31, "not enough space in pmap");
+static_assert(ce_log2(XRES_MAX) + ce_log2(YRES_MAX) + PMAPBITS <= 31, "not enough space in pmap");

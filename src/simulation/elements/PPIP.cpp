@@ -77,7 +77,7 @@ void Element_PPIP_flood_trigger(Simulation * sim, int x, int y, int sparkedBy)
 	int x1, x2;
 
 	Particle * parts = sim->parts;
-	int (*pmap)[XRES] = sim->pmap;
+	GridView<int> pmap = sim->pmap;
 
 	// Separate flags for on and off in case PPIP is sparked by PSCN and NSCN on the same frame
 	// - then PSCN can override NSCN and behaviour is not dependent on particle order

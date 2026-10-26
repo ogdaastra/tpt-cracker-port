@@ -4,11 +4,11 @@
 #include <iomanip>
 #include <iostream>
 
-Circuit * circuit_map[NPART];
+Circuit * circuit_map[NPART_MAX];
 std::vector<Circuit *> all_circuits;
 // sim->timer + 1 of the last attempt that found no valid circuit through this pixel. Without it every
 // VOLT/CPTR/LOGC pixel of a blob that is not a circuit floods the whole blob again every frame.
-static unsigned int failed_at[YRES][XRES];
+static unsigned int failed_at[YRES_MAX][XRES_MAX];
 
 // Functions
 void CIRCUITS::add_circuit(int x, int y, Simulation * sim) {

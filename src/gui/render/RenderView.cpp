@@ -19,14 +19,14 @@ public:
 };
 
 RenderView::RenderView() :
-	ui::Window(ui::Point(0, 0), ui::Point(XRES, WINDOWH)),
+	ui::Window(ui::Point(0, 0), ui::Point(SCREENW, WINDOWH)),
 	ren(NULL),
 	toolTip(""),
 	toolTipPresence(0),
 	isToolTipFadingIn(false)
 {
 	auto addPresetButton = [this](int index, Icon icon, ui::Point offset, String tooltip) {
-		auto *presetButton = new ui::Button(ui::Point(XRES, YRES) + offset, ui::Point(30, 13), "", tooltip);
+		auto *presetButton = new ui::Button(ui::Point(SCREENW, SCREENH) + offset, ui::Point(30, 13), "", tooltip);
 		presetButton->SetIcon(icon);
 		presetButton->SetActionCallback({ [this, index] { c->LoadRenderPreset(index); } });
 		AddComponent(presetButton);
@@ -44,7 +44,7 @@ RenderView::RenderView() :
 	addPresetButton(10, IconLife, ui::Point(-232, 6), "Life display mode preset");
 
 	auto addRenderModeCheckbox = [this](unsigned int mode, Icon icon, ui::Point offset, String tooltip) {
-		auto *renderModeCheckbox = new ModeCheckbox(ui::Point(0, YRES) + offset, ui::Point(30, 16), "", tooltip);
+		auto *renderModeCheckbox = new ModeCheckbox(ui::Point(0, SCREENH) + offset, ui::Point(30, 16), "", tooltip);
 		renderModes.push_back(renderModeCheckbox);
 		renderModeCheckbox->mode = mode;
 		renderModeCheckbox->SetIcon(icon);
@@ -65,7 +65,7 @@ RenderView::RenderView() :
 	addRenderModeCheckbox(RENDER_SPRK, IconEffect, ui::Point(97, 4), "Glow effect on sparks");
 
 	auto addDisplayModeCheckbox = [this](unsigned int mode, Icon icon, ui::Point offset, String tooltip) {
-		auto *displayModeCheckbox = new ModeCheckbox(ui::Point(0, YRES) + offset, ui::Point(30, 16), "", tooltip);
+		auto *displayModeCheckbox = new ModeCheckbox(ui::Point(0, SCREENH) + offset, ui::Point(30, 16), "", tooltip);
 		displayModes.push_back(displayModeCheckbox);
 		displayModeCheckbox->mode = mode;
 		displayModeCheckbox->SetIcon(icon);
@@ -89,7 +89,7 @@ RenderView::RenderView() :
 	line3 = 270;
 
 	auto addColourModeCheckbox = [this](unsigned int mode, Icon icon, ui::Point offset, String tooltip) {
-		auto *colourModeCheckbox = new ModeCheckbox(ui::Point(0, YRES) + offset, ui::Point(30, 16), "", tooltip);
+		auto *colourModeCheckbox = new ModeCheckbox(ui::Point(0, SCREENH) + offset, ui::Point(30, 16), "", tooltip);
 		colourModes.push_back(colourModeCheckbox);
 		colourModeCheckbox->mode = mode;
 		colourModeCheckbox->SetIcon(icon);
@@ -110,7 +110,7 @@ RenderView::RenderView() :
 
 void RenderView::OnMouseDown(int x, int y, unsigned button)
 {
-	if (x > XRES || y < YRES)
+	if (x > SCREENW || y < SCREENH)
 		c->Exit();
 }
 
@@ -162,12 +162,12 @@ void RenderView::OnDraw()
 		ren->RenderBegin();
 		ren->RenderEnd();
 	}
-	g->draw_line(0, YRES, XRES - 1, YRES, 200, 200, 200, 255);
-	g->draw_line(line1, YRES, line1, WINDOWH, 200, 200, 200, 255);
-	g->draw_line(line2, YRES, line2, WINDOWH, 200, 200, 200, 255);
-	g->draw_line(line3, YRES, line3, WINDOWH, 200, 200, 200, 255);
-	g->draw_line(line4, YRES, line4, WINDOWH, 200, 200, 200, 255);
-	g->draw_line(XRES, 0, XRES, WINDOWH, 255, 255, 255, 255);
+	g->draw_line(0, SCREENH, SCREENW - 1, SCREENH, 200, 200, 200, 255);
+	g->draw_line(line1, SCREENH, line1, WINDOWH, 200, 200, 200, 255);
+	g->draw_line(line2, SCREENH, line2, WINDOWH, 200, 200, 200, 255);
+	g->draw_line(line3, SCREENH, line3, WINDOWH, 200, 200, 200, 255);
+	g->draw_line(line4, SCREENH, line4, WINDOWH, 200, 200, 200, 255);
+	g->draw_line(SCREENW, 0, SCREENW, WINDOWH, 255, 255, 255, 255);
 	if (toolTipPresence && toolTip.length())
 	{
 		g->drawtext(6, Size.Y - MENUSIZE - 12, toolTip, 255, 255, 255, toolTipPresence > 51 ? 255 : toolTipPresence * 5);
