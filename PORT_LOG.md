@@ -686,3 +686,49 @@ equivalent edits, each marked with the upstream commit in a comment):
   ran. A walled cup under PRTO now catches the dust and the test steps a fixed 240 frames with
   `tpt_benchmark`. Measured over 6 runs: 235-258 of 451 DUST in the cup at 120, 240, 480 and 720 frames
   alike; the test requires more than 150 (a broken portal gives about 0). Passed 5 of 5 with `--repeat-each 5`.
+
+## 27. Faster simulation (N3), with results proven unchanged
+
+Rule for this section: every change must leave the simulation bit-for-bit the same.
+
+- **How "the same" is proven.** New export `tpt_rng_seed(seed)` seeds both random number generators and
+  resets the counters that otherwise depend on how long the page has been open: the sand colour cycle (it
+  advances on every drawn frame, even paused, and tints some created particles), the timer (time dilation
+  skips frames by it) and the tick count. New tool `docs/handoff/tools/samecheck.mjs` runs scenes in two
+  builds (seeded, stepped with `tpt_benchmark`) and compares every particle property and the air grids at
+  1, 30, 120 and 400 frames. Scenes: electronics; 28 rows of conductors (every element SPRK treats
+  specially); water, sand, wood, dust, fire and plasma in a walled box; two time dilation fields with
+  plasma and gas; Newtonian gravity in all four gravity modes. 32 checkpoints. The tool caught two
+  sources of run-to-run differences before any comparison counted (sand colour, timer); with both reset,
+  the old build matches itself in two separate browsers, and the new build matches the old one at all 32.
+  The compiler uses `-ffast-math`, so "same order of operations" is not taken as proof; only this is.
+- **Where the time went** (temporary per-section timers in a profiling build): `BeforeSim` costs 0.85-1.3
+  ms every frame, of which the air update is 0.63-0.84 ms whatever is on screen, and almost all of that is
+  its main per-cell pass. In the electronics scene the unnamed hotspot (`update(...)_6152` in the
+  handoff, `_5676` in this build) is SPRK's update (identified by disassembling the profiling build: the
+  only update that calls `flood_prop`, `parts_avg` and inserts into a `std::set`).
+- **SPRK** (`SPRK.cpp`): `parts_avg` (the insulation lookup between a spark and a neighbour) is computed
+  only where it is read; neighbours that can't be sparked (life not 0, or the spark too old: everything
+  after the first switch only acts on those) skip the remaining checks; for spark neighbours, the two
+  combinations that do anything are checked before the lookup; the conductor and distance checks come
+  before it. None of the skipped code has side effects or draws random numbers.
+- **Air** (`Air.cpp`): the per-cell body of the main pass is a lambda; with no time dilation anywhere it
+  runs in a plain loop (the old `goto` loop for time dilation stopped the compiler from optimising the
+  common case), with time dilation the old repeat logic runs as a `do`/`while`. A first attempt (a
+  branch-free 3x3 blur for interior cells) made no difference and was taken out.
+- **Gravity** (`Simulation.cpp`): `UpdateParticles` computed each particle's gravity and then called
+  `GetGravityField`, which sets both components in every mode; the first copy was dead work.
+- **Results** (single-threaded release builds, same machine, alternating old/new): with a 200-frame window
+  after 30 warm-up frames, median of 7: empty screen 0.78 -> 0.69 ms per simulated frame (-11%),
+  electronics 9.22 -> 7.57 (-18%), 28 conductor rows 9.10 -> 7.68 (-16%), water/sand/fire 13.53 -> 12.99
+  (-4%). `perf.spec.mjs` (PERF=1), 5 runs each, medians (`artifacts/browser/perf-n3.json`): electronics
+  15.68 -> 14.32 ms (-9%, every new run faster than every old one), liquids and fire 12.85 -> 11.84 (-8%,
+  runs overlap), powder bands and powder bands with gravity within noise. The drawing times in the same
+  runs (code not touched) moved by up to 11%, which is the noise on this machine.
+- **Not done, and why.** In water, sand and powder scenes two thirds of the time is in
+  `UpdateParticles` itself (heat transfer, state changes, movement) and 16% in `eval_move`/`try_move`:
+  TPT's core loop. Making it much faster needs restructuring whose equivalence is hard to prove (it draws
+  random numbers in many places, so even reordering checks can change results). `RecalcFreeParticles`
+  costs about 0.1 ms on an empty screen (three full-screen clears) plus about 15 ns per particle; nothing
+  found there was worth the risk. The expected "15-30% faster in heavy scenes" holds for circuits, not
+  for liquids and powders.

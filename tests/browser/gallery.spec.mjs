@@ -96,8 +96,12 @@ test('My saves: thumbnails, search, sort, rename, delete and open, kept across r
 	expect(await cardNames(page)).toEqual(['save 9.cps', 'alpha.cps', 'save 10.cps', 'beta.cps']);
 	await page.selectOption('#saves-sort', 'name'); // numbers in names sort as numbers
 	expect(await cardNames(page)).toEqual(['alpha.cps', 'beta.cps', 'save 9.cps', 'save 10.cps']);
+	// largest first, checked against the files themselves (the saves compress to similar sizes, so which one is
+	// smallest isn't known in advance)
 	await page.selectOption('#saves-sort', 'size');
-	expect((await cardNames(page)).at(-1), 'the small WATR save is last by size').toBe('beta.cps');
+	const bySize = await cardNames(page);
+	const sizes = await page.evaluate(([dir, names]) => names.map((n) => window.tptPage.module.FS.stat(`${dir}/${n}`).size), [SAVES, bySize]);
+	expect(sizes, `sizes in the order shown: ${bySize.join(', ')}`).toEqual([...sizes].sort((a, b) => b - a));
 
 	// search
 	await page.fill('#saves-search', 'SAVE');

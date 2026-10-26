@@ -58,6 +58,7 @@
 #include "gui/game/Tool.h"
 #include "graphics/Renderer.h"
 #include "simulation/Simulation.h"
+#include "common/tpt-rand.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
 #include "gui/game/GameView.h"
@@ -1263,6 +1264,26 @@ extern "C"
 		}
 		sim->framerender = 0;
 		return emscripten_get_now() - start;
+	}
+
+	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock
+	// at start) and resets the frame counters that depend on how long the game has been running: the sand
+	// colour cycle (advances on every drawn frame, even while paused, and tints some created particles), the
+	// timer (time dilation skips frames by it) and the tick count (element recounts). A scene stepped with
+	// tpt_benchmark right after this replays exactly; for checking that a speed-up leaves the results
+	// unchanged (docs/handoff/tools/samecheck.mjs).
+	EMSCRIPTEN_KEEPALIVE void tpt_rng_seed(unsigned int seed)
+	{
+		RNG::Ref().seed(seed);
+		random_gen.seed(seed);
+		if (webGameController)
+		{
+			auto *sim = webGameController->GetModel()->GetSimulation();
+			sim->sandcolour = 0;
+			sim->sandcolour_frame = 0;
+			sim->timer = 0;
+			sim->currentTick = 0;
+		}
 	}
 }
 

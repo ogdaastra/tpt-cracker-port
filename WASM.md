@@ -59,7 +59,8 @@ The page talks to the game through a few exported functions (`src/PowderToySDL.c
 (imports), `tpt_element_list` / `tpt_active_tools` / `tpt_select_tool` (the Elements panel; selection is
 queued as an SDL event and handled in the game loop), `tpt_set_frame_callback` (recording), `tpt_lua_command` (runs a Lua line in the game loop; the Challenges
 panel sends `challenges.command(...)`, and the game answers through `Module.tptOnChallenge`), `tpt_save_thumbnail` /
-`tpt_delete_stamp` (the "My saves" gallery) and `tpt_benchmark`.
+`tpt_delete_stamp` (the "My saves" gallery), `tpt_benchmark` and `tpt_rng_seed` (replays a scene exactly, for
+`docs/handoff/tools/samecheck.mjs`, which proves a speed-up leaves the simulation unchanged).
 
 ## Deploy (Vercel)
 

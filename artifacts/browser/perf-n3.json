@@ -1,0 +1,116 @@
+{
+ "what": "perf.spec.mjs (PERF=1), single-threaded release builds, same machine, runs alternated A,B x5. A = main before N3 (plus the tpt_rng_seed export), B = N3. simMsPerFrame per run and median; drawing code is unchanged, so its spread shows the noise.",
+ "scenes": {
+  "powderBands": {
+   "before": [
+    6.84,
+    6.547,
+    6.157,
+    6.009,
+    5.794
+   ],
+   "after": [
+    6.623,
+    6.263,
+    5.307,
+    6.317,
+    6.431
+   ],
+   "medianBefore": 6.157,
+   "medianAfter": 6.317,
+   "ratio": 1.026
+  },
+  "liquidsAndFire": {
+   "before": [
+    13.223,
+    11.627,
+    14.433,
+    12.851,
+    12.641
+   ],
+   "after": [
+    11.347,
+    11.838,
+    13.44,
+    12.9,
+    11.75
+   ],
+   "medianBefore": 12.851,
+   "medianAfter": 11.838,
+   "ratio": 0.921
+  },
+  "powderBandsGravity": {
+   "before": [
+    5.691,
+    6.61,
+    7.053,
+    6.209,
+    6.697
+   ],
+   "after": [
+    7.605,
+    6.027,
+    6.305,
+    6.235,
+    6.655
+   ],
+   "medianBefore": 6.61,
+   "medianAfter": 6.305,
+   "ratio": 0.954
+  },
+  "electronics": {
+   "before": [
+    16.21,
+    15.675,
+    16.947,
+    15.557,
+    15.499
+   ],
+   "after": [
+    14.32,
+    14.819,
+    13.848,
+    14.96,
+    13.637
+   ],
+   "medianBefore": 15.675,
+   "medianAfter": 14.32,
+   "ratio": 0.914
+  }
+ },
+ "renderNoise": {
+  "velocity": {
+   "ratio": 1.043
+  },
+  "pressure": {
+   "ratio": 0.936
+  },
+  "persistent": {
+   "ratio": 1.016
+  },
+  "fire": {
+   "ratio": 0.971
+  },
+  "blob": {
+   "ratio": 1.07
+  },
+  "heat": {
+   "ratio": 1.023
+  },
+  "fancy": {
+   "ratio": 1.004
+  },
+  "nothing": {
+   "ratio": 0.893
+  },
+  "heatGradient": {
+   "ratio": 0.946
+  },
+  "lifeGradient": {
+   "ratio": 1.052
+  },
+  "altVelocity": {
+   "ratio": 1.077
+  }
+ }
+}

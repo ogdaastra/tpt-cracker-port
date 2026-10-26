@@ -4003,32 +4003,8 @@ void Simulation::UpdateParticles(int start, int end)
 			float pGravX = 0, pGravY = 0, pGravD = 0;
 			if (!(elements[t].Properties & TYPE_SOLID) && (elements[t].Gravity || elements[t].NewtonianGravity))
 			{
-				if (elements[t].Gravity)
-				{
-					//Gravity mode by Moach
-					switch (gravityMode)
-					{
-					default:
-					case 0:
-						pGravX = 0.0f;
-						pGravY = elements[t].Gravity;
-						break;
-					case 1:
-						pGravX = pGravY = 0.0f;
-						break;
-					case 2:
-						pGravD = 0.01f - hypotf(float(x - XCNTR), float(y - YCNTR));
-						pGravX = elements[t].Gravity * ((float)(x - XCNTR) / pGravD);
-						pGravY = elements[t].Gravity * ((float)(y - YCNTR) / pGravD);
-						break;
-					}
-				}
-				if (elements[t].NewtonianGravity)
-				{
-					//Get some gravity from the gravity map
-					pGravX += elements[t].NewtonianGravity * gravx[(y/CELL)*(XRES/CELL)+(x/CELL)];
-					pGravY += elements[t].NewtonianGravity * gravy[(y/CELL)*(XRES/CELL)+(x/CELL)];
-				}
+				// GetGravityField sets both components in every gravity mode (Newtonian gravity included); the copy of
+				// its code that used to run first here was always overwritten
 				GetGravityField(x, y, elements[t].Gravity, elements[t].NewtonianGravity, pGravX, pGravY);
 			}
 
