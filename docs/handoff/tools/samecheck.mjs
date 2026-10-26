@@ -15,6 +15,7 @@ const SEED = Number(process.env.SEED || 12345);
 // Rows of conductors, each fed by a battery, with the elements SPRK treats specially as receivers and senders.
 const ROW_TYPES = process.env.ROWS ? process.env.ROWS.split(',') : ['METL', 'PSCN', 'NSCN', 'INST', 'SWCH', 'NTCT', 'PTCT', 'WATR', 'SLTW', 'INWR', 'ETRD', 'IRON', 'TUNG',
 	'QRTZ', 'RSST', 'COPR', 'BMTL', 'GOLD', 'NICH', 'LCRY', 'PUMP', 'LEAD', 'IRDM', 'TESC', 'NBLE', 'EMP', 'PPIP', 'BRMT'];
+const GRAVITY_MODES = [0, 1, 2, 3];
 const SCENES = {
 	electronics: `for row = 0, 19 do local y = 20 + row * 18 for x = 20, 590 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_METL) end
 		for x = 20, 590 do sim.partCreate(-1, x, y + 1, (x % 2 == 0) and elem.DEFAULT_PT_PSCN or elem.DEFAULT_PT_NSCN) end
@@ -50,6 +51,13 @@ const SCENES = {
 			for x = cx - 40, cx + 40 do for y = 240, 260 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_GAS) end end
 			for x = cx - 40, cx + 40, 5 do sim.partCreate(-1, x, 239, elem.DEFAULT_PT_FIRE) end
 		end`,
+	// Newtonian gravity from a block of gravitons (GRVT) with powders, liquids and a gas;
+	// run with each gravity mode by the loop below
+	gravity: `tpt.newtonian_gravity(1)
+		for x = 200, 410 do for y = 100, 130 do sim.partCreate(-1, x, y, (x % 3 == 0) and elem.DEFAULT_PT_WATR or elem.DEFAULT_PT_DUST) end end
+		for x = 200, 410 do for y = 250, 270 do sim.partCreate(-1, x, y, (x % 2 == 0) and elem.DEFAULT_PT_SAND or elem.DEFAULT_PT_OIL) end end
+		for x = 290, 320 do for y = 180, 200 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_GRVT) end end
+		for x = 100, 140 do for y = 180, 200 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_HYGN) end end`,
 };
 
 // One line per particle (every property the game exposes, floats with 9 significant digits, enough for an
@@ -97,8 +105,15 @@ async function run(url) {
 	};
 	const digests = {};
 	await lua('tpt.set_pause(1)');
-	for (const [name, scene] of Object.entries(SCENES).filter(([n]) => !process.env.SCENES || process.env.SCENES.split(',').includes(n))) {
-		await lua('sim.clearSim()');
+	const runs = [];
+	for (const [name, scene] of Object.entries(SCENES)) {
+		if (process.env.SCENES && !process.env.SCENES.split(',').includes(name)) continue;
+		if (name === 'gravity') for (const mode of GRAVITY_MODES) runs.push([`${name}${mode}`, `sim.gravityMode(${mode}) sim.customGravity(0.3, 0.6) ` + scene]);
+		else runs.push([name, scene]);
+	}
+	for (const [name, scene] of runs) {
+		// every scene starts from the default settings
+		await lua('sim.clearSim() sim.gravityMode(0) tpt.newtonian_gravity(0) tpt.ambient_heat(0) tpt.set_pause(1)');
 		await page.evaluate((s) => window.tptPage.module.ccall('tpt_rng_seed', null, ['number'], [s]), SEED);
 		await lua(scene);
 		let done = 0;
