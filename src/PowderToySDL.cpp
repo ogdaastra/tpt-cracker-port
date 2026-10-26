@@ -1340,6 +1340,33 @@ extern "C"
 		return webGameController && webGameController->HistoryRestore() ? 1 : 0;
 	}
 
+	// Caps the undo history's memory (the page passes less on devices with little memory) and, if maxSteps > 0,
+	// its number of steps (saved as a setting; tests use 5, the old default, to compare)
+	EMSCRIPTEN_KEEPALIVE void tpt_undo_setup(int capMegabytes, int maxSteps)
+	{
+		if (!webGameController)
+			return;
+		auto *model = webGameController->GetModel();
+		model->SetUndoHistoryCapBytes(size_t(std::max(1, capMegabytes)) << 20);
+		if (maxSteps > 0)
+			model->SetUndoHistoryLimit(maxSteps);
+	}
+
+	// "count position bytes capBytes" of the undo history: Ctrl+Z can go back position steps, Ctrl+Y forward
+	// count - position
+	EMSCRIPTEN_KEEPALIVE const char *tpt_undo_info()
+	{
+		static std::string text;
+		text.clear();
+		if (webGameController)
+		{
+			auto *model = webGameController->GetModel();
+			text = std::to_string(model->HistoryCount()) + " " + std::to_string(model->HistoryPosition()) + " " +
+				std::to_string(model->HistoryBytes()) + " " + std::to_string(model->GetUndoHistoryCapBytes());
+		}
+		return text.c_str();
+	}
+
 	// Rewind (the page's Rewind bar): the buffer of recent snapshots, filled after every simulated frame
 	static RewindBuffer webRewind;
 	static void WebRewindAfterSim(Simulation *sim)

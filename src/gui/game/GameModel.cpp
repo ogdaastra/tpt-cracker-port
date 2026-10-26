@@ -152,10 +152,11 @@ GameModel::GameModel():
 	colourPresets.push_back(ui::Colour(0, 0, 255));
 	colourPresets.push_back(ui::Colour(0, 0, 0));
 
-	undoHistoryLimit = Client::Ref().GetPrefInteger("Simulation.UndoHistoryLimit", 5);
-	// cap due to memory usage (this is about 3.4GB of RAM)
-	if (undoHistoryLimit > 200)
-		SetUndoHistoryLimit(200);
+	// Undo steps are kept as differences and the history is also capped in bytes (undoHistoryCapBytes), so
+	// the count can be high enough to go back to the first pixel of most sessions
+	undoHistoryLimit = Client::Ref().GetPrefInteger("Simulation.UndoHistoryLimit", 10000);
+	if (undoHistoryLimit > 100000)
+		SetUndoHistoryLimit(100000);
 
 	mouseClickRequired = Client::Ref().GetPrefBool("MouseClickRequired", false);
 	includePressure = Client::Ref().GetPrefBool("Simulation.IncludePressure", true);
@@ -810,6 +811,7 @@ void GameModel::HistoryPush(std::unique_ptr<Snapshot> last)
 	}
 	while (historyPosition < history.size())
 	{
+		historyBytes -= history.back().bytes;
 		history.pop_back();
 	}
 	if (rebaseOnto)
@@ -817,13 +819,19 @@ void GameModel::HistoryPush(std::unique_ptr<Snapshot> last)
 		auto &prev = history.back();
 		prev.delta = SnapshotDelta::FromSnapshots(*rebaseOnto, *last);
 		prev.snap.reset();
+		historyBytes -= prev.bytes;
+		prev.bytes = prev.delta->Bytes();
+		historyBytes += prev.bytes;
 	}
 	history.emplace_back();
 	history.back().snap = std::move(last);
+	history.back().bytes = history.back().snap->Bytes();
+	historyBytes += history.back().bytes;
 	historyPosition += 1U;
 	historyCurrent.reset();
-	while (undoHistoryLimit < history.size())
+	while (undoHistoryLimit < history.size() || (historyBytes > undoHistoryCapBytes && history.size() > 1))
 	{
+		historyBytes -= history.front().bytes;
 		history.pop_front();
 		historyPosition -= 1U;
 	}
@@ -1027,6 +1035,7 @@ void GameModel::SetChallengeTools(bool restricted, std::set<ByteString> tools)
 void GameModel::ClearHistory()
 {
 	history.clear();
+	historyBytes = 0;
 	historyCurrent.reset();
 	historyPosition = 0;
 }

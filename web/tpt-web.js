@@ -1278,6 +1278,7 @@
 	const REWIND_SECONDS = 30;
 	// devices that say they have little memory get a smaller cap (navigator.deviceMemory, in GB, Chromium only)
 	const REWIND_CAP_MB = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 60 : 150;
+	const UNDO_CAP_MB = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 40 : 100;
 	const rewind = { on: storageGet(REWIND_KEY) !== 'off', count: 0, bytes: 0, view: 0, timer: 0 };
 	window.tptPage.rewind = rewind;
 
@@ -1629,6 +1630,9 @@
 					$(id).disabled = false;
 				}
 				rewindSetup();
+				// Ctrl+Z goes back as far as this much memory of undo steps allows (thousands of steps in most
+				// sessions, fewer when the whole screen keeps changing); less on devices with little memory
+				mod.ccall('tpt_undo_setup', null, ['number', 'number'], [UNDO_CAP_MB, 0]);
 				if (sound.on) {
 					setSoundOn(true); // left on last time; the audio itself starts at the first click or key press
 				}
