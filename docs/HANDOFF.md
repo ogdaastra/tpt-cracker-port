@@ -72,7 +72,7 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). The next free `PORT_LOG.md` section is **27**.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27; the next free section is **28**.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -125,7 +125,13 @@ Concern to check: calling `SaveRenderer` from a page callback while the game loo
 should be fine (it has its own Simulation/Renderer and is what the in-game save browser uses), but verify
 no errors and no frame hitch with ~20 saves.
 
-### N3 Performance A, B, C
+### N3 Performance A, B, C: DONE as far as it could be proven safe (Ember; `PORT_LOG.md` section 27)
+Sparks 15-18% cheaper, air update cheaper, results identical (proved with
+`docs/handoff/tools/samecheck.mjs`, which needs `tpt_rng_seed`). Liquids and powders: within noise to -8%.
+What's left is TPT's core loop (`UpdateParticles`, `eval_move`, `try_move`), where every reordering risks
+changing which random numbers are drawn. If you try it, prove it with samecheck first. The plan below is
+the original one, for reference.
+
 Measured with `docs/handoff/tools/simprof.mjs` (CPU profile of `tpt_benchmark(…, 0)` on the profiling
 build; see section 7) on the current code:
 
