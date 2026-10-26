@@ -51,6 +51,8 @@ Key technical facts:
 - The user likes plain, non-technical explanations, tables for status, and honesty about what failed.
   They asked for a **phone notification** (`PushNotification` tool) when something they wait for goes live,
   and (26 Oct) **whenever you are waiting for them or need them**: ping the phone, don't wait quietly.
+- **No multiplayer** (26 Oct: "remove multiplayer from ur brain i dont want that"): neither playing together
+  in the browser nor TPTMP. Don't propose or build it.
 - Commits end with the attribution lines the system gives (Co-Authored-By + Claude-Session). PR bodies end
   with the "Generated with Claude Code" line + session link. No model names in commits/PRs.
 
@@ -73,8 +75,10 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33; the next free section
-  is **34**. All seven planned features are done; N8 (deep undo) was asked for on 26 Oct.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33, tilt to pour (N9) section 34; the
+  next free section is **35**. On 26 Oct Orlando picked from an ideas list: N9 tilt to pour, N10
+  customisable world size (small worlds so he doesn't live in the zoom, and big ones), N11 turbo mode
+  (multi-core simulation), N12 GPU eye candy, in that order; deep undo goes live automatically. All seven planned features are done; N8 (deep undo) was asked for on 26 Oct.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -226,6 +230,8 @@ Asked for by the user on 26 Oct ("Ctrl+Z and Ctrl+Y to my heart's content, even 
 rule: if it makes performance more than 5% worse in the worst case, keep it very finite. It doesn't (−1.5%,
 noise, on a 160,000-particle scene with a full 96 MB history), so the history is limited by memory only:
 100 MB (40 MB on low-memory devices), 10,000 steps.
+
+### N9 Tilt to pour: DONE (Ember; `PORT_LOG.md` section 34)
 
 ## 5. Environment setup (a new container has none of this)
 

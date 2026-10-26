@@ -897,3 +897,27 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   some back, the rest brings back exactly the drawn state (hash of every particle property and the air);
   with a 4 MB cap and a screen of moving water, 20 clicks keep the history under the cap by dropping the
   oldest steps, and Ctrl+Z still goes back one step.
+
+## 34. Tilt to pour (N9)
+
+- **Asked for** by Orlando on 26 Oct, from the ideas list. The engine already had a custom gravity mode
+  (`gravityMode` 3, `customGravityX/Y`, 1 = normal gravity's strength).
+- **New exports**: `tpt_tilt(on, gx, gy)` switches to custom gravity pointing (gx, gy) and remembers the
+  gravity mode and custom values it had; `on = 0` puts them back. `tpt_shake(strength)` gives every
+  particle that isn't a solid a random push of up to `strength` in x and y (returns how many).
+- **Page**: a Tilt button on the touch bar (touch screens with `DeviceOrientationEvent`). The fall direction
+  in the device's axes is (sin γ cos β, −sin β) for the W3C Z-X'-Y'' angles (β front-back, γ left-right),
+  rotated by `screen.orientation.angle` into screen axes, y flipped for the game: as strong as normal gravity
+  when the device stands upright, nothing when it lies flat. Readings are smoothed (30% of the way per
+  reading). A shake is `devicemotion` acceleration (without gravity) of 15 m/s² or more, at most every
+  400 ms, pushing with strength min(6, a/5). Turning Tilt on asks for the motion sensors where the browser
+  asks first (iOS, and Chromium too: without the grant `requestPermission` says "denied"; the button then
+  says "No sensor access" for 3 s), and locks the screen's rotation where the browser allows it.
+- **Physics note**: tilted gently towards a corner the sand stayed put: a floor at 41° to gravity is a slope
+  gentler than sand's heap, as with real sand. A fresh heap tilted ±41° moved +107 / −109 px; tipped well
+  over (β 20°, γ ±70°) heaped sand pours across the box both ways.
+- **Tests** (`tilt.spec.mjs`, emulated Pixel 7 with the sensors allowed): the direction from the angles
+  (upright, flat, leaning right, sideways with the screen turned and not turned); with the button on, the
+  game's gravity is custom and follows the readings; a heap of sand in a closed box pours right (mean x
+  300 → 470) then left (→ 301); flat gives no pull; a gentle movement isn't a shake, a hard one is (total
+  speed 1,193 → 23,211); off restores gravity mode 0.

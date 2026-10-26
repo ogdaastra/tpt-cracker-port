@@ -1420,6 +1420,58 @@ extern "C"
 		webGameController->GetModel()->SetPaused(false);
 	}
 
+	// Tilt to pour (the page's Tilt button on phones): on = 1 switches the simulation to custom gravity pointing
+	// (gx, gy), 1 being normal gravity's strength, remembering the gravity it had; on = 0 puts that back.
+	static bool webTiltOn = false;
+	static int webTiltMode = 0;
+	static float webTiltX = 0, webTiltY = 0;
+	EMSCRIPTEN_KEEPALIVE void tpt_tilt(int on, float gx, float gy)
+	{
+		if (!webGameController)
+			return;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		if (on)
+		{
+			if (!webTiltOn)
+			{
+				webTiltOn = true;
+				webTiltMode = sim->gravityMode;
+				webTiltX = sim->customGravityX;
+				webTiltY = sim->customGravityY;
+			}
+			sim->gravityMode = 3;
+			sim->customGravityX = gx;
+			sim->customGravityY = gy;
+		}
+		else if (webTiltOn)
+		{
+			webTiltOn = false;
+			sim->gravityMode = webTiltMode;
+			sim->customGravityX = webTiltX;
+			sim->customGravityY = webTiltY;
+		}
+	}
+
+	// A shake (the phone shaken while tilting): every particle that isn't a solid gets a random push of up to
+	// strength pixels per frame in each direction. Returns how many were pushed.
+	EMSCRIPTEN_KEEPALIVE int tpt_shake(float strength)
+	{
+		if (!webGameController)
+			return 0;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		int pushed = 0;
+		for (int i = 0; i <= sim->parts_lastActiveIndex; i++)
+		{
+			auto &part = sim->parts[i];
+			if (!part.type || (sim->elements[part.type].Properties & TYPE_SOLID))
+				continue;
+			part.vx += (RNG::Ref().uniform01() * 2.0f - 1.0f) * strength;
+			part.vy += (RNG::Ref().uniform01() * 2.0f - 1.0f) * strength;
+			pushed++;
+		}
+		return pushed;
+	}
+
 	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock
 	// at start) and resets the frame counters that depend on how long the game has been running: the sand
 	// colour cycle (advances on every drawn frame, even while paused, and tints some created particles), the
