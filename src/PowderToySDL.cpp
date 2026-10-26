@@ -1267,12 +1267,19 @@ extern "C"
 	}
 
 	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock
-	// at start), so a scene stepped with tpt_benchmark replays exactly; for checking that a speed-up leaves
-	// the results unchanged (docs/handoff/tools/samecheck.mjs).
+	// at start) and resets the sand colour cycle (it advances on every drawn frame, even while paused, and
+	// tints some created particles), so a scene stepped with tpt_benchmark right after this replays exactly;
+	// for checking that a speed-up leaves the results unchanged (docs/handoff/tools/samecheck.mjs).
 	EMSCRIPTEN_KEEPALIVE void tpt_rng_seed(unsigned int seed)
 	{
 		RNG::Ref().seed(seed);
 		random_gen.seed(seed);
+		if (webGameController)
+		{
+			auto *sim = webGameController->GetModel()->GetSimulation();
+			sim->sandcolour = 0;
+			sim->sandcolour_frame = 0;
+		}
 	}
 }
 

@@ -235,14 +235,24 @@ static int update(UPDATE_FUNC_ARGS)
 					continue;
 				receiver = TYP(r);
 				sender = ct;
-				pavg = sim->parts_avg(ID(r), i,PT_INSL);
+				// parts_avg (the particle between the two, for insulation) only where it is needed: it has no side
+				// effects, and most neighbours never get that far
+				bool pavgKnown = false;
+				auto avg = [&]() {
+					if (!pavgKnown)
+					{
+						pavg = sim->parts_avg(ID(r), i, PT_INSL);
+						pavgKnown = true;
+					}
+					return pavg;
+				};
 				//receiver is the element SPRK is trying to conduct to
 				//sender is the element the SPRK is on
 				//First, some checks usually for (de)activation of elements
 				switch (receiver)
 				{
 				case PT_SWCH:
-					if (pavg!=PT_INSL && parts[i].life<4)
+					if (avg()!=PT_INSL && parts[i].life<4)
 					{
 						if(sender==PT_PSCN && parts[ID(r)].life<10) {
 							parts[ID(r)].life = 10;
@@ -255,7 +265,7 @@ static int update(UPDATE_FUNC_ARGS)
 					}
 					break;
 				case PT_NICH: { // NICH only conducts 1 pixel at a time
-					if (pavg != PT_INSL && parts[i].life < 4) {
+					if (avg() != PT_INSL && parts[i].life < 4) {
 						if (abs(rx) > 1 || abs(ry) > 1)
 							continue;
 					}
@@ -270,24 +280,27 @@ static int update(UPDATE_FUNC_ARGS)
 						continue;
 					break;
 				case PT_SPRK:
-					if (pavg!=PT_INSL && parts[i].life<4)
+				{
+					// the commonest neighbour in a live circuit; only two combinations do anything, so they are checked
+					// before the insulation lookup
+					auto rct = parts[ID(r)].ctype;
+					bool toSwitch = rct==PT_SWCH && sender==PT_NSCN;
+					bool toSemi = (rct==PT_NTCT||rct==PT_PTCT || rct == PT_FPTC || rct == PT_FNTC) && sender==PT_METL;
+					if ((toSwitch || toSemi) && parts[i].life<4 && avg()!=PT_INSL)
 					{
-						if (parts[ID(r)].ctype==PT_SWCH)
+						if (toSwitch)
 						{
-							if (sender==PT_NSCN)
-							{
-								sim->part_change_type(ID(r),x+rx,y+ry,PT_SWCH);
-								parts[ID(r)].ctype = PT_NONE;
-								parts[ID(r)].life = 9;
-							}
+							sim->part_change_type(ID(r),x+rx,y+ry,PT_SWCH);
+							parts[ID(r)].ctype = PT_NONE;
+							parts[ID(r)].life = 9;
 						}
-						else if(parts[ID(r)].ctype==PT_NTCT||parts[ID(r)].ctype==PT_PTCT || parts[ID(r)].ctype == PT_FPTC || parts[ID(r)].ctype == PT_FNTC)
-							if (sender==PT_METL)
-							{
-								parts[ID(r)].temp = 473.0f;
-							}
+						else
+						{
+							parts[ID(r)].temp = 473.0f;
+						}
 					}
 					continue;
+				}
 				case PT_PUMP: case PT_GPMP: case PT_HSWC: case PT_PBCN: case PT_PINV: case PT_AMBE: case PT_PWHT: case PT_BUTN:
 					if (parts[i].life<4)// PROP_PTOGGLE, Maybe? We seem to use 2 different methods for handling actived elements, this one seems better. Yes, use this one for new elements, PCLN is different for compatibility with existing saves
 					{
@@ -297,7 +310,7 @@ static int update(UPDATE_FUNC_ARGS)
 					continue;
 
 				case PT_LITH2:
-					if (pavg != PT_INSL)
+					if (avg() != PT_INSL)
 					{
 						if (sender == PT_INST && parts[ID(r)].tmp2 == 10 && parts[ID(r)].tmp < parts[ID(r)].life)
 						{
@@ -352,7 +365,7 @@ static int update(UPDATE_FUNC_ARGS)
 					}
 					continue;
 				case PT_PPIP:
-					if (parts[i].life == 3 && pavg!=PT_INSL)
+					if (parts[i].life == 3 && avg()!=PT_INSL)
 					{
 						void Element_PPIP_flood_trigger(Simulation * sim, int x, int y, int sparkedBy);
 						if (sender == PT_NSCN || sender == PT_PSCN || sender == PT_INST)
@@ -360,7 +373,7 @@ static int update(UPDATE_FUNC_ARGS)
 					}
 					continue;
 				case PT_NTCT: case PT_PTCT: case PT_INWR:case PT_FNTC:case PT_FPTC:
-					if (sender==PT_METL && pavg!=PT_INSL && parts[i].life<4)
+					if (sender==PT_METL && avg()!=PT_INSL && parts[i].life<4)
 					{
 						parts[ID(r)].temp = 473.0f;
 						if (receiver==PT_NTCT||receiver==PT_PTCT || receiver == PT_NTCT|| receiver == PT_FPTC)
@@ -386,9 +399,12 @@ static int update(UPDATE_FUNC_ARGS)
 					break;
 				}
 
-				if (pavg == PT_INSL) continue; //Insulation blocks everything past here (parts_avg reports RSSS as INSL)
+				// From here on nothing changes until conduct:, and everything there needs the receiver's life to be 0
+				// and the spark's life below 4 (or 5, for ETRD): skip the rest for any other neighbour
+				if (parts[ID(r)].life != 0 || (parts[i].life >= 4 && parts[i].life != 5)) continue;
 				if (!((sim->elements[receiver].Properties&PROP_CONDUCTS)||receiver==PT_INST||receiver==PT_QRTZ)) continue; //Stop non-conducting receivers, allow INST and QRTZ as special cases
 				if (abs(rx)+abs(ry)>=4 &&sender!=PT_SWCH&&receiver!=PT_SWCH) continue; //Only switch conducts really far
+				if (avg() == PT_INSL) continue; //Insulation blocks everything past here (parts_avg reports RSSS as INSL)
 				if (receiver==sender && receiver!=PT_INST && receiver!=PT_QRTZ) goto conduct; //Everything conducts to itself, except INST.
 
 				//Sender cases, where elements can have specific outputs

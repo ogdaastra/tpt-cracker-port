@@ -13,7 +13,7 @@ const STEPS = (process.env.STEPS || '1,30,120,400').split(',').map(Number);
 const SEED = Number(process.env.SEED || 12345);
 
 // Rows of conductors, each fed by a battery, with the elements SPRK treats specially as receivers and senders.
-const ROW_TYPES = ['METL', 'PSCN', 'NSCN', 'INST', 'SWCH', 'NTCT', 'PTCT', 'WATR', 'SLTW', 'INWR', 'ETRD', 'IRON', 'TUNG',
+const ROW_TYPES = process.env.ROWS ? process.env.ROWS.split(',') : ['METL', 'PSCN', 'NSCN', 'INST', 'SWCH', 'NTCT', 'PTCT', 'WATR', 'SLTW', 'INWR', 'ETRD', 'IRON', 'TUNG',
 	'QRTZ', 'RSST', 'COPR', 'BMTL', 'GOLD', 'NICH', 'LCRY', 'PUMP', 'LEAD', 'IRDM', 'TESC', 'NBLE', 'EMP', 'PPIP', 'BRMT'];
 const SCENES = {
 	electronics: `for row = 0, 19 do local y = 20 + row * 18 for x = 20, 590 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_METL) end
@@ -39,7 +39,17 @@ const SCENES = {
 		for x = 20, 590 do for y = 200, 230 do sim.partCreate(-1, x, y, (x % 5 == 0) and elem.DEFAULT_PT_WOOD or elem.DEFAULT_PT_DUST) end end
 		for x = 20, 590, 4 do sim.partCreate(-1, x, 195, elem.DEFAULT_PT_FIRE) end
 		for x = 100, 140 do for y = 100, 140 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_PLSM) end end
-		sim.createWallBox(0, 0, 611, 383, 8)`,
+		sim.createWallBox(0, 0, 611, 3, 8) sim.createWallBox(0, 380, 611, 383, 8) sim.createWallBox(0, 0, 3, 383, 8) sim.createWallBox(608, 0, 611, 383, 8)`,
+	// two time dilation fields (TIME with tmp2 set): faster on the left, slower on the right, with plasma
+	// stirring the air in both, so the air code's time dilation branches run
+	timefield: `for k, spec in ipairs({ { 150, 273.15 + 16 * 3 }, { 450, 273.15 - 16 * 3 } }) do
+			local cx, temp = spec[1], spec[2]
+			local id = sim.partCreate(-1, cx, 190, elem.DEFAULT_PT_TIME)
+			sim.partProperty(id, "temp", temp) sim.partProperty(id, "tmp2", 1000000)
+			for x = cx - 40, cx + 40 do for y = 120, 140 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_PLSM) end end
+			for x = cx - 40, cx + 40 do for y = 240, 260 do sim.partCreate(-1, x, y, elem.DEFAULT_PT_GAS) end end
+			for x = cx - 40, cx + 40, 5 do sim.partCreate(-1, x, 239, elem.DEFAULT_PT_FIRE) end
+		end`,
 };
 
 // One line per particle (every property the game exposes, floats with 9 significant digits, enough for an
@@ -87,13 +97,19 @@ async function run(url) {
 	};
 	const digests = {};
 	await lua('tpt.set_pause(1)');
-	for (const [name, scene] of Object.entries(SCENES)) {
+	for (const [name, scene] of Object.entries(SCENES).filter(([n]) => !process.env.SCENES || process.env.SCENES.split(',').includes(n))) {
 		await lua('sim.clearSim()');
 		await page.evaluate((s) => window.tptPage.module.ccall('tpt_rng_seed', null, ['number'], [s]), SEED);
 		await lua(scene);
 		let done = 0;
 		for (const steps of STEPS) {
-			await page.evaluate((f) => window.tptPage.module.ccall('tpt_benchmark', 'number', ['number', 'number'], [f, 0]), steps - done);
+			// re-seeded in the same call as the stepping: the game draws frames while waiting for Lua, and those
+			// advance the sand colour cycle
+			await page.evaluate(([f, s]) => {
+				const m = window.tptPage.module;
+				m.ccall('tpt_rng_seed', null, ['number'], [s]);
+				m.ccall('tpt_benchmark', 'number', ['number', 'number'], [f, 0]);
+			}, [steps - done, SEED + steps]);
 			done = steps;
 			const path = `/tmp/samecheck-${name}-${steps}.txt`;
 			await lua(DUMP(path));

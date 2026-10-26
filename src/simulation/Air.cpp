@@ -241,152 +241,166 @@ void Air::update_air(void)
 					vy[y][x] = 0;
 			}
 
+		// one cell of the main pass (same code as before, moved out of the loop so the common case, no time
+		// dilation anywhere, is a plain loop the compiler can optimise; time dilation repeats it as before)
+		auto updateCell = [&](int x, int y) {
+			int i, j, stepLimit, step;
+			float dx, dy, dp, f, tx, ty, stepX, stepY;
+
+			dx = 0.0f;
+			dy = 0.0f;
+			dp = 0.0f;
+			for (j=-1; j<2; j++)
+				for (i=-1; i<2; i++)
+					if (y+j>0 && y+j<YRES/CELL-1 &&
+					        x+i>0 && x+i<XRES/CELL-1 &&
+					        !bmap_blockair[y+j][x+i])
+					{
+						f = kernel[i+1+(j+1)*3];
+						dx += vx[y+j][x+i]*f;
+						dy += vy[y+j][x+i]*f;
+						dp += pv[y+j][x+i]*f;
+					}
+					else
+					{
+						f = kernel[i+1+(j+1)*3];
+						dx += vx[y][x]*f;
+						dy += vy[y][x]*f;
+						dp += pv[y][x]*f;
+					}
+
+			tx = x - dx*advDistanceMult;
+			ty = y - dy*advDistanceMult;
+			if ((std::abs(dx*advDistanceMult)>1.0f || std::abs(dy*advDistanceMult)>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
+			{
+				// Trying to take velocity from far away, check whether there is an intervening wall. Step from current position to desired source location, looking for walls, with either the x or y step size being 1 cell
+				if (std::abs(dx)>std::abs(dy))
+				{
+					stepX = (dx<0.0f) ? 1.f : -1.f;
+					stepY = -dy/fabsf(dx);
+					stepLimit = (int)(fabsf(dx*advDistanceMult));
+				}
+				else
+				{
+					stepY = (dy<0.0f) ? 1.f : -1.f;
+					stepX = -dx/fabsf(dy);
+					stepLimit = (int)(fabsf(dy*advDistanceMult));
+				}
+				tx = float(x);
+				ty = float(y);
+				for (step=0; step<stepLimit; ++step)
+				{
+					tx += stepX;
+					ty += stepY;
+					if (bmap_blockair[(int)(ty+0.5f)][(int)(tx+0.5f)])
+					{
+						tx -= stepX;
+						ty -= stepY;
+						break;
+					}
+				}
+				if (step==stepLimit)
+				{
+					// No wall found
+					tx = x - dx*advDistanceMult;
+					ty = y - dy*advDistanceMult;
+				}
+			}
+			i = (int)tx;
+			j = (int)ty;
+			tx -= i;
+			ty -= j;
+			// upstream 3b19f846: <= read one cell too far and made air appear in the lower right corner
+			if (!bmap_blockair[y][x] && i>=2 && i<XRES/CELL-3 &&
+			        j>=2 && j<YRES/CELL-3)
+			{
+				dx *= 1.0f - AIR_VADV;
+				dy *= 1.0f - AIR_VADV;
+
+				dx += AIR_VADV*(1.0f-tx)*(1.0f-ty)*vx[j][i];
+				dy += AIR_VADV*(1.0f-tx)*(1.0f-ty)*vy[j][i];
+
+				dx += AIR_VADV*tx*(1.0f-ty)*vx[j][i+1];
+				dy += AIR_VADV*tx*(1.0f-ty)*vy[j][i+1];
+
+				dx += AIR_VADV*(1.0f-tx)*ty*vx[j+1][i];
+				dy += AIR_VADV*(1.0f-tx)*ty*vy[j+1][i];
+
+				dx += AIR_VADV*tx*ty*vx[j+1][i+1];
+				dy += AIR_VADV*tx*ty*vy[j+1][i+1];
+			}
+
+			// vorticity confinement (upstream b77a1cba, 4d1364b8)
+			if (vorticityCoeff > 0.0f && x > 1 && x < XRES/CELL-2 && y > 1 && y < YRES/CELL-2)
+			{
+				auto dwx = (std::abs(vorticity(y, x+1)) - std::abs(vorticity(y, x-1)))*0.5f;
+				auto dwy = (std::abs(vorticity(y+1, x)) - std::abs(vorticity(y-1, x)))*0.5f;
+				auto norm = std::hypot(dwx, dwy);
+				auto w = vorticity(y, x);
+				dx += vorticityCoeff/5.0f * dwy / (norm + 0.001f) * w;
+				dy += vorticityCoeff/5.0f * (-dwx) / (norm + 0.001f) * w;
+			}
+
+			if (bmap[y][x] == WL_FAN)
+			{
+				dx += fvx[y][x];
+				dy += fvy[y][x];
+			}
+			// pressure/velocity caps
+			if (dp > MAX_PRESSURE) dp = MAX_PRESSURE;
+			if (dp < MIN_PRESSURE) dp = MIN_PRESSURE;
+			if (dx > MAX_PRESSURE) dx = MAX_PRESSURE;
+			if (dx < MIN_PRESSURE) dx = MIN_PRESSURE;
+			if (dy > MAX_PRESSURE) dy = MAX_PRESSURE;
+			if (dy < MIN_PRESSURE) dy = MIN_PRESSURE;
+
+
+			switch (airMode)
+			{
+			default:
+			case 0:  //Default
+				break;
+			case 1:  //0 Pressure
+				dp = 0.0f;
+				break;
+			case 2:  //0 Velocity
+				dx = 0.0f;
+				dy = 0.0f;
+				break;
+			case 3: //0 Air
+				dx = 0.0f;
+				dy = 0.0f;
+				dp = 0.0f;
+				break;
+			case 4: //No Update
+				break;
+			}
+
+			ovx[y][x] = dx;
+			ovy[y][x] = dy;
+			opv[y][x] = dp;
+		};
+		if (!sim.anyTimeDilation)
+		{
+			for (y=0; y<YRES/CELL; y++) //update velocity and pressure
+				for (x=0; x<XRES/CELL; x++)
+					updateCell(x, y);
+		}
+		else
 		for (y=0; y<YRES/CELL; y++) //update velocity and pressure
 			for (x=0; x<XRES/CELL; x++)
 			{
 				// Apply time dilation: (negative = loop every n frames)
-				if (sim.anyTimeDilation && sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
+				if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
 					continue;
+				// positive = run n more times. Ie 1 = run air sim 2 times
 				int count = 0;
-				air_cell_update_begin:
-
-				dx = 0.0f;
-				dy = 0.0f;
-				dp = 0.0f;
-				for (j=-1; j<2; j++)
-					for (i=-1; i<2; i++)
-						if (y+j>0 && y+j<YRES/CELL-1 &&
-						        x+i>0 && x+i<XRES/CELL-1 &&
-						        !bmap_blockair[y+j][x+i])
-						{
-							f = kernel[i+1+(j+1)*3];
-							dx += vx[y+j][x+i]*f;
-							dy += vy[y+j][x+i]*f;
-							dp += pv[y+j][x+i]*f;
-						}
-						else
-						{
-							f = kernel[i+1+(j+1)*3];
-							dx += vx[y][x]*f;
-							dy += vy[y][x]*f;
-							dp += pv[y][x]*f;
-						}
-
-				tx = x - dx*advDistanceMult;
-				ty = y - dy*advDistanceMult;
-				if ((std::abs(dx*advDistanceMult)>1.0f || std::abs(dy*advDistanceMult)>1.0f) && (tx>=2 && tx<XRES/CELL-2 && ty>=2 && ty<YRES/CELL-2))
+				do
 				{
-					// Trying to take velocity from far away, check whether there is an intervening wall. Step from current position to desired source location, looking for walls, with either the x or y step size being 1 cell
-					if (std::abs(dx)>std::abs(dy))
-					{
-						stepX = (dx<0.0f) ? 1.f : -1.f;
-						stepY = -dy/fabsf(dx);
-						stepLimit = (int)(fabsf(dx*advDistanceMult));
-					}
-					else
-					{
-						stepY = (dy<0.0f) ? 1.f : -1.f;
-						stepX = -dx/fabsf(dy);
-						stepLimit = (int)(fabsf(dy*advDistanceMult));
-					}
-					tx = float(x);
-					ty = float(y);
-					for (step=0; step<stepLimit; ++step)
-					{
-						tx += stepX;
-						ty += stepY;
-						if (bmap_blockair[(int)(ty+0.5f)][(int)(tx+0.5f)])
-						{
-							tx -= stepX;
-							ty -= stepY;
-							break;
-						}
-					}
-					if (step==stepLimit)
-					{
-						// No wall found
-						tx = x - dx*advDistanceMult;
-						ty = y - dy*advDistanceMult;
-					}
+					updateCell(x, y);
+					++count;
 				}
-				i = (int)tx;
-				j = (int)ty;
-				tx -= i;
-				ty -= j;
-				// upstream 3b19f846: <= read one cell too far and made air appear in the lower right corner
-				if (!bmap_blockair[y][x] && i>=2 && i<XRES/CELL-3 &&
-				        j>=2 && j<YRES/CELL-3)
-				{
-					dx *= 1.0f - AIR_VADV;
-					dy *= 1.0f - AIR_VADV;
-
-					dx += AIR_VADV*(1.0f-tx)*(1.0f-ty)*vx[j][i];
-					dy += AIR_VADV*(1.0f-tx)*(1.0f-ty)*vy[j][i];
-
-					dx += AIR_VADV*tx*(1.0f-ty)*vx[j][i+1];
-					dy += AIR_VADV*tx*(1.0f-ty)*vy[j][i+1];
-
-					dx += AIR_VADV*(1.0f-tx)*ty*vx[j+1][i];
-					dy += AIR_VADV*(1.0f-tx)*ty*vy[j+1][i];
-
-					dx += AIR_VADV*tx*ty*vx[j+1][i+1];
-					dy += AIR_VADV*tx*ty*vy[j+1][i+1];
-				}
-
-				// vorticity confinement (upstream b77a1cba, 4d1364b8)
-				if (vorticityCoeff > 0.0f && x > 1 && x < XRES/CELL-2 && y > 1 && y < YRES/CELL-2)
-				{
-					auto dwx = (std::abs(vorticity(y, x+1)) - std::abs(vorticity(y, x-1)))*0.5f;
-					auto dwy = (std::abs(vorticity(y+1, x)) - std::abs(vorticity(y-1, x)))*0.5f;
-					auto norm = std::hypot(dwx, dwy);
-					auto w = vorticity(y, x);
-					dx += vorticityCoeff/5.0f * dwy / (norm + 0.001f) * w;
-					dy += vorticityCoeff/5.0f * (-dwx) / (norm + 0.001f) * w;
-				}
-
-				if (bmap[y][x] == WL_FAN)
-				{
-					dx += fvx[y][x];
-					dy += fvy[y][x];
-				}
-				// pressure/velocity caps
-				if (dp > MAX_PRESSURE) dp = MAX_PRESSURE;
-				if (dp < MIN_PRESSURE) dp = MIN_PRESSURE;
-				if (dx > MAX_PRESSURE) dx = MAX_PRESSURE;
-				if (dx < MIN_PRESSURE) dx = MIN_PRESSURE;
-				if (dy > MAX_PRESSURE) dy = MAX_PRESSURE;
-				if (dy < MIN_PRESSURE) dy = MIN_PRESSURE;
-
-
-				switch (airMode)
-				{
-				default:
-				case 0:  //Default
-					break;
-				case 1:  //0 Pressure
-					dp = 0.0f;
-					break;
-				case 2:  //0 Velocity
-					dx = 0.0f;
-					dy = 0.0f;
-					break;
-				case 3: //0 Air
-					dx = 0.0f;
-					dy = 0.0f;
-					dp = 0.0f;
-					break;
-				case 4: //No Update
-					break;
-				}
-
-				ovx[y][x] = dx;
-				ovy[y][x] = dy;
-				opv[y][x] = dp;
-
-				// Time dilation, positive = run n more times. Ie 1 = run air sim 2 times
-				++count;
-				if (sim.anyTimeDilation && sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x])
-					goto air_cell_update_begin;
+				while (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x]);
 			}
 		memcpy(vx, ovx, sizeof(vx));
 		memcpy(vy, ovy, sizeof(vy));
