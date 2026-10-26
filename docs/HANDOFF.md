@@ -72,7 +72,7 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28; the next free section is **29**.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29; the next free section is **30**.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -186,7 +186,9 @@ actually happens with JSPI + `SDL_Delay(0)` and say so. Tests: set each option t
 `tpt.setfpscap()` value, measure ticks/second (`event.tick` counter over wall time) and draws/second
 (frame callback counter via `tpt_set_frame_callback`), persistence after reload.
 
-### N5 Sound effects (off by default)
+### N5 Sound effects (off by default): DONE (Ember; `PORT_LOG.md` section 29)
+The plan below is the original one, for reference.
+
 Ultimata's synth exists: `src/music/` (`audio.cpp`, `music.cpp`, `synth/`), Lua `tpt.play_sound(note,
 length, instrument, interpret)`. Check whether SDL audio works in the web build (Emscripten SDL2 audio uses
 WebAudio; browsers need a user gesture to start audio). Plan: a speaker button + volume slider on the page

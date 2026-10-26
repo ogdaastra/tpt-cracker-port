@@ -3455,6 +3455,8 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
     }
 
 	int t = parts[i].type;
+	if (t > 0 && t < PT_NUM)
+		soundVanished[t]++;
 	if (t && elements[t].ChangeType)
 	{
 		(*(elements[t].ChangeType))(this, i, x, y, t, PT_NONE);
@@ -3544,6 +3546,9 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 		}
 	}
 
+	if (parts[i].type > 0 && parts[i].type < PT_NUM)
+		soundVanished[parts[i].type]++;
+	soundAppeared[t]++;
 	parts[i].type = t;
 	if (elements[t].Properties & TYPE_ENERGY)
 	{
@@ -3681,6 +3686,8 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 
 	parts[i] = elements[t].DefaultProperties;
 	parts[i].type = t;
+	if (t > 0 && t < PT_NUM)
+		soundAppeared[t]++;
 	parts[i].x = (float)x;
 	parts[i].y = (float)y;
 

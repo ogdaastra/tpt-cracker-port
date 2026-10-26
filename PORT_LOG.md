@@ -774,3 +774,32 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
 - `helpers.saveScreenshot` waits for two drawn frames before capturing and retries once on Chromium's
   "Unable to capture screenshot", which failed one CI run of PR #11 right after a page showed its failure
   message (not reproduced in 120 local runs, 60 of them with the CPU fully loaded).
+
+## 29. Sound effects (N5), off by default
+
+- **Sound: off** / **Sound: on** button in the page header, with a volume slider next to it while sound is on.
+  Both are kept in the browser (`localStorage` key `tptSound`). The AudioContext is only created by a click
+  on the button, or, when sound was left on, at the first click or key press on the page (browsers don't
+  let pages start audio on their own).
+- **Where the sounds come from.** The simulation counts the particles of each type that appear (created, or
+  changed into) and vanish (killed, or changed away) in `create_part`, `part_change_type` and `kill_part`:
+  one counter increment each, read by nothing in the simulation. New export `tpt_sound_events()` sums them
+  into five kinds and resets them: sparks (new SPRK), fire (new FIRE, PLSM, CFLM, BFLM, DFLM), explosions
+  (new EMBR, the sparks BOMB, TNT, fireworks and friends throw), steam (new WTRV: water boiling on something
+  hot) and acid (ACID used up dissolving things, new CAUS), as text ("3 0 12 0 0"; the module exports no
+  heap views).
+- **The sounds** are synthesised with WebAudio from a second of white noise and two oscillators, no sound
+  files: a crackle (high-passed noise click and a short square blip), a whoosh (low-passed noise swell), a
+  boom (low-passed noise with a falling sine thump), a hiss (band-passed noise) and bubbles (three short
+  rising sine blips). Every 50 ms the page reads the counts and plays at most one sound of each kind, with a
+  minimum gap per kind (60-250 ms), louder for more particles (1 particle is quiet, 1000 or more is full
+  volume, on a log scale).
+- **The simulation is unchanged:** `samecheck.mjs`, the N4 build vs this one, all 32 checkpoints identical.
+- **Tests** (`sound.spec.mjs`): off by default and no AudioContext at all, even while a scene with every kind
+  runs; the button turns it on and the context runs; a scene with a battery on a wire, burning wood, a bomb,
+  water on lava and acid on wood brings events of all five kinds and plays each (one run: 3800 spark
+  particles heard and 49 spark sounds played, fire 2625/22, explosions 231/1, steam 452/14, acid 572/16);
+  each kind rendered offline (`sound.preview`, an OfflineAudioContext) has a waveform that isn't silent
+  (peaks: spark 0.27, fire 0.06, explosion 0.76, steam 0.13, acid 0.09); the volume slider sets the gain;
+  turned off, the context is suspended and nothing more plays; after a reload the choice and the volume are
+  kept and the audio starts at the first key press. Full suite: 58 passed, 2 skipped.

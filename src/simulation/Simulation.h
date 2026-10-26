@@ -74,6 +74,11 @@ public:
 	int NUM_PARTS;
 	bool elementRecount;
 	int elementCount[PT_NUM];
+	// Particles of each type that appeared (created or changed into) and vanished (killed or changed away)
+	// since the page last read them, for its sound effects (tpt_sound_events). Counting only: nothing in the
+	// simulation reads them. Unsigned, so a page that never reads them just wraps around.
+	unsigned int soundAppeared[PT_NUM] = {};
+	unsigned int soundVanished[PT_NUM] = {};
 	int ISWIRE;
 	bool force_stacking_check;
 	int emp_decor;

@@ -10,21 +10,21 @@
       "scripts"
     ],
     "timings": {
-      "start": 70.1949999993667,
-      "instantiated": 249.93499999959022,
-      "runtimeReady": 764.2949999999255,
-      "firstFrame": 802.3650000002235
+      "start": 65.65000000037253,
+      "instantiated": 261.4550000000745,
+      "runtimeReady": 670.5099999997765,
+      "firstFrame": 708.359999999404
     },
     "buildInfo": {
       "name": "Cracker1000's Mod v55.1 (The Powder Toy 97.0) for WebAssembly",
-      "commit": "02a24b8d475d1872ff15ed39edb90bc7ee306f52",
-      "dirty": true,
+      "commit": "ebef961d5acfa2741bf6ece88f7287604ff10248",
+      "dirty": false,
       "emscripten": "4.0.23",
-      "wasmBytes": 5631945,
+      "wasmBytes": 5631724,
       "threaded": {
-        "wasmBytes": 5739023
+        "wasmBytes": 5740090
       },
-      "built": "2026-10-26T03:07:31Z"
+      "built": "2026-10-26T04:10:08Z"
     }
   },
   "console": [
@@ -69,14 +69,14 @@
       "type": "text/javascript; charset=utf-8"
     },
     {
-      "url": "http://127.0.0.1:8765/powder-mt.wasm",
-      "status": 200,
-      "type": "application/wasm"
-    },
-    {
       "url": "http://127.0.0.1:8765/powder-mt.js",
       "status": 200,
       "type": "text/javascript; charset=utf-8"
+    },
+    {
+      "url": "http://127.0.0.1:8765/powder-mt.wasm",
+      "status": 200,
+      "type": "application/wasm"
     },
     {
       "url": "http://127.0.0.1:8765/powder-mt.js",
