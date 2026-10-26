@@ -28,6 +28,8 @@ class OptionsView: public ui::Window
 	ui::DropDown * gravityMode;
 	ui::DropDown * edgeMode;
 	ui::DropDown * temperatureScale;
+	ui::DropDown * simulationSpeedCap;
+	ui::DropDown * drawingCap;
 	ui::DropDown * scale;
 	ui::Checkbox * resizable;
 	ui::Checkbox * fullscreen;

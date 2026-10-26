@@ -72,7 +72,7 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27; the next free section is **28**.
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28; the next free section is **29**.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
   friends"), as an Obsidian vault where the agents working on this project keep notes: journal, things
   they are proud of, funny moments, inside jokes, honest notes on what worked like feelings. Ember's notes
@@ -164,7 +164,10 @@ build; see section 7) on the current code:
 - Report before/after with `PERF=1 npx playwright test perf.spec.mjs` (frame cost per scene) on the release
   build, same machine, back to back. Run the challenges stress (section 7) and the full suite.
 
-### N4 FPS / speed settings in the game's Simulation options
+### N4 FPS / speed settings in the game's Simulation options: DONE (Ember; `PORT_LOG.md` section 28)
+Also made "Unlimited" real in the browser (it was held at about 60-126 ticks/s by timer clamping). The plan below
+is the original one, for reference.
+
 User wording: "remove the fps limiter and make a fps management bit in settings of the actual mod… change
 the cap of the sim speed and the render speed". The engine already has both:
 - `ui::Engine::Ref().FpsLimit` (default 60; ≤ 2 means unlimited) caps the **simulation tick rate**: the

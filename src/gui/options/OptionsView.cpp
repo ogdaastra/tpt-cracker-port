@@ -1,5 +1,7 @@
 #include "OptionsView.h"
 
+#include <algorithm>
+
 #include <cstdio>
 #include <cstring>
 #include <cmath>
@@ -23,6 +25,23 @@
 #include "gui/interface/Label.h"
 #include "gui/interface/Textbox.h"
 #include "gui/interface/DirectionSelector.h"
+
+// Speed and drawing caps offered in the options; a script (tpt.setfpscap, tpt.setdrawcap, the mod's own FPS
+// button) can set any other value, which then shows as an extra choice
+static const std::vector<std::pair<String, int>> speedCapOptions = {
+	{ "30", 30 }, { "60", 60 }, { "120", 120 }, { "240", 240 }, { "Unlimited", 0 },
+};
+static const std::vector<std::pair<String, int>> drawingCapOptions = {
+	{ "Every tick", 0 }, { "30", 30 }, { "60", 60 }, { "120", 120 }, { "144", 144 },
+};
+
+static void ShowCap(ui::DropDown *dropDown, std::vector<std::pair<String, int>> options, int value)
+{
+	if (std::none_of(options.begin(), options.end(), [value](const std::pair<String, int> &option) { return option.second == value; }))
+		options.push_back({ String::Build(value), value });
+	dropDown->SetOptions(options);
+	dropDown->SetOption(value);
+}
 
 OptionsView::OptionsView():
 	ui::Window(ui::Point(-1, -1), ui::Point(320, 340))
@@ -246,6 +265,40 @@ OptionsView::OptionsView():
 	temperatureScale->SetActionCallback({ [this] { c->SetTemperatureScale(temperatureScale->GetOption().second); } });
 
 	tempLabel = new ui::Label(ui::Point(8, currentY), ui::Point(Size.X-96, 16), "Temperature Scale");
+	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
+	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
+	scrollPanel->AddChild(tempLabel);
+
+	currentY+=20;
+	simulationSpeedCap = new ui::DropDown(ui::Point(Size.X-95, currentY), ui::Point(80, 16));
+	scrollPanel->AddChild(simulationSpeedCap);
+	simulationSpeedCap->SetOptions(speedCapOptions);
+	simulationSpeedCap->SetActionCallback({ [this] { c->SetSimulationSpeedCap(simulationSpeedCap->GetOption().second); } });
+
+	tempLabel = new ui::Label(ui::Point(8, currentY), ui::Point(Size.X-96, 16), "Simulation Speed Cap \bg(ticks per second)");
+	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
+	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
+	scrollPanel->AddChild(tempLabel);
+	currentY+=14;
+	tempLabel = new ui::Label(ui::Point(24, currentY), ui::Point(1, 16), "\bg60 is normal speed; above it everything moves faster");
+	autowidth(tempLabel);
+	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
+	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
+	scrollPanel->AddChild(tempLabel);
+
+	currentY+=20;
+	drawingCap = new ui::DropDown(ui::Point(Size.X-95, currentY), ui::Point(80, 16));
+	scrollPanel->AddChild(drawingCap);
+	drawingCap->SetOptions(drawingCapOptions);
+	drawingCap->SetActionCallback({ [this] { c->SetDrawingCap(drawingCap->GetOption().second); } });
+
+	tempLabel = new ui::Label(ui::Point(8, currentY), ui::Point(Size.X-96, 16), "Drawing Cap \bg(frames per second)");
+	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
+	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
+	scrollPanel->AddChild(tempLabel);
+	currentY+=14;
+	tempLabel = new ui::Label(ui::Point(24, currentY), ui::Point(1, 16), "\bgDrawing less often leaves more time for the simulation");
+	autowidth(tempLabel);
 	tempLabel->Appearance.HorizontalAlign = ui::Appearance::AlignLeft;
 	tempLabel->Appearance.VerticalAlign = ui::Appearance::AlignMiddle;
 	scrollPanel->AddChild(tempLabel);
@@ -534,6 +587,8 @@ void OptionsView::NotifySettingsChanged(OptionsModel * sender)
 	includePressure->SetChecked(sender->GetIncludePressure());
 	perfectCirclePressure->SetChecked(sender->GetPerfectCircle());
 	momentumScroll->SetChecked(sender->GetMomentumScroll());
+	ShowCap(simulationSpeedCap, speedCapOptions, sender->GetSimulationSpeedCap());
+	ShowCap(drawingCap, drawingCapOptions, sender->GetDrawingCap());
 }
 
 void OptionsView::AttachController(OptionsController * c_)
