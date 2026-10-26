@@ -167,7 +167,17 @@ export async function canvasStats(page) {
 
 export async function saveScreenshot(page, name) {
 	const file = path.join(ARTIFACTS, `${name}.png`);
-	await page.screenshot({ path: file });
+	// Chromium can't capture a page it hasn't drawn yet ("Unable to capture screenshot", seen once in CI right
+	// after a page showed its failure message): wait for two drawn frames, and give it one more try. The
+	// screenshot is a record for people, not something a test checks.
+	await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+	try {
+		await page.screenshot({ path: file });
+	} catch (e) {
+		if (!String(e).includes('Unable to capture screenshot')) throw e;
+		await page.waitForTimeout(250);
+		await page.screenshot({ path: file });
+	}
 	return file;
 }
 

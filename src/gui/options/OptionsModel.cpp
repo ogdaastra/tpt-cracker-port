@@ -285,6 +285,32 @@ void OptionsModel::SetMomentumScroll(bool state)
 	notifySettingsChanged();
 }
 
+int OptionsModel::GetSimulationSpeedCap()
+{
+	// a limit of 2 or less means none (tpt.setfpscap(2) is how scripts turn it off)
+	auto limit = ui::Engine::Ref().FpsLimit;
+	return limit <= 2.0f ? 0 : int(limit);
+}
+
+void OptionsModel::SetSimulationSpeedCap(int cap)
+{
+	Client::Ref().SetPref("SimulationSpeedCap", cap);
+	ui::Engine::Ref().FpsLimit = cap > 2 ? float(cap) : 2.0f;
+	notifySettingsChanged();
+}
+
+int OptionsModel::GetDrawingCap()
+{
+	return ui::Engine::Ref().GetDrawingFrequencyLimit();
+}
+
+void OptionsModel::SetDrawingCap(int cap)
+{
+	Client::Ref().SetPref("DrawingCap", cap);
+	ui::Engine::Ref().SetDrawingFrequencyLimit(cap);
+	notifySettingsChanged();
+}
+
 void OptionsModel::notifySettingsChanged()
 {
 	for (size_t i = 0; i < observers.size(); i++)

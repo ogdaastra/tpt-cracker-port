@@ -522,6 +522,26 @@ void LargeScreenDialog()
 	}
 }
 
+#ifdef __EMSCRIPTEN__
+// Yields to the browser (input, drawing, the page's own code) and resumes as soon as it is idle. SDL_Delay(0)
+// resumes from a timer, and browsers make back-to-back timers wait at least 4 ms; with no speed limit that
+// wait, not the simulation, decided how many ticks ran per second. A message on a MessageChannel has no
+// such minimum. With JSPI the whole C++ stack is suspended while the promise is pending.
+EM_ASYNC_JS(void, web_yield, (), {
+	if (!Module['tptYield'])
+	{
+		const channel = new MessageChannel();
+		const waiting = [];
+		channel.port1.onmessage = () => waiting.shift()();
+		Module['tptYield'] = () => new Promise((resolve) => {
+			waiting.push(resolve);
+			channel.port2.postMessage(0);
+		});
+	}
+	await Module['tptYield']();
+});
+#endif
+
 void EngineProcess()
 {
 	double correctedFrameTimeAvg = 0;
@@ -582,14 +602,33 @@ void EngineProcess()
 			auto oldFrameStartTimeBlock = oldFrameStart / timeBlockDuration;
 			auto frameStartTimeBlock = oldFrameStartTimeBlock + 1U;
 			frameStart = std::max(frameStart, frameStartTimeBlock * timeBlockDuration);
+#ifdef __EMSCRIPTEN__
+			// Timers can't wait less than about 4 ms (see web_yield), which held every cap above 60 at about
+			// 60 ticks per second. With a short frame (cap above about 83), sleep on a timer only while plenty
+			// of time is left, then yield until the frame's start time. Longer frames (the default 60) sleep
+			// on the timer as before: yielding repeatedly keeps the CPU busy.
+			if (timeBlockDuration >= UINT64_C(12'000'000))
+				SDL_Delay((frameStart - now) / UINT64_C(1'000'000));
+			else for (;;)
+			{
+				auto left = int64_t(frameStart) - int64_t(uint64_t(SDL_GetTicks()) * UINT64_C(1'000'000));
+				if (left <= 0)
+					break;
+				if (left > INT64_C(6'000'000))
+					SDL_Delay(Uint32((left - INT64_C(5'000'000)) / INT64_C(1'000'000)));
+				else
+					web_yield();
+			}
+#else
 			SDL_Delay((frameStart - now) / UINT64_C(1'000'000));
+#endif
 		}
 #ifdef __EMSCRIPTEN__
 		else
 		{
-			// No frame limit: still yield to the browser once per frame (with JSPI, SDL_Delay suspends
-			// the whole C++ stack, nested modal loops included, and resumes it from the event loop).
-			SDL_Delay(0);
+			// No frame limit: still yield to the browser once per frame (with JSPI this suspends the whole
+			// C++ stack, nested modal loops included, and resumes it from the event loop)
+			web_yield();
 		}
 #endif
 		auto correctedFrameTime = frameStart - oldFrameStart;
@@ -915,6 +954,10 @@ int main(int argc, char * argv[])
 	engine->SetMaxSize(desktopWidth, desktopHeight);
 	engine->Begin(WINDOWW, WINDOWH);
 	engine->SetFastQuit(Client::Ref().GetPrefBool("FastQuit", true));
+	// Simulation speed and drawing caps from the Simulation options (0 = no limit / draw after every tick)
+	int speedCap = Client::Ref().GetPrefInteger("SimulationSpeedCap", 60);
+	engine->FpsLimit = speedCap > 2 ? float(speedCap) : 2.0f;
+	engine->SetDrawingFrequencyLimit(Client::Ref().GetPrefInteger("DrawingCap", 0));
 
 #if !defined(DEBUG)
 	bool enableBluescreen = !true_arg(arguments["disable-bluescreen"]);

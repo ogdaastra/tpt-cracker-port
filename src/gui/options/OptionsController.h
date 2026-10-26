@@ -39,6 +39,8 @@ public:
 	void SetIncludePressure(bool includePressure);
 	void SetPerfectCircle(bool perfectCircle);
 	void SetMomentumScroll(bool momentumScroll);
+	void SetSimulationSpeedCap(int cap);
+	void SetDrawingCap(int cap);
 	
 	void Exit();
 	OptionsView * GetView();

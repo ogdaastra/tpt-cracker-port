@@ -732,3 +732,45 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   costs about 0.1 ms on an empty screen (three full-screen clears) plus about 15 ns per particle; nothing
   found there was worth the risk. The expected "15-30% faster in heavy scenes" holds for circuits, not
   for liquids and powders.
+
+## 28. Speed and drawing caps in the Simulation options (N4)
+
+- Two new rows in the game's own Simulation options (`OptionsView`/`OptionsModel`/`OptionsController`):
+  **Simulation Speed Cap** (30 / 60 / 120 / 240 / Unlimited ticks per second; hint: "60 is normal speed;
+  above it everything moves faster") and **Drawing Cap** (every tick / 30 / 60 / 120 / 144 frames per
+  second; hint: "Drawing less often leaves more time for the simulation"). They set the engine's existing
+  limits (`ui::Engine::FpsLimit`, where 2 or less means none, and `SetDrawingFrequencyLimit`, where 0 means
+  every tick), so `tpt.setfpscap()` / `tpt.setdrawcap()` and the mod's own FPS button stay in step: the
+  dialog shows whatever is set, and a value a script set that isn't a choice shows as an extra one. Saved as
+  the preferences `SimulationSpeedCap` (default 60) and `DrawingCap` (default 0) and applied at start.
+- **What actually happened in the browser, measured first** (headless Chromium, empty screen, ticks counted
+  with `event.aftersim`; `event.tick` only runs on drawn frames, `GameView::DoDraw` calls the controller's
+  Tick): the speed cap did almost nothing. Unlimited gave 60 ticks/s when drawing every tick, 126 with
+  drawing capped at 30; caps of 120 and 240 gave about 60. The game yields to the browser once per tick
+  with `SDL_Delay(0)`, which resumes from a timer, and browsers make back-to-back timers wait at least 4 ms.
+- **Fix** (`PowderToySDL.cpp`): with no cap the loop yields with `web_yield()`, an `EM_ASYNC_JS` that
+  resumes on a `MessageChannel` message (no minimum wait); with a cap above about 83 (frame shorter than
+  12 ms) it sleeps on a timer while more than 6 ms are left and yields until the frame's start time after
+  that. Caps up to 83, including the default 60, wait exactly as before (yielding in a loop keeps the CPU
+  busy, and the timer was accurate enough there).
+
+  | Speed cap, drawing cap | Before | After (ticks/s, drawn/s) |
+  |---|---|---|
+  | 60, every tick (default) | 60, 60 | 59, 60 |
+  | 120, every tick | 64, 64 | 98, 97 |
+  | none, every tick | 60, 61 | 143, 144 |
+  | none, 60 | 96, 50 | 322, 56 |
+  | none, 30 | 126, 27 | 485, 29 |
+  | 240, 60 | 92, 49 | 213, 50 |
+
+  With a full screen of water nothing changes (about 20 ticks/s whatever the caps): there the simulation
+  itself is the limit. Headless Chromium draws WebGL in software, so every drawn frame costs CPU here; a
+  real GPU leaves more time for ticks.
+- Tests: `fps.spec.mjs` sets both caps through the dialog (by clicking the dropdowns), checks
+  `tpt.setfpscap()`/`tpt.setdrawcap()`, measures ticks and drawn frames per second (default 58/58;
+  unlimited with drawing at 30: 438 ticks/s, 28 drawn; back to 60: 58), checks both are kept after a reload,
+  and that a script's value (75) shows in the dialog. Rates are read with `tpt_lua_command`, not the console:
+  while the console window is open the simulation doesn't step.
+- `helpers.saveScreenshot` waits for two drawn frames before capturing and retries once on Chromium's
+  "Unable to capture screenshot", which failed one CI run of PR #11 right after a page showed its failure
+  message (not reproduced in 120 local runs, 60 of them with the CPU fully loaded).

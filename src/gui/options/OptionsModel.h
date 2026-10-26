@@ -62,6 +62,12 @@ public:
 	void SetPerfectCircle(bool perfectCircle);
 	bool GetMomentumScroll();
 	void SetMomentumScroll(bool momentumScroll);
+	// simulation ticks per second, 0 = no limit (ui::Engine::FpsLimit, tpt.setfpscap)
+	int GetSimulationSpeedCap();
+	void SetSimulationSpeedCap(int cap);
+	// drawn frames per second, 0 = draw after every tick (tpt.setdrawcap)
+	int GetDrawingCap();
+	void SetDrawingCap(int cap);
 	virtual ~OptionsModel();
 };
 

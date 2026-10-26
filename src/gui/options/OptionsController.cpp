@@ -137,6 +137,16 @@ void OptionsController::SetMomentumScroll(bool momentumScroll)
 	model->SetMomentumScroll(momentumScroll);
 }
 
+void OptionsController::SetSimulationSpeedCap(int cap)
+{
+	model->SetSimulationSpeedCap(cap);
+}
+
+void OptionsController::SetDrawingCap(int cap)
+{
+	model->SetDrawingCap(cap);
+}
+
 void OptionsController::Exit()
 {
 	view->CloseActiveWindow();
