@@ -3,7 +3,7 @@
     "elements": 143,
     "notPlaceable": [],
     "particles": 1284,
-    "ticksIn8s": 406
+    "ticksIn8s": 371
   },
   "stamp": {
     "before": 143,
@@ -15,9 +15,9 @@
     "rspk": 68
   },
   "voltBlock": {
-    "ticksIn4s": 233
+    "ticksIn4s": 232
   },
   "portals": {
-    "dustThroughPortal": 234
+    "dustThroughPortal": 247
   }
 }
