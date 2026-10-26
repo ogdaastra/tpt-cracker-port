@@ -59,6 +59,7 @@
 #include "graphics/Renderer.h"
 #include "simulation/Simulation.h"
 #include "simulation/ElementClasses.h"
+#include "simulation/Rewind.h"
 #include "common/tpt-rand.h"
 #include "simulation/SaveRenderer.h"
 #include "simulation/SimulationData.h"
@@ -1331,6 +1332,59 @@ extern "C"
 		std::fill(std::begin(sim->soundVanished), std::end(sim->soundVanished), 0U);
 		snprintf(text, sizeof(text), "%u %u %u %u %u", out[0], out[1], out[2], out[3], out[4]);
 		return text;
+	}
+
+	// Rewind (the page's Rewind bar): the buffer of recent snapshots, filled after every simulated frame
+	static RewindBuffer webRewind;
+	static void WebRewindAfterSim(Simulation *sim)
+	{
+		webRewind.FrameDone(*sim);
+	}
+
+	// Turns rewinding on (a snapshot every intervalFrames frames, at most maxEntries of them and capMegabytes of
+	// memory) or off (the snapshots are dropped)
+	EMSCRIPTEN_KEEPALIVE void tpt_rewind_setup(int on, int intervalFrames, int maxEntries, int capMegabytes)
+	{
+		if (!webGameController)
+			return;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		webRewind.intervalFrames = std::max(1, intervalFrames);
+		webRewind.maxEntries = size_t(std::max(2, maxEntries));
+		webRewind.capBytes = size_t(std::max(1, capMegabytes)) << 20;
+		if (on)
+			sim->afterSimHook = WebRewindAfterSim;
+		else
+		{
+			sim->afterSimHook = nullptr;
+			webRewind.Clear();
+		}
+	}
+
+	// "snapshots bytes view intervalFrames": view is how many snapshots back the one being shown is (0 = none)
+	EMSCRIPTEN_KEEPALIVE const char *tpt_rewind_info()
+	{
+		static char text[96];
+		snprintf(text, sizeof(text), "%zu %zu %zu %u", webRewind.Count(), webRewind.Bytes(), webRewind.View(), webRewind.intervalFrames);
+		return text;
+	}
+
+	// Pauses the game and shows the snapshot stepsBack snapshots before the newest; 1 if there is one
+	EMSCRIPTEN_KEEPALIVE int tpt_rewind_show(int stepsBack)
+	{
+		if (!webGameController || stepsBack < 0)
+			return 0;
+		auto *model = webGameController->GetModel();
+		model->SetPaused(true);
+		return webRewind.Show(*model->GetSimulation(), size_t(stepsBack)) ? 1 : 0;
+	}
+
+	// Carries on from the snapshot being shown (everything newer is dropped) and unpauses
+	EMSCRIPTEN_KEEPALIVE void tpt_rewind_resume()
+	{
+		if (!webGameController)
+			return;
+		webRewind.ContinueFromView();
+		webGameController->GetModel()->SetPaused(false);
 	}
 
 	// Seeds the simulation's random number generators (RNG::Ref() and random_gen, both seeded from the clock

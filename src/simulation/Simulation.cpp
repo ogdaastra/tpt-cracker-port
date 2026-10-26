@@ -5856,6 +5856,8 @@ void Simulation::AfterSim()
 #ifdef LUACONSOLE
 	luacon_ci->HandleEvent(LuaEvents::aftersim, new AfterSimEvent());
 #endif
+	if (afterSimHook)
+		afterSimHook(this);
 }
 
 Simulation::~Simulation()

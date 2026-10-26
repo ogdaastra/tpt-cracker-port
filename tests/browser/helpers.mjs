@@ -216,3 +216,31 @@ export async function luaFile(page, code, timeoutMs = 20_000) {
 	if (!result.startsWith('OK ')) throw new Error(`Lua error in ${src}: ${result}`);
 	return result.slice(3);
 }
+
+// Lua that writes every particle's properties (floats with 9 significant digits, enough for an exact float32) and
+// the air grids to path, one line each: comparing two of these tells whether two simulation states are the same
+// (same as docs/handoff/tools/samecheck.mjs).
+export function particleStateLua(path) {
+	return `
+	local props = { "type", "ctype", "life", "tmp", "tmp2", "x", "y", "vx", "vy", "temp", "flags", "dcolour" }
+	for _, extra in ipairs({ "tmp3", "tmp4", "pavg0", "pavg1" }) do
+		if pcall(sim.partProperty, 0, extra) then props[#props + 1] = extra end
+	end
+	local out = {}
+	for i in sim.parts() do
+		local row = { i }
+		for _, p in ipairs(props) do
+			local ok, v = pcall(sim.partProperty, i, p)
+			row[#row + 1] = ok and (math.floor(v) == v and string.format("%d", v) or string.format("%.9g", v)) or "-"
+		end
+		out[#out + 1] = table.concat(row, " ")
+	end
+	for y = 0, 95 do
+		local row = { "air", y }
+		for x = 0, 152 do
+			row[#row + 1] = string.format("%.9g %.9g %.9g", sim.pressure(x, y), sim.velocityX(x, y), sim.velocityY(x, y))
+		end
+		out[#out + 1] = table.concat(row, " ")
+	end
+	local f = io.open("${path}", "w") f:write(table.concat(out, "\\n")) f:close()`;
+}

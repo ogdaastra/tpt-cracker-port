@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind']) {
 			$(id).disabled = true;
 		}
 	}
@@ -1269,6 +1269,100 @@
 	window.addEventListener('keydown', resumeOnGesture, true);
 	showSound();
 
+	// ------------------------------------------------------------------ rewind
+	// The game keeps a snapshot every half second (tpt_rewind_setup): the newest whole, older ones as
+	// differences, 30 seconds at most and a memory cap. Moving the slider pauses the game and shows that moment;
+	// "Resume from here" (or unpausing in the game) carries on from it and forgets everything after it.
+	const REWIND_KEY = 'tptRewind';
+	const REWIND_INTERVAL = 30; // frames between snapshots
+	const REWIND_SECONDS = 30;
+	// devices that say they have little memory get a smaller cap (navigator.deviceMemory, in GB, Chromium only)
+	const REWIND_CAP_MB = navigator.deviceMemory && navigator.deviceMemory <= 4 ? 60 : 150;
+	const rewind = { on: storageGet(REWIND_KEY) !== 'off', count: 0, bytes: 0, view: 0, timer: 0 };
+	window.tptPage.rewind = rewind;
+
+	function rewindSetup() {
+		mod.ccall('tpt_rewind_setup', null, ['number', 'number', 'number', 'number'],
+			[rewind.on ? 1 : 0, REWIND_INTERVAL, REWIND_SECONDS * 60 / REWIND_INTERVAL + 1, REWIND_CAP_MB]);
+	}
+
+	function rewindSeconds(steps) {
+		return steps * REWIND_INTERVAL / 60;
+	}
+
+	function rewindRefresh() {
+		const [count, bytes, view] = mod.ccall('tpt_rewind_info', 'string', [], []).split(' ').map(Number);
+		Object.assign(rewind, { count, bytes, view });
+		const slider = $('rewind-slider');
+		slider.min = String(-Math.max(0, count - 1));
+		slider.value = String(-view);
+		slider.disabled = count < 2;
+		$('rewind-time').textContent = view ? `−${rewindSeconds(view).toFixed(1)} s` : 'now';
+		$('rewind-resume').disabled = !view;
+		$('rewind-now').disabled = !view;
+		$('rewind-on').checked = rewind.on;
+		$('rewind-info').textContent = !rewind.on ? 'Off.' : count < 2 ? 'Nothing kept yet: let the game run.' :
+			`${rewindSeconds(count - 1).toFixed(1)} s kept, ${(bytes / 1048576).toFixed(0)} MB.`;
+	}
+
+	function rewindShow(steps) {
+		steps = Math.max(0, Math.min(steps, rewind.count - 1));
+		if (mod.ccall('tpt_rewind_show', 'number', ['number'], [steps])) {
+			rewind.view = steps;
+		}
+		rewindRefresh();
+	}
+
+	function rewindOpen(open) {
+		$('rewind-bar').hidden = !open;
+		$('btn-rewind').setAttribute('aria-expanded', String(open));
+		clearInterval(rewind.timer);
+		rewind.timer = 0;
+		if (open) {
+			rewindRefresh();
+			rewind.timer = setInterval(rewindRefresh, 500);
+		}
+		fit();
+	}
+
+	$('btn-rewind').addEventListener('click', () => rewindOpen($('rewind-bar').hidden));
+	$('rewind-close').addEventListener('click', () => {
+		rewindOpen(false);
+		canvas.focus();
+	});
+	$('rewind-slider').addEventListener('input', () => rewindShow(-Number($('rewind-slider').value)));
+	$('rewind-slider').addEventListener('keydown', (e) => e.stopPropagation());
+	$('rewind-resume').addEventListener('click', () => {
+		mod.ccall('tpt_rewind_resume', null, [], []);
+		rewindRefresh();
+		canvas.focus();
+	});
+	$('rewind-now').addEventListener('click', () => {
+		rewindShow(0);
+		mod.ccall('tpt_rewind_resume', null, [], []);
+		rewindRefresh();
+		canvas.focus();
+	});
+	$('rewind-on').addEventListener('change', () => {
+		rewind.on = $('rewind-on').checked;
+		storageSet(REWIND_KEY, rewind.on ? 'on' : 'off');
+		rewindSetup();
+		rewindRefresh();
+	});
+	// Shift+Backspace: back about a second (Backspace alone is for the game's text boxes)
+	window.addEventListener('keydown', (e) => {
+		if (e.key !== 'Backspace' || !e.shiftKey || !mod || window.tptPage.state !== 'running') {
+			return;
+		}
+		e.preventDefault();
+		e.stopPropagation();
+		if ($('rewind-bar').hidden) {
+			rewindOpen(true);
+		}
+		rewindRefresh();
+		rewindShow(rewind.view + Math.round(60 / REWIND_INTERVAL));
+	}, true);
+
 	// ------------------------------------------------------------------ loading
 	// Opened straight from disk (file://): browsers refuse fetch() there, but still run <script> files,
 	// so the offline bundle also carries the binary as powder-wasm.js (base64, made by
@@ -1366,9 +1460,10 @@
 				window.tptPage.state = 'running';
 				window.tptPage.timings.firstFrame = performance.now();
 				statusBox.hidden = true;
-				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges', 'btn-sound']) {
+				for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind']) {
 					$(id).disabled = false;
 				}
+				rewindSetup();
 				if (sound.on) {
 					setSoundOn(true); // left on last time; the audio itself starts at the first click or key press
 				}

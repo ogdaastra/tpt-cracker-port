@@ -78,6 +78,8 @@ public:
 	// since the page last read them, for its sound effects (tpt_sound_events). Counting only: nothing in the
 	// simulation reads them. Unsigned, so a page that never reads them just wraps around.
 	unsigned int soundAppeared[PT_NUM] = {};
+	// Called at the end of every simulated frame when set (the page's rewind buffer)
+	void (*afterSimHook)(Simulation *sim) = nullptr;
 	unsigned int soundVanished[PT_NUM] = {};
 	int ISWIRE;
 	bool force_stacking_check;
