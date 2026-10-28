@@ -160,11 +160,8 @@ void Air::update_airh(void)
 
 void Air::update_air(void)
 {
-	int x = 0, y = 0, i = 0, j = 0;
-	float dp = 0.0f, dx = 0.0f, dy = 0.0f, f = 0.0f, tx = 0.0f, ty = 0.0f;
+	int i = 0, j = 0;
 	const float advDistanceMult = 0.7f;
-	float stepX, stepY;
-	int stepLimit, step;
 
 	if (airMode != 4) { //airMode 4 is no air/pressure update
 
@@ -215,19 +212,31 @@ void Air::update_air(void)
 			}
 		}
 
-		for (y=1; y<YRES/CELL; y++) //pressure adjustments from velocity
-			for (x=1; x<XRES/CELL; x++)
+		// row bands, perhaps on several threads (forRows)
+		auto rows = [this](int count, const std::function<void(int, int)> &body) {
+			if (forRows)
+				forRows(count, body);
+			else
+				body(0, count);
+		};
+
+		rows(YRES/CELL, [&](int y0, int y1) {
+		for (int y=std::max(y0, 1); y<y1; y++) //pressure adjustments from velocity
+			for (int x=1; x<XRES/CELL; x++)
 			{
-				dp = 0.0f;
+				float dp = 0.0f;
 				dp += vx[y][x-1] - vx[y][x];
 				dp += vy[y-1][x] - vy[y][x];
 				pv[y][x] *= AIR_PLOSS;
 				pv[y][x] += dp*AIR_TSTEPP;
 			}
+		});
 
-		for (y=0; y<YRES/CELL-1; y++) //velocity adjustments from pressure
-			for (x=0; x<XRES/CELL-1; x++)
+		rows(YRES/CELL-1, [&](int y0, int y1) {
+		for (int y=y0; y<y1; y++) //velocity adjustments from pressure
+			for (int x=0; x<XRES/CELL-1; x++)
 			{
+				float dx, dy;
 				dx = dy = 0.0f;
 				dx += pv[y][x] - pv[y][x+1];
 				dy += pv[y][x] - pv[y+1][x];
@@ -240,6 +249,7 @@ void Air::update_air(void)
 				if (bmap_blockair[y][x] || bmap_blockair[y+1][x])
 					vy[y][x] = 0;
 			}
+		});
 
 		// one cell of the main pass (same code as before, moved out of the loop so the common case, no time
 		// dilation anywhere, is a plain loop the compiler can optimise; time dilation repeats it as before)
@@ -380,15 +390,17 @@ void Air::update_air(void)
 			ovy[y][x] = dy;
 			opv[y][x] = dp;
 		};
+		// (each cell reads the old grids and writes only its own place in the new ones)
+		rows(YRES/CELL, [&](int y0, int y1) {
 		if (!sim.anyTimeDilation)
 		{
-			for (y=0; y<YRES/CELL; y++) //update velocity and pressure
-				for (x=0; x<XRES/CELL; x++)
+			for (int y=y0; y<y1; y++) //update velocity and pressure
+				for (int x=0; x<XRES/CELL; x++)
 					updateCell(x, y);
 		}
 		else
-		for (y=0; y<YRES/CELL; y++) //update velocity and pressure
-			for (x=0; x<XRES/CELL; x++)
+		for (int y=y0; y<y1; y++) //update velocity and pressure
+			for (int x=0; x<XRES/CELL; x++)
 			{
 				// Apply time dilation: (negative = loop every n frames)
 				if (sim.time_dilation[y][x] < 0 && sim.timer % (int)abs(sim.time_dilation[y][x]) != 0)
@@ -402,6 +414,7 @@ void Air::update_air(void)
 				}
 				while (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x]);
 			}
+		});
 		vx.CopyFrom(ovx);
 		vy.CopyFrom(ovy);
 		pv.CopyFrom(opv);

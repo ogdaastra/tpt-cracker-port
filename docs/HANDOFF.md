@@ -247,7 +247,10 @@ in `src/simulation/Turbo.cpp`, read its update function and everything it calls*
 `TURBO_ELEMENT_REACH` pixels, use no shared state other than what Turbo.h routes per thread (no statics, no
 global arrays, no flood fills), and turn things only into non-special types. `turbo.spec.mjs` (same result on 1
 and 4 threads, special particles never touched in parallel) must stay green. Turbo off must stay bit-identical
-(`samecheck.mjs`). Next step if wanted: parallelise `RecalcFreeParticles` and the air update.
+(`samecheck.mjs`). The work before the particle loop also uses every core on 2+ threads (`PORT_LOG.md`
+section 38): `TurboRecalc` must stay **byte-identical** to `RecalcFreeParticles`. If you change either one,
+re-run the side-by-side check described there. The air's `forRows` bodies must only write cells of their own
+rows that no other row reads. The ambient heat pass must stay serial.
 
 ### N12 Effects (GPU eye candy): DONE (Ember; `PORT_LOG.md` section 37)
 Glow, heat haze, shockwaves and night lighting, WebGL2 over the game (page code in `web/tpt-web.js`, section
