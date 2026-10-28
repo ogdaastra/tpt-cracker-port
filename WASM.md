@@ -107,7 +107,7 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | Challenges | 50 puzzles (heat, electronics, explosives, chemistry, machines, gravity, life, characters, records) with limited tools and ink, stars kept in the browser; Challenges… on the page or the ★ button in the game. List: `docs/CHALLENGES.md` |
 | Sound | NOTE and `tpt.play_sound()` play through Web Audio (an AudioContext at 44.1 kHz starts in Chromium; volume kept low) |
 | World size | **World size…** on the page: small worlds drawn with 2× to 4× pixels (they fill the screen without zooming), the classic 612 × 384, or bigger up to 1224 × 768; the game restarts with the world brought along. The game takes it as the start argument `world:WxHxS`; challenges need the classic size. `PORT_LOG.md` section 35 |
-| Turbo | **Turbo** on the page (threaded build): the particle update on every core, about 2× faster in big scenes; things move a little differently from classic Powder Toy, the same on any number of cores. `PORT_LOG.md` section 36 |
+| Turbo | **Turbo** on the page (threaded build): the particle update (and the work before it) on every core, about 2.5× faster in big scenes; things move a little differently from classic Powder Toy, the same on any number of cores. `PORT_LOG.md` sections 36 and 38 |
 | Effects | **Effects…** on the page: glow, heat haze, shockwaves and night lighting, drawn by the graphics card (WebGL2) over the simulation; the menus and the simulation itself are unchanged. `PORT_LOG.md` section 37 |
 
 ## License

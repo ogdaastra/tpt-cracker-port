@@ -1111,3 +1111,47 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   - Shockwaves bend the stripes at the edge of a block of pressure (528 pixels), not inside it (0).
   - Night darkens diamond far from lava to under 40% while diamond beside it stays lit; text drawn over the
     simulation is unchanged (0); a click still lands on its pixel; the settings are kept after reload.
+
+## 38. Turbo: the work before the particle loop on every core too
+
+- **What**: in turbo mode on more than one thread, two jobs that ran on one thread before every frame now use
+  every core. The result is exactly the same as before, bit for bit; only the time changes.
+  - Rebuilding the particle maps (`RecalcFreeParticles`, `Simulation::TurboRecalc` in `Turbo.cpp`). Each piece
+    of the particle list is read on its own thread: where each particle is, counts, life running down and the
+    free slots. Its particles are sorted into 16 bands of rows. Each band of the maps is then filled on its own
+    thread, from every piece in index order, so each pixel ends up with the same particle.
+  - Particles whose life runs out are removed afterwards in index order with `kill_part`. Before that, the
+    maps are filled as `RecalcFreeParticles` leaves them: such a particle is placed, then taken off.
+  - The free list is rebuilt exactly as `RecalcFreeParticles` makes it, quirks included. A removed particle
+    goes to the front of the list. The list starts again at the first free slot, so the particles removed
+    before that slot are left out until the next frame.
+  - The air (`Air::update_air`): the main pass, and the pressure and velocity adjustments before it, run in
+    bands of rows (`Air::forRows`, `Simulation::TurboRows`). Each cell reads only what no band writes, so the
+    split doesn't matter.
+  - Kept on one thread: the ambient heat pass (`update_airh`). It changes the air velocity in place, cell
+    after cell, and later cells read it.
+- **Proof**:
+  - A test-only build ran both `RecalcFreeParticles` and `TurboRecalc` on every frame and compared them byte
+    for byte: particles, all three maps, element counts, the free list head, the highest index and the
+    particle count. It covered 3,200 frames over 8 scenes: fire, plasma and photons, FILT, INVS and stacking,
+    indestructible and stasis walls, sparks, mixed, time fields, and void edges. Result: 0 differences.
+  - To show the check can fail, a bug was planted in the free list, and the check reported it on every
+    frame.
+  - Turbo off: `samecheck.mjs` against the build from before world size gives ALL SAME at 32/32.
+  - Turbo on 1 thread (no splitting) against 4 threads: ALL SAME at 16/16, air grids included (electronics,
+    circuits, mixed, time fields). `turbo.spec.mjs` passes 4/4.
+  - The gravity scenes can't be compared on the threaded build at all. Newtonian gravity runs on its own
+    thread there and finishes at a different moment each run. Two identical runs (turbo 4 vs turbo 4, or
+    turbo off on the threaded build vs the single-threaded one) already differ. That was true before turbo
+    too. The `samecheck.mjs` header says so.
+- **Measured** (threaded build, this 4-core machine; ms per simulated frame, median of 5 runs, two runs
+  each, alternating with the build before):
+
+  | Scene | Off | Turbo 4, before | Turbo 4, now | Work before the loop, before → now |
+  |---|---|---|---|---|
+  | Classic, lower half water | 24–28 | 12.5–14.0 | 10.3–10.7 | 2.2–2.4 → 1.3–1.4 |
+  | Classic, lower half sand and dust | 17–19 | 8.9–9.2 | 7.7–7.9 | 2.0–2.3 → 1.0–1.3 |
+  | Huge 1224 × 768, lower half water | 104–106 | 40.7–43.2 | 34.0–40.8 | 10.3–11.3 → 4.7–5.1 |
+  | Huge, sand and dust | 76–81 | 36.0–38.7 | 31.9–32.4 | 8.7–9.3 → 4.1–5.0 |
+
+  Turbo on one thread keeps the one-thread versions; splitting the work only pays with more threads.

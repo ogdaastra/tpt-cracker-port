@@ -1,5 +1,6 @@
 #ifndef SIMULATION_H
 #define SIMULATION_H
+#include <functional>
 #include "Config.h"
 #include "simulation/WorldGrid.h"
 
@@ -102,6 +103,9 @@ public:
 	bool turboElementOk[PT_NUM] = {}; // updated in parallel this frame
 	TurboState *turboState = nullptr;
 	bool TurboFrame();
+	bool TurboRecalc(bool do_life_dec);
+	void TurboRows(int rows, const std::function<void(int y0, int y1)> &body);
+	TurboState &TurboStateFor();
 	bool TurboParticleOk(const Particle &p) const;
 	void TurboUpdateList(const int *list, int count);
 	void TurboFree();

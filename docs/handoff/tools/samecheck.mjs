@@ -5,6 +5,9 @@
 // the threaded one.
 //   node samecheck.mjs http://127.0.0.1:8831/ http://127.0.0.1:8832/
 // (serve each dist/ copy with tests/browser/serve.mjs <dir> <port>)
+// The gravity scenes only repeat on the single-threaded build: in the threaded one Newtonian gravity runs on its
+// own thread and lands at a different moment each run (two identical threaded runs already differ), so compare
+// threaded addresses with SCENES=electronics,circuits,mixed,timefield.
 // Turbo mode: add turbo=N to an address (N threads); threads=1 keeps the threaded build, e.g.
 //   node samecheck.mjs 'http://127.0.0.1:8833/?turbo=1' 'http://127.0.0.1:8833/?turbo=4&threads=1'
 import { createHash } from 'node:crypto';

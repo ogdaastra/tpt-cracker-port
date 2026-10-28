@@ -1,0 +1,41 @@
+--- a/src/simulation/Simulation.cpp	2026-10-28 11:39:01.970592069 +0000
++++ b/src/simulation/Simulation.cpp	2026-10-28 11:39:01.988092682 +0000
+@@ -5761,7 +5761,37 @@
+ 		gravWallChanged = false;
+ 	}
+ 
+-	if (debug_currentParticle == 0 && !(turboThreads > 1 && TurboRecalc(true)))
++	if (debug_currentParticle == 0 && turboThreads > 1)
++	{
++		// TURBO_VERIFY: TurboRecalc must give exactly what RecalcFreeParticles gives (docs/handoff/tools/turbo-verify.cjs)
++		std::vector<Particle> before(parts, parts + NPART);
++		int pfree0 = pfree, last0 = parts_lastActiveIndex, num0 = NUM_PARTS;
++		bool recount0 = elementRecount;
++		std::vector<int> count0(elementCount, elementCount + PT_NUM);
++		RecalcFreeParticles(true);
++		std::vector<Particle> after(parts, parts + NPART);
++		std::vector<int> pm(pmap.Data(), pmap.Data() + XRES * YRES), ph(photons.Data(), photons.Data() + XRES * YRES);
++		std::vector<unsigned int> pc(pmap_count.Data(), pmap_count.Data() + XRES * YRES);
++		std::vector<int> count1(elementCount, elementCount + PT_NUM);
++		int pfree1 = pfree, last1 = parts_lastActiveIndex, num1 = NUM_PARTS;
++		std::copy(before.begin(), before.end(), parts);
++		pfree = pfree0; parts_lastActiveIndex = last0; NUM_PARTS = num0; elementRecount = recount0;
++		std::copy(count0.begin(), count0.end(), elementCount);
++		TurboRecalc(true);
++		bool partsDiffer = memcmp(after.data(), parts, sizeof(Particle) * NPART) != 0;
++		bool pmapDiffer = memcmp(pm.data(), pmap.Data(), pm.size() * 4) != 0, photonsDiffer = memcmp(ph.data(), photons.Data(), ph.size() * 4) != 0;
++		bool countDiffer = memcmp(pc.data(), pmap_count.Data(), pc.size() * 4) != 0, elemDiffer = !std::equal(count1.begin(), count1.end(), elementCount);
++		static int frames = 0, bad = 0;
++		if (partsDiffer || pmapDiffer || photonsDiffer || countDiffer || elemDiffer || pfree1 != pfree || last1 != parts_lastActiveIndex || num1 != NUM_PARTS)
++		{
++			bad++;
++			fprintf(stderr, "TURBO_VERIFY mismatch: parts %d pmap %d photons %d count %d elem %d pfree %d/%d last %d/%d num %d/%d\n", partsDiffer, pmapDiffer,
++				photonsDiffer, countDiffer, elemDiffer, pfree1, pfree, last1, parts_lastActiveIndex, num1, NUM_PARTS);
++		}
++		if (++frames % 200 == 0)
++			fprintf(stderr, "TURBO_VERIFY frames %d bad %d\n", frames, bad);
++	}
++	else if (debug_currentParticle == 0)
+ 		RecalcFreeParticles(true);
+ 
+ 	if (!sys_pause || framerender)

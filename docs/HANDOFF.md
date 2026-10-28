@@ -247,7 +247,10 @@ in `src/simulation/Turbo.cpp`, read its update function and everything it calls*
 `TURBO_ELEMENT_REACH` pixels, use no shared state other than what Turbo.h routes per thread (no statics, no
 global arrays, no flood fills), and turn things only into non-special types. `turbo.spec.mjs` (same result on 1
 and 4 threads, special particles never touched in parallel) must stay green. Turbo off must stay bit-identical
-(`samecheck.mjs`). Next step if wanted: parallelise `RecalcFreeParticles` and the air update.
+(`samecheck.mjs`). The work before the particle loop also uses every core on 2+ threads (`PORT_LOG.md`
+section 38): `TurboRecalc` must stay **byte-identical** to `RecalcFreeParticles`. If you change either one,
+re-run the side-by-side check described there. The air's `forRows` bodies must only write cells of their own
+rows that no other row reads. The ambient heat pass must stay serial.
 
 ### N12 Effects (GPU eye candy): DONE (Ember; `PORT_LOG.md` section 37)
 Glow, heat haze, shockwaves and night lighting, WebGL2 over the game (page code in `web/tpt-web.js`, section
@@ -391,3 +394,7 @@ playwright/index.mjs`, ports 8811/8822); adjust before use. Run with node from a
   promised.
 - N5 sound: off by default with a speaker button and volume. N6 rewind: last 30 s, slider + hotkey, memory
   capped. N7: touch drawing, pinch zoom, two-finger pan, on-screen buttons.
+- 28 Oct, after N9-N12: Orlando chose what comes next, in this order: (1) turbo for more elements (read and
+  clear more update functions for `turboAllowed`), (2) more challenges, (3) faster drawing (GPU stage 2,
+  `NEXT-PLANS.md` section 6, pixel tests against the CPU renderer), (4) turbo on by default on computers with
+  4+ cores.

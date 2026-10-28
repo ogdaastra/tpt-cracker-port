@@ -57,6 +57,8 @@ constexpr int TURBO_MIN_PARTICLES = 5000;
 constexpr int TURBO_CHUNKS = 8;
 // Tiles are coloured 3 x 3: two tiles of the same colour have two tiles between them
 constexpr int TURBO_COLOURS = 3;
+// TurboRecalc fills the particle maps in this many bands of rows
+constexpr int TURBO_BANDS = 16;
 // How long a thread waits for the next phase by checking before it sleeps
 constexpr int TURBO_SPIN = 200000;
 
@@ -105,10 +107,24 @@ struct TurboState
 	std::vector<int> specialSum; // its 2-D prefix sums
 	std::vector<int> chunkSpecial[TURBO_CHUNKS]; // special cells found by each piece
 	std::vector<int> tileOfX, tileOfY; // tile column of each x, first tile of the row of each y (no division per particle)
+	std::vector<int> bandOfY; // TurboRecalc's band of each row
 	std::vector<TurboThreadState> threads; // [0] is the main thread
 	std::vector<TurboTileSet *> phase;
 	int lastActive = 0;
 	TurboPool pool;
+	// TurboRecalc, per piece of the particle list: its particles on the maps by band of rows, in index order
+	// (~i for one whose life ran out, removed by RecalcFreeParticles as it goes), what it counted and its free slots
+	bool lifeDec = false;
+	// TurboRows
+	int rows = 0;
+	const std::function<void(int, int)> *rowsBody = nullptr;
+	struct Piece
+	{
+		std::vector<int> bands[TURBO_BANDS];
+		std::vector<int> kills;
+		std::vector<int> elementCount;
+		int count = 0, lastUsed = -1, freeHead = -1, freeTail = -1;
+	} pieces[TURBO_CHUNKS];
 };
 
 namespace
@@ -141,6 +157,121 @@ void SortPiece(TurboState &st, int, int chunk)
 		else if (sim->turboElementOk[t])
 			st.tiles[st.tileOfY[y] + st.tileOfX[x]].pieces[chunk].push_back(i);
 	}
+}
+
+// Job (TurboRecalc): one piece of the particle list: where each particle is, counting, life running down, free
+// slots; the particles whose life ran out are noted, removed afterwards in index order
+void RecalcPiece(TurboState &st, int, int chunk)
+{
+	auto *sim = st.sim;
+	int n = st.lastActive + 1;
+	int i0 = int(int64_t(n) * chunk / TURBO_CHUNKS), i1 = int(int64_t(n) * (chunk + 1) / TURBO_CHUNKS);
+	auto &piece = st.pieces[chunk];
+	for (auto &band : piece.bands)
+		band.clear();
+	piece.kills.clear();
+	piece.count = 0;
+	piece.lastUsed = piece.freeHead = piece.freeTail = -1;
+	bool recount = sim->elementRecount;
+	if (recount)
+		piece.elementCount.assign(PT_NUM, 0);
+	bool lifeDec = st.lifeDec && (!sim->sys_pause || sim->framerender);
+	auto &elements = sim->elements;
+	for (int i = i0; i < i1; i++)
+	{
+		auto &p = sim->parts[i];
+		int t = p.type;
+		if (!t)
+		{
+			if (piece.freeTail < 0)
+				piece.freeHead = i;
+			else
+				sim->parts[piece.freeTail].life = i;
+			piece.freeTail = i;
+			continue;
+		}
+		int x = (int)(p.x + 0.5f), y = (int)(p.y + 0.5f);
+		bool inBounds = x >= 0 && y >= 0 && x < XRES && y < YRES;
+		piece.lastUsed = i;
+		piece.count++;
+		if (recount && t >= 0 && t < PT_NUM && elements[t].Enabled)
+			piece.elementCount[t]++;
+		// the same as RecalcFreeParticles from here
+		bool dies = false;
+		if (!(sim->anyTimeDilation && inBounds && !(elements[t].Properties & PROP_NO_TIME) && sim->time_dilation[y / CELL][x / CELL] < 0 &&
+				sim->timer % (int)abs(sim->time_dilation[y / CELL][x / CELL]) != 0) && lifeDec)
+		{
+			if (t < 0 || t >= PT_NUM || !elements[t].Enabled)
+				dies = true;
+			else
+			{
+				unsigned int props = elements[t].Properties;
+				bool stasis = inBounds && sim->bmap[y / CELL][x / CELL] == WL_STASIS && sim->emap[y / CELL][x / CELL] < 8;
+				if (p.life > 0 && (props & PROP_LIFE_DEC) && !stasis)
+				{
+					if (sim->anyTimeDilation && inBounds && !(props & PROP_NO_TIME) && sim->time_dilation[y / CELL][x / CELL] > 0)
+					{
+						p.life -= sim->time_dilation[y / CELL][x / CELL];
+						if (p.life < 1)
+							p.life = 1;
+					}
+					p.life--;
+					dies = p.life <= 0 && (props & (PROP_LIFE_KILL_DEC | PROP_LIFE_KILL));
+				}
+				else
+					dies = p.life <= 0 && (props & PROP_LIFE_KILL) && !stasis;
+			}
+			// kill_part leaves particles in indestructible walls
+			if (dies && inBounds && sim->bmap[y / CELL][x / CELL] == WL_INDESTRUCTIBLE)
+				dies = false;
+			if (dies)
+				piece.kills.push_back(i);
+		}
+		if (inBounds)
+			piece.bands[st.bandOfY[y]].push_back(dies ? ~i : i);
+	}
+}
+
+// Job (TurboRecalc): one band of rows of the particle maps, from the particles placed in it, in index order, as
+// RecalcFreeParticles fills them (a particle whose life ran out is placed, then taken off by kill_part)
+void PlaceBand(TurboState &st, int, int band)
+{
+	auto *sim = st.sim;
+	int y0 = YRES * band / TURBO_BANDS, y1 = YRES * (band + 1) / TURBO_BANDS;
+	int from = y0 * XRES, to = y1 * XRES;
+	int *pmap = sim->pmap.Data(), *photons = sim->photons.Data();
+	unsigned int *count = sim->pmap_count.Data();
+	std::fill(pmap + from, pmap + to, 0);
+	std::fill(photons + from, photons + to, 0);
+	std::fill(count + from, count + to, 0u);
+	auto &elements = sim->elements;
+	for (auto &piece : st.pieces)
+		for (int v : piece.bands[band])
+		{
+			bool dies = v < 0;
+			int i = dies ? ~v : v;
+			auto &p = sim->parts[i];
+			int t = p.type;
+			int at = (int)(p.y + 0.5f) * XRES + (int)(p.x + 0.5f);
+			if (elements[t].Properties & TYPE_ENERGY)
+				photons[at] = dies ? 0 : PMAP(i, t);
+			else
+			{
+				if (!pmap[at] || (t != PT_INVIS && t != PT_FILT && t != PT_PINV && t != PT_PFLT))
+					pmap[at] = dies ? 0 : PMAP(i, t);
+				if (t != PT_THDR && t != PT_EMBR && t != PT_FIGH && t != PT_PLSM && t != PT_FILL &&
+					t != PT_SPDR && t != PT_BIRD && t != PT_ANT && t != PT_BEE && t != PT_FISH && t != PT_HAIR)
+					count[at]++;
+			}
+		}
+}
+
+// Job (TurboRows): one band of rows
+void RowBand(TurboState &st, int, int band)
+{
+	int y0 = st.rows * band / TURBO_BANDS, y1 = st.rows * (band + 1) / TURBO_BANDS;
+	if (y0 < y1)
+		(*st.rowsBody)(y0, y1);
 }
 
 // Job: update one tile of the current phase
@@ -264,6 +395,90 @@ void TurboPool::Run(void (*newJob)(TurboState &, int, int), int newParts)
 		;
 }
 
+TurboState &Simulation::TurboStateFor()
+{
+	if (!turboState)
+	{
+		turboState = new TurboState();
+		turboState->sim = this;
+		turboState->pool.state = turboState;
+		turboState->threads.resize(TURBO_MAX_THREADS);
+	}
+	turboState->pool.Ensure(std::clamp(turboThreads, 1, TURBO_MAX_THREADS));
+	return *turboState;
+}
+
+// RecalcFreeParticles on all threads (turbo mode on more than one): the particle maps, counts, life running down
+// and the free list, exactly as RecalcFreeParticles makes them (so either can be used)
+bool Simulation::TurboRecalc(bool do_life_dec)
+{
+	auto &st = TurboStateFor();
+	st.lastActive = parts_lastActiveIndex;
+	st.lifeDec = do_life_dec;
+	if (int(st.bandOfY.size()) != YRES)
+	{
+		st.bandOfY.resize(YRES);
+		for (int band = 0; band < TURBO_BANDS; band++)
+			for (int y = YRES * band / TURBO_BANDS; y < YRES * (band + 1) / TURBO_BANDS; y++)
+				st.bandOfY[y] = band;
+	}
+	st.pool.Run(RecalcPiece, TURBO_CHUNKS);
+	st.pool.Run(PlaceBand, TURBO_BANDS);
+	int lastUsed = 0;
+	NUM_PARTS = 0;
+	int firstFree = -1, tail = -1;
+	for (auto &piece : st.pieces)
+	{
+		NUM_PARTS += piece.count;
+		lastUsed = std::max(lastUsed, piece.lastUsed);
+		if (elementRecount)
+			for (int t = 0; t < PT_NUM; t++)
+				elementCount[t] += piece.elementCount[t];
+		if (piece.freeHead < 0)
+			continue;
+		if (tail < 0)
+			firstFree = piece.freeHead;
+		else
+			parts[tail].life = piece.freeHead;
+		tail = piece.freeTail;
+	}
+	int beyond = (parts_lastActiveIndex >= NPART - 1) ? -1 : parts_lastActiveIndex + 1;
+	// the particles whose life ran out, in index order, each put at the front of the free list by kill_part;
+	// RecalcFreeParticles starts the list again at the first free slot, dropping those killed before it
+	bool started = false;
+	for (auto &piece : st.pieces)
+		for (int i : piece.kills)
+		{
+			if (!started && firstFree >= 0 && i > firstFree)
+			{
+				pfree = firstFree;
+				started = true;
+			}
+			kill_part(i);
+		}
+	if (tail < 0)
+		pfree = beyond;
+	else
+	{
+		if (!started)
+			pfree = firstFree;
+		parts[tail].life = beyond;
+	}
+	parts_lastActiveIndex = lastUsed;
+	elementRecount = false;
+	return true;
+}
+
+// body(y0, y1) over bands of [0, rows) on all threads (turbo mode)
+void Simulation::TurboRows(int rows, const std::function<void(int, int)> &body)
+{
+	auto &st = TurboStateFor();
+	st.rows = rows;
+	st.rowsBody = &body;
+	st.pool.Run(RowBand, TURBO_BANDS);
+	st.rowsBody = nullptr;
+}
+
 bool Simulation::TurboParticleOk(const Particle &p) const
 {
 	if (!turboElementOk[p.type])
@@ -308,15 +523,7 @@ bool Simulation::TurboFrame()
 	// too few particles to be worth sorting into tiles (NUM_PARTS: counted by RecalcFreeParticles this frame)
 	if (NUM_PARTS < TURBO_MIN_PARTICLES)
 		return false;
-	if (!turboState)
-	{
-		turboState = new TurboState();
-		turboState->sim = this;
-		turboState->pool.state = turboState;
-		turboState->threads.resize(TURBO_MAX_THREADS);
-	}
-	auto &st = *turboState;
-	st.pool.Ensure(std::clamp(turboThreads, 1, TURBO_MAX_THREADS));
+	auto &st = TurboStateFor();
 
 	// Which elements are updated in parallel this frame, and which are special: changed only on one thread
 	auto &builtin = GetElements();

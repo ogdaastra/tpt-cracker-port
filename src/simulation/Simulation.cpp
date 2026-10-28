@@ -5761,7 +5761,7 @@ void Simulation::BeforeSim()
 		gravWallChanged = false;
 	}
 
-	if (debug_currentParticle == 0)
+	if (debug_currentParticle == 0 && !(turboThreads > 1 && TurboRecalc(true)))
 		RecalcFreeParticles(true);
 
 	if (!sys_pause || framerender)
@@ -6023,6 +6023,13 @@ Simulation::Simulation():
 
 	//Create and attach air simulation
 	air = new Air(*this);
+	// the air's row bands on every thread in turbo mode on more than one
+	air->forRows = [this](int rows, const std::function<void(int, int)> &body) {
+		if (turboThreads > 1)
+			TurboRows(rows, body);
+		else
+			body(0, rows);
+	};
 	//Give air sim references to our data
 	air->bmap = bmap.View();
 	air->emap = emap.View();
