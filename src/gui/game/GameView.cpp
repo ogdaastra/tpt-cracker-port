@@ -41,7 +41,7 @@
 // Right edge of the classic side bar. The window is EXTRABARSIZE wider than that, for a second column
 // of menu buttons; everything else keeps its classic position (crackerk.lua draws its theme over
 // these buttons at fixed coordinates).
-constexpr int CLASSIC_W = XRES + BARSIZE;
+#define CLASSIC_W (SCREENW + BARSIZE)
 
 #ifdef GetUserName
 # undef GetUserName // dammit windows
@@ -225,7 +225,7 @@ GameView::GameView():
 	int currentX = 1;
 	//Set up UI
 
-	scrollBar = new ui::Button(ui::Point(0,YRES+21), ui::Point(XRES, 2), "");
+	scrollBar = new ui::Button(ui::Point(0,SCREENH+21), ui::Point(SCREENW, 2), "");
 	scrollBar->Appearance.BorderHover = ui::Colour(200, 200, 200);
 	scrollBar->Appearance.BorderActive = ui::Colour(200, 200, 200);
 	scrollBar->Appearance.HorizontalAlign = ui::Appearance::AlignCentre;
@@ -331,7 +331,7 @@ GameView::GameView():
 	tempButton->SetActionCallback({ [this] { c->OpenElementSearch(); } });
 	AddComponent(tempButton);
 
-	colourPicker = new ui::Button(ui::Point((XRES/2)-8, YRES+1), ui::Point(16, 16), "", "Pick Colour");
+	colourPicker = new ui::Button(ui::Point((SCREENW/2)-8, SCREENH+1), ui::Point(16, 16), "", "Pick Colour");
 	colourPicker->SetActionCallback({ [this] { c->OpenColourPicker(); } });
 }
 
@@ -599,13 +599,13 @@ void GameView::NotifyToolListChanged(GameModel * sender)
 			tempTexture = ((DecorationTool*)tool)->GetIcon(tool->GetToolID(), 26, 14);
 
 		if(tempTexture)
-			tempButton = new ToolButton(ui::Point(currentX, YRES+1), ui::Point(30, 18), "", tool->GetIdentifier(), tool->GetDescription());
+			tempButton = new ToolButton(ui::Point(currentX, SCREENH+1), ui::Point(30, 18), "", tool->GetIdentifier(), tool->GetDescription());
 		else
-			tempButton = new ToolButton(ui::Point(currentX, YRES+1), ui::Point(30, 18), tool->GetName(), tool->GetIdentifier(), tool->GetDescription());
+			tempButton = new ToolButton(ui::Point(currentX, SCREENH+1), ui::Point(30, 18), tool->GetName(), tool->GetIdentifier(), tool->GetDescription());
 
 		tempButton->clipRectX = 1;
-		tempButton->clipRectY = YRES + 1;
-		tempButton->clipRectW = XRES - 1;
+		tempButton->clipRectY = SCREENH + 1;
+		tempButton->clipRectW = SCREENW - 1;
 		tempButton->clipRectH = 18;
 
 		//currentY -= 17;
@@ -730,7 +730,7 @@ void GameView::NotifyColourPresetsChanged(GameModel * sender)
 	int i = 0;
 	for(std::vector<ui::Colour>::iterator iter = colours.begin(), end = colours.end(); iter != end; ++iter)
 	{
-		ToolButton * tempButton = new ToolButton(ui::Point(currentX, YRES+1), ui::Point(30, 18), "", "", "Decoration Presets.");
+		ToolButton * tempButton = new ToolButton(ui::Point(currentX, SCREENH+1), ui::Point(30, 18), "", "", "Decoration Presets.");
 		tempButton->Appearance.BackgroundInactive = *iter;
 		tempButton->SetActionCallback({ [this, i, tempButton] {
 			c->SetActiveColourPreset(i);
@@ -1051,30 +1051,30 @@ void GameView::updateToolButtonScroll()
 
 		int newInitialX = CLASSIC_W - 56;
 		int totalWidth = (toolButtons[0]->Size.X + 1) * toolButtons.size();
-		int scrollSize = (int)(((float)(XRES - BARSIZE))/((float)totalWidth) * ((float)XRES - BARSIZE));
+		int scrollSize = (int)(((float)(SCREENW - BARSIZE))/((float)totalWidth) * ((float)SCREENW - BARSIZE));
 
-		if (scrollSize > XRES - 1)
-			scrollSize = XRES - 1;
+		if (scrollSize > SCREENW - 1)
+			scrollSize = SCREENW - 1;
 		
-		if (totalWidth > XRES - 15)
+		if (totalWidth > SCREENW - 15)
 		{			
 			int mouseX = x;
 
 			float overflow = 0;
 			float mouseLocation = 0;
 
-			if (mouseX > XRES)
-				mouseX = XRES;
+			if (mouseX > SCREENW)
+				mouseX = SCREENW;
 
 			// if (mouseX < 15) // makes scrolling a little nicer at edges but apparently if you put hundreds of elements in a menu it makes the end not show ...
 			// 	mouseX = 15;
 
 			scrollBar->Visible = true;
 
-			scrollBar->Position.X = (int)(((float)mouseX / (float)XRES) * (float)(XRES - scrollSize)) + 1;
+			scrollBar->Position.X = (int)(((float)mouseX / (float)SCREENW) * (float)(SCREENW - scrollSize)) + 1;
 
-			overflow = (float)(totalWidth - (XRES - BARSIZE));
-			mouseLocation = (float)(XRES - 3)/(float)((XRES - 2) - mouseX); // mouseLocation adjusted slightly in case you have 200 elements in one menu
+			overflow = (float)(totalWidth - (SCREENW - BARSIZE));
+			mouseLocation = (float)(SCREENW - 3)/(float)((SCREENW - 2) - mouseX); // mouseLocation adjusted slightly in case you have 200 elements in one menu
 
 			newInitialX += (int)(overflow/mouseLocation);
 		}
@@ -1171,7 +1171,7 @@ void GameView::OnMouseDown(int x, int y, unsigned button)
 			}
 			return;
 		}
-		if (currentMouse.X >= 0 && currentMouse.X < XRES && currentMouse.Y >= 0 && currentMouse.Y < YRES)
+		if (currentMouse.X >= 0 && currentMouse.X < SCREENW && currentMouse.Y >= 0 && currentMouse.Y < SCREENH)
 		{
 			// update tool index, set new "last" tool so GameView can detect certain tools properly
 			if (button == SDL_BUTTON_LEFT)
@@ -1317,7 +1317,7 @@ void GameView::ToolTip(ui::Point senderPosition, String toolTip)
 		}
 	}
 	// quickoption and menu tooltips
-	else if(senderPosition.X > XRES)// < Size.Y-(quickOptionButtons.size()+1)*16)
+	else if(senderPosition.X > SCREENW)// < Size.Y-(quickOptionButtons.size()+1)*16)
 	{
 		this->toolTip = toolTip;
 		toolTipPosition = ui::Point(CLASSIC_W-27-Graphics::textwidth(toolTip), senderPosition.Y+3);
@@ -1881,8 +1881,8 @@ void GameView::DoDraw()
 	auto *g = GetGraphics();
 	for (auto x = 0U; x < fadeout.size(); ++x)
 	{
-		g->draw_line(x, YRES + 1, x, YRES + 18, 0, 0, 0, fadeout[x]);
-		g->draw_line(XRES - x, YRES + 1, XRES - x, YRES + 18, 0, 0, 0, fadeout[x]);
+		g->draw_line(x, SCREENH + 1, x, SCREENH + 18, 0, 0, 0, fadeout[x]);
+		g->draw_line(SCREENW - x, SCREENH + 1, SCREENW - x, SCREENH + 18, 0, 0, 0, fadeout[x]);
 	}
 
 	c->Tick();
@@ -1906,11 +1906,11 @@ void GameView::NotifyNotificationsChanged(GameModel * sender)
 
 	std::vector<Notification*> notifications = sender->GetNotifications();
 
-	int currentY = YRES-23;
+	int currentY = SCREENH-23;
 	for (auto *notification : notifications)
 	{
 		int width = (Graphics::textwidth(notification->Message))+8;
-		ui::Button * tempButton = new ui::Button(ui::Point(XRES-width-22, currentY), ui::Point(width, 15), notification->Message);
+		ui::Button * tempButton = new ui::Button(ui::Point(SCREENW-width-22, currentY), ui::Point(width, 15), notification->Message);
 		tempButton->SetActionCallback({ [notification] {
 			notification->Action();
 		} });
@@ -1921,7 +1921,7 @@ void GameView::NotifyNotificationsChanged(GameModel * sender)
 		AddComponent(tempButton);
 		notificationComponents.push_back(tempButton);
 
-		tempButton = new ui::Button(ui::Point(XRES-20, currentY), ui::Point(15, 15), 0xE02A);
+		tempButton = new ui::Button(ui::Point(SCREENW-20, currentY), ui::Point(15, 15), 0xE02A);
 		//tempButton->SetIcon(IconClose);
 		auto closeNotification = [this, notification] {
 			c->RemoveNotification(notification);
@@ -2105,7 +2105,7 @@ void GameView::OnDraw()
 		ren->clearScreen(1.0f);
 		ren->RenderBegin();
 		ren->SetSample(c->PointTranslate(currentMouse).X, c->PointTranslate(currentMouse).Y);
-		if (showBrush && selectMode == SelectNone && (!zoomEnabled || zoomCursorFixed) && activeBrush && (isMouseDown || (currentMouse.X >= 0 && currentMouse.X < XRES && currentMouse.Y >= 0 && currentMouse.Y < YRES)))
+		if (showBrush && selectMode == SelectNone && (!zoomEnabled || zoomCursorFixed) && activeBrush && (isMouseDown || (currentMouse.X >= 0 && currentMouse.X < SCREENW && currentMouse.Y >= 0 && currentMouse.Y < SCREENH)))
 		{
 			ui::Point finalCurrentMouse = c->PointTranslate(currentMouse);
 			ui::Point initialDrawPoint = drawPoint1;
@@ -2240,10 +2240,14 @@ void GameView::OnDraw()
 			Platform::WriteFile(data, filename);
 		}
 
+		// everything above is in simulation pixels (and the screenshot and recording take them at that size);
+		// a small world is enlarged to fill the screen before the screen-space text below
+		ren->ScaleToScreen();
+
 		if (logEntries.size())
 		{
 			int startX = 20;
-			int startY = YRES-20;
+			int startY = SCREENH-20;
 			std::deque<std::pair<String, int> >::iterator iter;
 			for(iter = logEntries.begin(); iter != logEntries.end(); iter++)
 			{
@@ -2267,8 +2271,8 @@ void GameView::OnDraw()
 		String sampleInfo = String::Build("#", screenshotIndex, " ", String(0xE00E), " REC");
 
 		int textWidth = Graphics::textwidth(sampleInfo);
-		g->fillrect(XRES-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, 127);
-		g->drawtext(XRES-16-textWidth, 16, sampleInfo, 255, 50, 20, 255);
+		g->fillrect(SCREENW-20-textWidth, 12, textWidth+8, 15, 0, 0, 0, 127);
+		g->drawtext(SCREENW-16-textWidth, 16, sampleInfo, 255, 50, 20, 255);
 	}
 	else if (showHud)
 	{
@@ -2504,7 +2508,7 @@ void GameView::OnDraw()
 	if(infoTipPresence)
 	{
 		int infoTipAlpha = (infoTipPresence>50?50:infoTipPresence)*5;
-		g->drawtext_outline((XRES-Graphics::textwidth(infoTip))/2, (YRES/2)-2, infoTip, 255, 255, 255, infoTipAlpha);
+		g->drawtext_outline((SCREENW-Graphics::textwidth(infoTip))/2, (SCREENH/2)-2, infoTip, 255, 255, 255, infoTipAlpha);
 	}
 
 	if(toolTipPresence && toolTipPosition.X!=-1 && toolTipPosition.Y!=-1 && toolTip.length())
@@ -2528,8 +2532,8 @@ void GameView::OnDraw()
 	}
 
 	// Clear menu areas, to ensure particle graphics don't overlap
-	memset(g->vid+(WINDOWW*YRES), 0, (PIXELSIZE*WINDOWW)*MENUSIZE);
-	g->clearrect(XRES, 1, WINDOWW-XRES, YRES-1);
+	memset(g->vid+(WINDOWW*SCREENH), 0, (PIXELSIZE*WINDOWW)*MENUSIZE);
+	g->clearrect(SCREENW, 1, WINDOWW-SCREENW, SCREENH-1);
 }
 
 ui::Point GameView::lineSnapCoords(ui::Point point1, ui::Point point2)

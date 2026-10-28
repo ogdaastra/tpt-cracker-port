@@ -66,7 +66,7 @@ struct StackData
 	}
 };
 
-int tempParts[XRES];
+int tempParts[XRES_MAX];
 
 constexpr int PISTON_INACTIVE   = 0x00;
 constexpr int PISTON_RETRACT    = 0x01;

@@ -1,6 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 #include "Config.h"
+#include "simulation/WorldGrid.h"
 
 #include <vector>
 
@@ -46,9 +47,9 @@ public:
 	unsigned int display_mode;
 	std::vector<RenderPreset> renderModePresets;
 	//
-	unsigned char fire_r[YRES/CELL][XRES/CELL];
-	unsigned char fire_g[YRES/CELL][XRES/CELL];
-	unsigned char fire_b[YRES/CELL][XRES/CELL];
+	WorldGrid<unsigned char> fire_r;
+	WorldGrid<unsigned char> fire_g;
+	WorldGrid<unsigned char> fire_b;
 	unsigned int fire_alpha[CELL*3][CELL*3];
 	//
 	bool gravityZonesEnabled;
@@ -130,6 +131,7 @@ public:
 	void draw_image(const VideoBuffer * vidBuf, int w, int h, int a);
 
 	VideoBuffer DumpFrame();
+	void ScaleToScreen();
 
 	void drawblob(int x, int y, unsigned char cr, unsigned char cg, unsigned char cb);
 

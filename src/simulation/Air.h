@@ -1,6 +1,7 @@
 #ifndef AIR_H
 #define AIR_H
 #include "Config.h"
+#include "WorldGrid.h"
 
 class Simulation;
 
@@ -13,21 +14,21 @@ public:
 	// vorticity confinement (upstream b77a1cba): > 0 keeps swirls in the air going; 0 is off, the old behaviour
 	float vorticityCoeff;
 	//Arrays from the simulation
-	unsigned char (*bmap)[XRES/CELL];
-	unsigned char (*emap)[XRES/CELL];
-	float (*fvx)[XRES/CELL];
-	float (*fvy)[XRES/CELL];
+	GridView<unsigned char> bmap;
+	GridView<unsigned char> emap;
+	GridView<float> fvx;
+	GridView<float> fvy;
 	//
-	float vx[YRES/CELL][XRES/CELL];
-	float ovx[YRES/CELL][XRES/CELL];
-	float vy[YRES/CELL][XRES/CELL];
-	float ovy[YRES/CELL][XRES/CELL];
-	float pv[YRES/CELL][XRES/CELL];
-	float opv[YRES/CELL][XRES/CELL];
-	float hv[YRES/CELL][XRES/CELL];
-	float ohv[YRES/CELL][XRES/CELL]; // Ambient Heat
-	unsigned char bmap_blockair[YRES/CELL][XRES/CELL];
-	unsigned char bmap_blockairh[YRES/CELL][XRES/CELL];
+	WorldGrid<float> vx;
+	WorldGrid<float> ovx;
+	WorldGrid<float> vy;
+	WorldGrid<float> ovy;
+	WorldGrid<float> pv;
+	WorldGrid<float> opv;
+	WorldGrid<float> hv;
+	WorldGrid<float> ohv; // Ambient Heat
+	WorldGrid<unsigned char> bmap_blockair;
+	WorldGrid<unsigned char> bmap_blockairh;
 	float kernel[9];
 	void make_kernel(void);
 	// curl of the air velocity at a cell (dvy/dx - dvx/dy), 0 next to walls (upstream 4d1364b8)

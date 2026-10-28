@@ -84,12 +84,13 @@ public:
 	void OnTryExit(ui::Window::ExitMethod method) override;
     void OnTryOkay(ui::Window::OkayMethod method) override;
 
+    // x and y in simulation pixels; the window goes on the other side of the screen from the text
     void changeTextLocation(int x, int y) {
         if (x > XRES) x = XRES;
         if (y > YRES) y = YRES;
         textPosition = ui::Point(x, y);
-        Position.X = textPosition.X > XRES / 2 ? 50 : XRES / 2;
-        Position.Y = textPosition.Y > YRES / 2 ? 50 : YRES / 3;
+        Position.X = textPosition.X * SIMSCALE > SCREENW / 2 ? 50 : SCREENW / 2;
+        Position.Y = textPosition.Y * SIMSCALE > SCREENH / 2 ? 50 : SCREENH / 3;
     }
 
     void onClose() {
@@ -250,7 +251,7 @@ TextWindow::TextWindow(TextTool * tool_, Simulation * sim_, ui::Point position_)
 
 void TextWindow::OnTryExit(ui::Window::ExitMethod method) {
     if (method == ui::Window::MouseOutside) { // Clicking outside shouldn't exit - relocate the cursor instead
-        changeTextLocation(ui::Engine::Ref().GetMouseX(), ui::Engine::Ref().GetMouseY());
+        changeTextLocation(ui::Engine::Ref().GetMouseX() / SIMSCALE, ui::Engine::Ref().GetMouseY() / SIMSCALE);
         return;
     }
     onClose();
@@ -275,25 +276,27 @@ void TextWindow::DoDraw() {
         text_spacing_options[spacing->GetOption().second].second,
         textPosition.X, textPosition.Y, g, elecolor);
 
-    // Draw corner label
+    // Draw corner label (on the screen, where the text's corner is)
     StringBuilder coord_label;
     coord_label << textPosition.X << ", " << textPosition.Y << "\n";
-    g->drawcircle(textPosition.X, textPosition.Y, 5, 5, 255, 255, 255, 105);
-    g->drawtext(textPosition.X - g->textwidth(coord_label.Build()) / 2,
-                textPosition.Y - 20, coord_label.Build(), 255, 255, 255, 255);
+    int screenX = textPosition.X * SIMSCALE, screenY = textPosition.Y * SIMSCALE;
+    g->drawcircle(screenX, screenY, 5, 5, 255, 255, 255, 105);
+    g->drawtext(screenX - g->textwidth(coord_label.Build()) / 2,
+                screenY - 20, coord_label.Build(), 255, 255, 255, 255);
 
     ui::Window::DoDraw();
 }
 
 void TextWindow::DoMouseMove(int x, int y, int dx, int dy) {
     ui::Window::DoMouseMove(x, y, dx, dy);
-    if (drag) changeTextLocation(x, y);
+    if (drag) changeTextLocation(x / SIMSCALE, y / SIMSCALE);
 }
 
 void TextWindow::DoMouseDown(int x, int y, unsigned button) {
     ui::Window::DoMouseDown(x, y, button);
     // Enable dragging if in the circle of radius 5
-    if ((x - textPosition.X) * (x - textPosition.X) + (y - textPosition.Y) * (y - textPosition.Y) <= 25)
+    int dx = x - textPosition.X * SIMSCALE, dy = y - textPosition.Y * SIMSCALE;
+    if (dx * dx + dy * dy <= 25)
         drag = true;
 }
 

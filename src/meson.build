@@ -21,6 +21,7 @@ font_files = files(
 
 common_files = files(
 	'Format.cpp',
+	'WorldSize.cpp',
 	'Misc.cpp',
 	'Probability.cpp',
 )

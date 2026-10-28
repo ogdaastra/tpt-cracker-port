@@ -155,7 +155,7 @@ void Air::update_airh(void)
 				goto air_cell_update_begin;
 		}
 	}
-	memcpy(hv, ohv, sizeof(hv));
+	hv.CopyFrom(ohv);
 }
 
 void Air::update_air(void)
@@ -402,9 +402,9 @@ void Air::update_air(void)
 				}
 				while (sim.time_dilation[y][x] > 0 && count <= sim.time_dilation[y][x]);
 			}
-		memcpy(vx, ovx, sizeof(vx));
-		memcpy(vy, ovy, sizeof(vy));
-		memcpy(pv, opv, sizeof(pv));
+		vx.CopyFrom(ovx);
+		vy.CopyFrom(ovy);
+		pv.CopyFrom(opv);
 	}
 }
 
@@ -458,6 +458,12 @@ Air::Air(Simulation & simulation):
 {
 	//Simulation should do this.
 	make_kernel();
+	for (auto *grid : { &vx, &ovx, &vy, &ovy, &pv, &opv, &hv, &ohv })
+	{
+		grid->Resize(XRES/CELL, YRES/CELL);
+	}
+	bmap_blockair.Resize(XRES/CELL, YRES/CELL);
+	bmap_blockairh.Resize(XRES/CELL, YRES/CELL);
 	std::fill(&bmap_blockair[0][0], &bmap_blockair[0][0]+((XRES/CELL)*(YRES/CELL)), 0);
 	std::fill(&bmap_blockairh[0][0], &bmap_blockairh[0][0]+((XRES/CELL)*(YRES/CELL)), 0);
 	std::fill(&vx[0][0], &vx[0][0]+((XRES/CELL)*(YRES/CELL)), 0.0f);

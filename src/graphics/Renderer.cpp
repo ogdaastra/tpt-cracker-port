@@ -672,7 +672,7 @@ void Renderer::render_fire()
 			alpha[y][x] = findingElement ? int(fire_alpha[y][x]) / 2 : int(fire_alpha[y][x]);
 	// Rows with no fire in them or next to them stay empty (nothing to draw, nothing spreads in): skip them.
 	// The blur below works in place, so the row above is checked after its update, as the loop sees it.
-	bool rowFire[YRES/CELL];
+	bool rowFire[YRES_MAX/CELL];
 	for (j=0; j<YRES/CELL; j++)
 	{
 		rowFire[j] = false;
@@ -1650,10 +1650,10 @@ void Renderer::draw_air()
 	if(!(display_mode & DISPLAY_AIR))
 		return;
 	int x, y, i, j;
-	float (*pv)[XRES/CELL] = sim->air->pv;
-	float (*hv)[XRES/CELL] = sim->air->hv;
-	float (*vx)[XRES/CELL] = sim->air->vx;
-	float (*vy)[XRES/CELL] = sim->air->vy;
+	GridView<float> pv = sim->air->pv;
+	GridView<float> hv = sim->air->hv;
+	GridView<float> vx = sim->air->vx;
+	GridView<float> vy = sim->air->vy;
 	pixel c = 0;
 	for (y=0; y<YRES/CELL; y++)
 		for (x=0; x<XRES/CELL; x++)
@@ -1855,9 +1855,9 @@ Renderer::Renderer(Graphics * g, Simulation * sim):
 	persistentVid = new pixel[VIDXRES*YRES];
 	warpVid = new pixel[VIDXRES*VIDYRES];
 
-	memset(fire_r, 0, sizeof(fire_r));
-	memset(fire_g, 0, sizeof(fire_g));
-	memset(fire_b, 0, sizeof(fire_b));
+	fire_r.Resize(XRES/CELL, YRES/CELL);
+	fire_g.Resize(XRES/CELL, YRES/CELL);
+	fire_b.Resize(XRES/CELL, YRES/CELL);
 
 	//Set defauly display modes
 	ResetModes();
@@ -2064,6 +2064,22 @@ void Renderer::ResetModes()
 	SetRenderMode({ RENDER_BASC, RENDER_FIRE, RENDER_SPRK, RENDER_EFFE });
 	SetDisplayMode({ });
 	SetColourMode(COLOUR_DEFAULT);
+}
+
+// A small world (SIMSCALE > 1) is drawn at its own size in the top left; this enlarges it in place to fill the
+// simulation area on screen, each pixel a SIMSCALE x SIMSCALE square. Last row and column first, so nothing is
+// overwritten before it is read (row y reads row y / SIMSCALE <= y).
+void Renderer::ScaleToScreen()
+{
+	if (SIMSCALE == 1)
+		return;
+	for (int y = SCREENH - 1; y >= 0; y--)
+	{
+		const pixel *src = vid + (y / SIMSCALE) * VIDXRES;
+		pixel *dst = vid + y * VIDXRES;
+		for (int x = SCREENW - 1; x >= 0; x--)
+			dst[x] = src[x / SIMSCALE];
+	}
 }
 
 VideoBuffer Renderer::DumpFrame()

@@ -921,3 +921,90 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   game's gravity is custom and follows the readings; a heap of sand in a closed box pours right (mean x
   300 → 470) then left (→ 301); flat gives no pull; a gentle movement isn't a shake, a hard one is (total
   speed 1,193 → 23,211); off restores gravity mode 0.
+
+## 35. World size: small worlds with big pixels, and big worlds (N10)
+
+- **Asked for** by Orlando on 26 Oct: big worlds, "but also a way to make small worlds cuz constantly living
+  in the zoom function is unbearable".
+- **The problem**: the world's size was fixed when the game was compiled. `XRES` × `YRES` (612 × 384) were
+  constants, and dozens of arrays were declared with them: the particle maps, the air and heat grids, walls,
+  fans, gravity, fire, stasis, stress, magnetism, the particle array itself.
+- **Engine changes**:
+  - `XRES` and `YRES` are now numbers set once at start (`tptXRES`, `tptYRES` in `src/WorldSize.cpp`) from the
+    game's new start argument `world:WIDTHxHEIGHTxSCALE`. `XRES_MAX` × `YRES_MAX` (1224 × 768) size the few
+    small buffers that stay fixed.
+  - `WorldGrid<T>` (owns a width × height block, used as `grid[y][x]`) and `GridView<T>` (a view of one, for
+    functions and element updates; `UPDATE_FUNC_ARGS` now takes `GridView<int> pmap`) replace the fixed 2-D
+    arrays. `src/simulation/WorldGrid.h`. Simulation, Air, Gravity, the renderer's fire, stasis, stress and
+    magnetic maps are allocated at the world's size when the simulation is made.
+  - Every `memset`/`memcpy` with `sizeof(array)` was found and changed to `.Clear()` / `.CopyFrom()`: with a
+    pointer instead of an array, `sizeof` would have silently cleared 4 bytes.
+  - Big arrays on the stack (circuit search, framework, gravity check map) moved to the heap.
+  - **Pixel size** (`SIMSCALE`, 1 to 4): the simulation is drawn at 1× and `Renderer::ScaleToScreen` enlarges it
+    in place (starting from the bottom-right corner, so it never overwrites pixels it still has to read). It
+    runs after screenshots and recordings take their frame, so those stay at simulation size. The window is
+    `SCREENW` × `SCREENH` (the world times the pixel size) plus the bars. The GUI lays out with the screen
+    sizes, and the simulation uses the world's.
+  - **Mouse**: `GameController` divides by the pixel size first, so the zoom window, signs and every tool get
+    simulation pixels. The ruler, transform, text and sign tools, and CNFG's previews (CRAY, DRAY, FFGN, PSTN,
+    detectors, force), draw their overlays at screen size (`config_tool/util.h`: `sim_point`, `sim_length`).
+  - **The mod's Lua UI**: crackerk.lua's side bar boxes, bottom bar, top bar, Cr-Menu, message box and filters
+    follow `graphics.WIDTH` / `HEIGHT`. manager.lua's button does too. PLNE's limits use `sim.XRES` / `YRES`.
+  - **Saves**: both save readers (current and the old PSv format) refused any save bigger than the current
+    world. They now take saves up to the biggest world and keep all their particles. `Simulation::Load`
+    places what fits and drops the rest, as it already did for a stamp hanging over an edge.
+- **The rules** (the same in the game and on the page): whole cells of 4 pixels, width 64 to 1224, height 64
+  to 768, pixels 1× to 4×, and at least 612 × 384 on screen so the menus fit beside and below. Anything else
+  gives the classic world (the game prints "unusable world size").
+- **Page**: a **World size…** button opens a dialog with these sizes:
+
+  | Size | World | Pixels | On screen |
+  |---|---|---|---|
+  | Tiny | 156 × 96 | 4× | 624 × 384 |
+  | Small | 204 × 128 | 3× | 612 × 384 |
+  | Medium | 308 × 192 | 2× | 616 × 384 |
+  | Classic | 612 × 384 | 1× | 612 × 384 |
+  | Large | 916 × 576 | 1× | 916 × 576 |
+  | Huge | 1224 × 768 | 1× | 1224 × 768 |
+
+  There is also **Custom** (width, height and pixel size, checked as you type). The choice is kept in the
+  browser (`localStorage` `tptWorld`); `?world=WxHxS` in the address sets it for one visit.
+  - Changing size restarts the game: the page reloads.
+  - With "Bring the current world along" (on by default), the world is saved as a stamp first
+    (`world-carry.stm` in the game's folder, not in the stamps list). After the restart it is placed centred,
+    cut off where it doesn't fit.
+  - Challenges need the classic world: the button is greyed out, and `challenges.start` says so.
+- **Classic is unchanged**: `samecheck.mjs` against the build from before this change (single-threaded,
+  seeded, 8 scenes × 4 frame counts) gives ALL SAME at all 32 checkpoints. Speed at classic size is within
+  noise (heaviest scene +1.2%, electronics −0.7%).
+- **Measured** (`world.spec.mjs`, `artifacts/browser/world.json`):
+  - Clicks with a 1-pixel brush land on the simulation pixel under the mouse (three points each) at 2×, 3×,
+    4×, Large and Huge.
+  - A 10 × 10 block covers exactly its 10s × 10s square on screen (100% inside, 0% beside).
+  - The menus and the pause button are where the moved bars put them.
+  - Sand falls to the new floor (y 571 in Large, 763 in Huge).
+  - A frame with the lower half of the world full of water (solid edges, so none drains away; threaded build,
+    median of 5 runs of 60 frames):
+
+    | World | Particles | ms per frame |
+    |---|---|---|
+    | Medium 308 × 192 | 27,600 | 6.7 |
+    | Classic 612 × 384 | 113,552 | 28.5 |
+    | Large 916 × 576 | 257,872 | 70.2 |
+    | Huge 1224 × 768 | 462,080 | 129.3 |
+
+    The cost follows the particle count (about 0.25 µs per particle per frame). A full Huge world runs at
+    about 8 frames a second on this machine; turbo mode (N11) is meant for that.
+  - Memory: the particle array is `NPART` × 56 bytes, 13 MB at Classic and 53 MB at Huge. Undo steps are
+    bigger in a full big world, so the 100 MB undo history holds fewer of them.
+- **Known limits**:
+  - The debug overlays (`src/debug/`, turned on with `tpt.setdebug`) draw in simulation pixels on the
+    enlarged screen, so in a small world they sit squeezed into the top-left part of it.
+  - The online save preview window is unchanged (it is unavailable in this build anyway).
+  - A save from a bigger world opened in a smaller one keeps the top-left part that fits (only the
+    carry-over centres it); its thumbnail shows the same part.
+- **Tests**: `world.spec.mjs`, 7 tests: three small sizes (sizes, clicks, drawing scale, bars, menus); Large
+  and Huge (the same, plus sand reaching the new floor and the cost of a frame); the dialog (a size the game
+  would refuse is refused; Classic → Medium carries a block to (148, 84), reload keeps the size, back to
+  Classic carries it to (300, 180)); and an address asking for a refused size gives the classic world on
+  both sides. Full suite on this build: 71 passed, 2 skipped (the two opt-in performance tests).

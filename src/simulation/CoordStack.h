@@ -36,11 +36,12 @@ class CoordStack
 private:
 	unsigned short (*stack)[2];
 	int stack_size;
-	const static int stack_limit = XRES*YRES;
+	int stack_limit; // the world's area
 public:
 	CoordStack() :
 		stack(NULL),
-		stack_size(0)
+		stack_size(0),
+		stack_limit(XRES*YRES)
 	{
 		stack = new unsigned short[stack_limit][2];
 	}

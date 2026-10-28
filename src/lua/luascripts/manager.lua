@@ -920,7 +920,7 @@ local function mouseclick(mousex,mousey,button,event,wheel)
 	sidebutton:process(mousex,mousey,button,event,wheel)
 	if MANAGER.hidden then return true end
 
-	if mousex>612 or mousey>384 then return false end
+	if mousex>graphics.WIDTH-34 or mousey>graphics.HEIGHT-40 then return false end
 	mainwindow:process(mousex,mousey,button,event,wheel)
 	return false
 end
@@ -1202,13 +1202,15 @@ mainwindow:add(tempbutton)
 tempbutton = ui_button.new(100, 65, 35, 10, ui_button.onlineview, "Online")
 tempbutton.drawbox = true
 mainwindow:add(tempbutton)
+-- on the screen: the simulation area is the window less the side bar columns (34) and the bottom bar (40),
+-- which can be bigger than the world (this port's World size setting draws small worlds with bigger pixels)
 local ypos = 134
 if jacobsmod and tpt.oldmenu and tpt.oldmenu()==1 then
-	ypos = 390
+	ypos = graphics.HEIGHT-34
 elseif tpt.num_menus then
-	ypos = 390-16*tpt.num_menus()-(not jacobsmod and 16 or 0)
+	ypos = graphics.HEIGHT-34-16*tpt.num_menus()-(not jacobsmod and 16 or 0)
 end
-sidebutton = ui_button.new(sim.XRES+1,ypos,14,15,ui_button.sidepressed,'') -- classic side bar column (the window has a second one)
+sidebutton = ui_button.new(graphics.WIDTH-33,ypos,14,15,ui_button.sidepressed,'') -- classic side bar column (the window has a second one)
 
 local function gen_buttons_local()
 	local count = 0

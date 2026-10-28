@@ -74,7 +74,7 @@ public:
 };
 
 TransformWindow::TransformWindow(TransformTool * tool_, Simulation * sim_, ui::Point pos):
-	ui::Window(ui::Point(XRES - 200, YRES - 120), ui::Point(200, 130)),
+	ui::Window(ui::Point(SCREENW - 200, SCREENH - 120), ui::Point(200, 130)),
 	tool(tool_),
 	sim(sim_),
     p1(pos), p2(pos)
@@ -225,6 +225,9 @@ void TransformWindow::DoMouseDown(int x, int y, unsigned button) {
 		dragdy = y - Position.Y;
         return;
 	}
+    // the selection, its handles and the preview are in simulation pixels (DoDraw scales them to the screen)
+    x /= SIMSCALE;
+    y /= SIMSCALE;
 
     if (point_count <= 2) {
         ++point_count;
@@ -296,6 +299,9 @@ void TransformWindow::DoMouseDown(int x, int y, unsigned button) {
 
 void TransformWindow::DoMouseMove(int x, int y, int dx, int dy) {
 	ui::Window::DoMouseMove(x, y, dx, dy);
+    int screenX = x, screenY = y; // moving the window itself
+    x /= SIMSCALE;
+    y /= SIMSCALE;
 
     if (point_count == 1) { // Seting 2nd point
         p2 = ui::Point(x, y);
@@ -346,19 +352,32 @@ void TransformWindow::DoMouseMove(int x, int y, int dx, int dy) {
     }
 
     if (dragging == 2) {
-        Position.X = x - dragdx;
-		Position.Y = y - dragdy;
+        Position.X = screenX - dragdx;
+		Position.Y = screenY - dragdy;
 
 		if (Position.X < 0) Position.X = 0;
 		if (Position.Y < 0) Position.Y = 0;
-		if (Position.X + Size.X > XRES) Position.X = XRES - Size.X;
-		if (Position.Y + Size.Y > YRES) Position.Y = YRES - Size.Y;
+		if (Position.X + Size.X > SCREENW) Position.X = SCREENW - Size.X;
+		if (Position.Y + Size.Y > SCREENH) Position.Y = SCREENH - Size.Y;
 		messageLabel->ClearSelection(); // Avoid selecting while dragging
     }
 }
 
 void TransformWindow::DoDraw() {
     Graphics * g = GetGraphics();
+    // everything here is in simulation pixels: draw it SIMSCALE times bigger on the screen
+    const int S = SIMSCALE;
+    auto draw_line = [g, S](int x1, int y1, int x2, int y2, int r, int gr, int b, int a) { g->draw_line(x1 * S, y1 * S, x2 * S, y2 * S, r, gr, b, a); };
+    auto fillcircle = [g, S](int x, int y, int rx, int ry, int r, int gr, int b, int a) { g->fillcircle(x * S, y * S, rx * S, ry * S, r, gr, b, a); };
+    auto drawcircle = [g, S](int x, int y, int rx, int ry, int r, int gr, int b, int a) { g->drawcircle(x * S, y * S, rx * S, ry * S, r, gr, b, a); };
+    // as drawrect(x, y, 1, 1) did, which blends its one pixel twice
+    auto drawpixel = [g, S](int x, int y, int r, int gr, int b, int a) {
+        if (S == 1)
+            g->drawrect(x, y, 1, 1, r, gr, b, a);
+        else
+            for (int twice = 0; twice < 2; twice++)
+                g->fillrect(x * S, y * S, S, S, r, gr, b, a);
+    };
 
     // Restrict scale
     if (fabs(scaleX) > 1000) {
@@ -385,10 +404,10 @@ void TransformWindow::DoDraw() {
     // Draw original bounding box
     if (point_count >= 1) {
         // Original bounding box for selection
-        g->draw_line(c1x, c1y, c2x, c2y, 200, 200, 200, 150);
-        g->draw_line(c1x, c1y, c3x, c3y, 200, 200, 200, 150);
-        g->draw_line(c4x, c4y, c2x, c2y, 200, 200, 200, 150);
-        g->draw_line(c4x, c4y, c3x, c3y, 200, 200, 200, 150);
+        draw_line(c1x, c1y, c2x, c2y, 200, 200, 200, 150);
+        draw_line(c1x, c1y, c3x, c3y, 200, 200, 200, 150);
+        draw_line(c4x, c4y, c2x, c2y, 200, 200, 200, 150);
+        draw_line(c4x, c4y, c3x, c3y, 200, 200, 200, 150);
 
         // Rotated bounding box
         int n1x2 = n1x, n2x2 = n2x, n3x2 = n3x, n4x2 = n4x;
@@ -398,10 +417,10 @@ void TransformWindow::DoDraw() {
         rotate_around(n3x2, n3y2, center.X, center.Y, rotation / 180 * PI);
         rotate_around(n4x2, n4y2, center.X, center.Y, rotation / 180 * PI);
 
-        g->draw_line(n1x2, n1y2, n2x2, n2y2, 255, 255, 255, 100);
-        g->draw_line(n1x2, n1y2, n3x2, n3y2, 255, 255, 255, 100);
-        g->draw_line(n4x2, n4y2, n2x2, n2y2, 255, 255, 255, 100);
-        g->draw_line(n4x2, n4y2, n3x2, n3y2, 255, 255, 255, 100);
+        draw_line(n1x2, n1y2, n2x2, n2y2, 255, 255, 255, 100);
+        draw_line(n1x2, n1y2, n3x2, n3y2, 255, 255, 255, 100);
+        draw_line(n4x2, n4y2, n2x2, n2y2, 255, 255, 255, 100);
+        draw_line(n4x2, n4y2, n3x2, n3y2, 255, 255, 255, 100);
     }
     // Draw Scale circle option and preview
     if (point_count >= 2) {
@@ -413,35 +432,35 @@ void TransformWindow::DoDraw() {
         }
 
         for (auto &t : transform_pixels)
-            g->drawrect(t.first.X, t.first.Y, 1, 1, t.second.Red, t.second.Green, t.second.Blue, t.second.Alpha);
+            drawpixel(t.first.X, t.first.Y, t.second.Red, t.second.Green, t.second.Blue, t.second.Alpha);
 
         // Draw rescaled box
-        g->draw_line(n1x, n1y, n2x, n2y, 255, 255, 255, 150);
-        g->draw_line(n1x, n1y, n3x, n3y, 255, 255, 255, 150);
-        g->draw_line(n4x, n4y, n2x, n2y, 255, 255, 255, 150);
-        g->draw_line(n4x, n4y, n3x, n3y, 255, 255, 255, 150);
+        draw_line(n1x, n1y, n2x, n2y, 255, 255, 255, 150);
+        draw_line(n1x, n1y, n3x, n3y, 255, 255, 255, 150);
+        draw_line(n4x, n4y, n2x, n2y, 255, 255, 255, 150);
+        draw_line(n4x, n4y, n3x, n3y, 255, 255, 255, 150);
 
         // Draw selector circles for bounding
-        g->fillcircle(center.X, center.Y - height * scaleY / 2, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(center.X, center.Y + height * scaleY / 2, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(center.X - width * fabs(scaleX) / 2, center.Y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(center.X + width * fabs(scaleX) / 2, center.Y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(n1x, n1y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(n2x, n2y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(n3x, n3y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
-        g->fillcircle(n4x, n4y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(center.X, center.Y - height * scaleY / 2, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(center.X, center.Y + height * scaleY / 2, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(center.X - width * fabs(scaleX) / 2, center.Y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(center.X + width * fabs(scaleX) / 2, center.Y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(n1x, n1y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(n2x, n2y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(n3x, n3y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
+        fillcircle(n4x, n4y, button_knob_radius, button_knob_radius, 255, 255, 255, 255);
 
         // Selector for moving
-        g->drawcircle(center.X, center.Y, move_knob_radius, move_knob_radius, 255, 255, 255, 255);
+        drawcircle(center.X, center.Y, move_knob_radius, move_knob_radius, 255, 255, 255, 255);
 
         // Rotate controller
-        g->drawcircle(center.X, center.Y, radius, radius, 255, 255, 255, 155);
-        g->fillcircle(center.X + radius * cos(rotation / 180 * PI), center.Y + radius * sin(rotation / 180 * PI),
+        drawcircle(center.X, center.Y, radius, radius, 255, 255, 255, 155);
+        fillcircle(center.X + radius * cos(rotation / 180 * PI), center.Y + radius * sin(rotation / 180 * PI),
             rotate_knob_radius, rotate_knob_radius, 255, 255, 255, 255);
     }
 
-    g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-    g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+    g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+    g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
 
     ui::Window::DoDraw();
 }

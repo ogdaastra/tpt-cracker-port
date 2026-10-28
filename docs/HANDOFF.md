@@ -75,8 +75,8 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33, tilt to pour (N9) section 34; the
-  next free section is **35**. On 26 Oct Orlando picked from an ideas list: N9 tilt to pour, N10
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33, tilt to pour (N9) section 34, world size (N10) section 35; the
+  next free section is **36**. On 26 Oct Orlando picked from an ideas list: N9 tilt to pour, N10
   customisable world size (small worlds so he doesn't live in the zoom, and big ones), N11 turbo mode
   (multi-core simulation), N12 GPU eye candy, in that order; deep undo goes live automatically. All seven planned features are done; N8 (deep undo) was asked for on 26 Oct.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
@@ -232,6 +232,14 @@ noise, on a 160,000-particle scene with a full 96 MB history), so the history is
 100 MB (40 MB on low-memory devices), 10,000 steps.
 
 ### N9 Tilt to pour: DONE (Ember; `PORT_LOG.md` section 34)
+
+### N10 World size: DONE (Ember; `PORT_LOG.md` section 35)
+Small worlds drawn with bigger pixels (so Orlando doesn't live in the zoom) and big worlds up to 1224 × 768,
+chosen on the page and fixed when the game starts. `XRES`/`YRES` are now set at start (`world:WxHxS`), the
+grids are `WorldGrid`/`GridView` (`src/simulation/WorldGrid.h`), and `SIMSCALE` enlarges the picture. **If you
+add an array sized by `XRES`/`YRES`/`NPART`, make it a `WorldGrid` or a vector sized at start** (or use the
+`_MAX` sizes); never use `sizeof` on a grid. The GUI lays out with `SCREENW`/`SCREENH`, and the simulation
+uses `XRES`/`YRES`; mouse positions reach tools in simulation pixels. Known limits are in section 35.
 
 ## 5. Environment setup (a new container has none of this)
 

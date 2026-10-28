@@ -64,8 +64,10 @@ void render_text(const std::vector<String> &lines, int align, float spacing, int
             for (unsigned short k = 0; k < (*map)[key]->sizeX; ++k)
             for (unsigned short l = 0; l < (*map)[key]->sizeY; ++l) {
                 if ((*map)[key]->chars[(*map)[key]->sizeX * l + k]) {
-                    if (g)
+                    if (g && SIMSCALE == 1)
                         g->drawrect(cx + k, cy + l, 1, 1, PIXR(color_or_element), PIXG(color_or_element), PIXB(color_or_element), 255);
+                    else if (g) // a small world's pixels are SIMSCALE screen pixels across
+                        g->fillrect((cx + k) * SIMSCALE, (cy + l) * SIMSCALE, SIMSCALE, SIMSCALE, PIXR(color_or_element), PIXG(color_or_element), PIXB(color_or_element), 255);
                     else
                         sim->create_part(-1, cx + k, cy + l, color_or_element);
                 }

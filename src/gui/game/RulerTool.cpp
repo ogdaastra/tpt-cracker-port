@@ -97,18 +97,19 @@ void RulerWindow::DoDraw() {
 
     // First point
     if (point_count >= 1) {
-        StringBuilder c1; c1 << p1.X << ", " << p1.Y;
+        // the points are on the screen; a small world's pixels are SIMSCALE screen pixels across
+        StringBuilder c1; c1 << p1.X / SIMSCALE << ", " << p1.Y / SIMSCALE;
         g->drawcircle(p1.X, p1.Y, 6, 6, 255, 255, 255, 200);
-        g->drawtext(p1.X - g->textwidth(c1.Build()) / 2, p1.Y + (p1.Y < YRES / 2 ? 15 : -20), c1.Build(), 255, 255, 255, 255);
+        g->drawtext(p1.X - g->textwidth(c1.Build()) / 2, p1.Y + (p1.Y < SCREENH / 2 ? 15 : -20), c1.Build(), 255, 255, 255, 255);
     }
     // Second point and connecting line
     if (point_count >= 2) {
-        StringBuilder c2; c2 << p2.X << ", " << p2.Y;
+        StringBuilder c2; c2 << p2.X / SIMSCALE << ", " << p2.Y / SIMSCALE;
         g->drawcircle(p2.X, p2.Y, 6, 6, 255, 255, 255, 200);
-        g->drawtext(p2.X - g->textwidth(c2.Build()) / 2, p2.Y + (p2.Y < YRES / 2 ? 15 : -20), c2.Build(), 255, 255, 255, 255);
+        g->drawtext(p2.X - g->textwidth(c2.Build()) / 2, p2.Y + (p2.Y < SCREENH / 2 ? 15 : -20), c2.Build(), 255, 255, 255, 255);
 
         g->draw_line(p1.X, p1.Y, p2.X, p2.Y, 255, 255, 255, 200);
-        StringBuilder len; len << sqrtf((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y)) << " px";
+        StringBuilder len; len << sqrtf((p1.X - p2.X) * (p1.X - p2.X) + (p1.Y - p2.Y) * (p1.Y - p2.Y)) / SIMSCALE << " px";
         String lenstr = len.Build();
         int lenstrlen = g->textwidth(lenstr);
 
@@ -116,8 +117,8 @@ void RulerWindow::DoDraw() {
         g->drawtext((p1.X + p2.X) / 2 - lenstrlen / 2, (p1.Y + p2.Y) / 2, lenstr, 255, 255, 255, 255);
     }
 
-    g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-	g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+    g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+	g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
 
     ui::Window::DoDraw();
 }
@@ -126,8 +127,8 @@ void RulerWindow::DoMouseMove(int x, int y, int dx, int dy) {
 	ui::Window::DoMouseMove(x, y, dx, dy);
 
     // Restrict x and y
-    if (x > XRES) x = XRES;
-    if (y > YRES) y = YRES;
+    if (x > SCREENW) x = SCREENW;
+    if (y > SCREENH) y = SCREENH;
     if (dragging == 1) p1 = ui::Point(x, y);
     else if (dragging == 2) p2 = ui::Point(x, y);
 }
@@ -153,5 +154,5 @@ VideoBuffer * RulerTool::GetIcon(int toolID, int width, int height) {
 void RulerTool::Click(Simulation * sim, Brush * brush, ui::Point position) {
     RulerWindow * t = new RulerWindow(this, sim);
     ++t->point_count;
-    t->p1 = position;
+    t->p1 = position * SIMSCALE; // to the screen
 }

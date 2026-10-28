@@ -55,4 +55,4 @@ int Element_LOLZ_RuleTable[9][9] =
 	{0,1,0,0,0,0,0,1,0},
 };
 
-int Element_LOLZ_lolz[XRES/9][YRES/9];
+int Element_LOLZ_lolz[XRES_MAX/9][YRES_MAX/9];

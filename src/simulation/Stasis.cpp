@@ -10,6 +10,9 @@ void Stasis::Clear() {
 }
 
 Stasis::Stasis(Simulation & simulation): sim(simulation) {
+	vx.Resize(XRES/STASIS_CELL, YRES/STASIS_CELL);
+	vy.Resize(XRES/STASIS_CELL, YRES/STASIS_CELL);
+	strength.Resize(XRES/STASIS_CELL, YRES/STASIS_CELL);
 	//Simulation should do this.
 	std::fill(&vx[0][0], &vx[0][0]+((XRES/STASIS_CELL)*(YRES/STASIS_CELL)), 0.0f);
 	std::fill(&vy[0][0], &vy[0][0]+((XRES/STASIS_CELL)*(YRES/STASIS_CELL)), 0.0f);

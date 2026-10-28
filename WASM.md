@@ -106,6 +106,7 @@ README, launchers that need no administrator rights (`serve.py`, `serve.mjs`, `S
 | `platform.restart()` | reloads the page; `platform.openLink()` opens a new tab |
 | Challenges | 50 puzzles (heat, electronics, explosives, chemistry, machines, gravity, life, characters, records) with limited tools and ink, stars kept in the browser; Challenges… on the page or the ★ button in the game. List: `docs/CHALLENGES.md` |
 | Sound | NOTE and `tpt.play_sound()` play through Web Audio (an AudioContext at 44.1 kHz starts in Chromium; volume kept low) |
+| World size | **World size…** on the page: small worlds drawn with 2× to 4× pixels (they fill the screen without zooming), the classic 612 × 384, or bigger up to 1224 × 768; the game restarts with the world brought along. The game takes it as the start argument `world:WxHxS`; challenges need the classic size. `PORT_LOG.md` section 35 |
 
 ## License
 

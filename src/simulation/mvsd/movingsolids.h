@@ -1,4 +1,5 @@
 #include <unordered_map>
+#include "simulation/WorldGrid.h"
 #include <list>
 #include <iostream>
 
@@ -39,7 +40,7 @@ class MVSDGroup {
 public:
     MVSDGroup();
     MVSDGroup(const std::vector<int> &particles, int type, int id);
-    void update(Particle *parts, int pmap[YRES][XRES], Simulation *sim);
+    void update(Particle *parts, GridView<int> pmap, Simulation *sim);
     void calc_center(Particle *parts);
     void assign_center(int cx, int cy);
     void add_collision(Collision c) { collisions.push_back(c); }
@@ -88,7 +89,7 @@ private:
     std::vector<Collision> collisions;
 
     // Helper
-    void calc_forces(Particle *parts, int pmap[YRES][XRES], Simulation *sim);
+    void calc_forces(Particle *parts, GridView<int> pmap, Simulation *sim);
 };
 
 // Hash map of all moving solids
@@ -98,5 +99,5 @@ extern std::unordered_map<int, MVSDGroup> solids;
 int get_new_state();
 
 // Floodfill creation
-void create_moving_solid(Particle *parts, int pmap[YRES][XRES], int i, int type=PT_MVSD);
+void create_moving_solid(Particle *parts, GridView<int> pmap, int i, int type=PT_MVSD);
 };

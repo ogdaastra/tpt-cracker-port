@@ -5,6 +5,7 @@
 #include <climits>
 #include <memory>
 #include <set>
+#include <algorithm>
 #include <cmath>
 
 #include "bzip2/bz2wrap.h"
@@ -86,7 +87,9 @@ void GameSave::setSize(int newWidth, int newHeight)
 	blockHeight = newHeight;
 
 	particlesCount = 0;
-	particles = std::vector<Particle>(NPART);
+	// A save made in a bigger world can hold more particles than this world has room for;
+	// keep them all here and let Simulation::Load drop whatever does not fit.
+	particles = std::vector<Particle>(std::max(NPART, blockWidth * CELL * blockHeight * CELL));
 
 	blockMap = Plane<unsigned char>(blockWidth, blockHeight, 0);
 	fanVelX = Plane<float>(blockWidth, blockHeight, 0.0f);
@@ -470,7 +473,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 		throw ParseException(ParseException::InvalidDimensions, "Save too small");
 
 	//Too large/off screen
-	if (blockX + blockW > XRES / CELL || blockY + blockH > YRES / CELL)
+	if (blockX + blockW > XRES_MAX / CELL || blockY + blockH > YRES_MAX / CELL)
 		throw ParseException(ParseException::InvalidDimensions, "Save too large");
 
 	setSize(blockW, blockH);
@@ -917,7 +920,7 @@ void GameSave::readOPS(const std::vector<char> &data)
 					if (x >= fullW || y >= fullH)
 						throw ParseException(ParseException::Corrupt, "Particle out of range");
 
-					if (newIndex < 0 || newIndex >= NPART)
+					if (newIndex < 0 || newIndex >= int(particles.size()))
 						throw ParseException(ParseException::Corrupt, "Too many particles");
 
 					//Clear the particle, ready for our new properties
@@ -1341,16 +1344,16 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 
 	bw = saveData[6];
 	bh = saveData[7];
-	if (bx0 + bw > XRES / CELL)
-		bx0 = XRES / CELL - bw;
-	if (by0 + bh > YRES / CELL)
-		by0 = YRES / CELL - bh;
+	if (bx0 + bw > XRES_MAX / CELL)
+		bx0 = XRES_MAX / CELL - bw;
+	if (by0 + bh > YRES_MAX / CELL)
+		by0 = YRES_MAX / CELL - bh;
 	if (bx0 < 0)
 		bx0 = 0;
 	if (by0 < 0)
 		by0 = 0;
 
-	if (saveData[5] != CELL || bx0 + bw > XRES / CELL || by0 + bh > YRES / CELL)
+	if (saveData[5] != CELL || bx0 + bw > XRES_MAX / CELL || by0 + bh > YRES_MAX / CELL)
 		throw ParseException(ParseException::InvalidDimensions, "Save too large");
 	int size = (unsigned)saveData[8];
 	size |= ((unsigned)saveData[9]) << 8;
@@ -1390,7 +1393,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 		airMode = 0;
 	}
 
-	std::vector<int> particleIDMap(XRES * YRES, 0);
+	std::vector<int> particleIDMap(w * h, 0);
 
 	// load the required air state
 	for (y = by0; y < by0 + bh; y++)
@@ -1538,7 +1541,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 			i--;
 			if (p + 1 >= dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-			if (i < NPART)
+			if (i < int(particles.size()))
 			{
 				particles[i].vx = (data[p++] - 127.0f) / 16.0f;
 				particles[i].vy = (data[p++] - 127.0f) / 16.0f;
@@ -1556,7 +1559,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					ttv = (data[p++]) << 8;
 					ttv |= (data[p++]);
 					particles[i - 1].life = ttv;
@@ -1568,7 +1571,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 			else {
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-				if (i <= NPART)
+				if (i <= int(particles.size()))
 					particles[i - 1].life = data[p++] * 4;
 				else
 					p++;
@@ -1584,7 +1587,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					ttv = (data[p++]) << 8;
 					ttv |= (data[p++]);
 					particles[i - 1].tmp = ttv;
@@ -1614,7 +1617,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 			{
 				if (p >= dataLength)
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-				if (i <= NPART)
+				if (i <= int(particles.size()))
 					particles[i - 1].tmp2 = data[p++];
 				else
 					p++;
@@ -1631,7 +1634,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					particles[i - 1].dcolour = data[p++] << 24;
 				}
 				else {
@@ -1650,7 +1653,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					particles[i - 1].dcolour |= data[p++] << 16;
 				}
 				else {
@@ -1669,7 +1672,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					particles[i - 1].dcolour |= data[p++] << 8;
 				}
 				else {
@@ -1688,7 +1691,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				if (p >= dataLength) {
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART) {
+				if (i <= int(particles.size())) {
 					particles[i - 1].dcolour |= data[p++];
 				}
 				else {
@@ -1709,7 +1712,7 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 				{
 					throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
 				}
-				if (i <= NPART)
+				if (i <= int(particles.size()))
 				{
 					if (ver >= 42) {
 						if (new_format) {
@@ -1753,13 +1756,13 @@ void GameSave::readPSv(const std::vector<char> &dataVec)
 		{
 			if (p >= dataLength)
 				throw ParseException(ParseException::Corrupt, "Not enough data at line " MTOS(__LINE__) " in " MTOS(__FILE__));
-			if (i <= NPART)
+			if (i <= int(particles.size()))
 				particles[i - 1].ctype = data[p++];
 			else
 				p++;
 		}
 		// no more particle properties to load, so we can change type here without messing up loading
-		if (i && i <= NPART)
+		if (i && i <= int(particles.size()))
 		{
 			if (ver < 90 && particles[i - 1].type == PT_PHOT)
 			{
@@ -2049,7 +2052,7 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 	std::vector<unsigned> partsPosFirstMap(fullW*fullH, 0);
 	std::vector<unsigned> partsPosLastMap(fullW*fullH, 0);
 	std::vector<unsigned> partsPosCount(fullW*fullH, 0);
-	std::vector<unsigned> partsPosLink(NPART, 0);
+	std::vector<unsigned> partsPosLink(particles.size(), 0);
 	unsigned int soapCount = 0;
 	for (i = 0; i < particlesCount; i++)
 	{
@@ -2105,11 +2108,11 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 
 	 // Allocate enough space to store all Particles and 3 bytes on top of that per Particle, for the field descriptors.
 	 // In practice, a Particle will never need as much space in the save as in memory; this is just an upper bound to simplify allocation.
-	std::vector<unsigned char> partsData(NPART * (sizeof(Particle) + 3));
+	std::vector<unsigned char> partsData(particles.size() * (sizeof(Particle) + 3));
 	unsigned int partsDataLen = 0;
-	std::vector<unsigned> partsSaveIndex(NPART);
+	std::vector<unsigned> partsSaveIndex(particles.size());
 	unsigned int partsCount = 0;
-	std::fill(&partsSaveIndex[0], &partsSaveIndex[0] + NPART, 0);
+	std::fill(partsSaveIndex.begin(), partsSaveIndex.end(), 0);
 	for (y=0;y<fullH;y++)
 	{
 		for (x = 0; x < fullW; x++)
@@ -2412,7 +2415,7 @@ std::pair<bool, std::vector<char>> GameSave::serialiseOPS() const
 						//linkedIndex is index within saved particles + 1, 0 means not saved or no link
 
 						unsigned linkedIndex = 0;
-						if ((particles[i].ctype & 2) && particles[i].tmp >= 0 && particles[i].tmp < NPART)
+						if ((particles[i].ctype & 2) && particles[i].tmp >= 0 && particles[i].tmp < int(particles.size()))
 						{
 							linkedIndex = partsSaveIndex[particles[i].tmp];
 						}
@@ -2784,7 +2787,7 @@ bool GameSave::PressureInTmp3(int type)
 
 GameSave& GameSave::operator << (Particle &v)
 {
-	if (particlesCount < NPART && v.type)
+	if (particlesCount < int(particles.size()) && v.type)
 	{
 		particles[particlesCount++] = v;
 	}

@@ -27,7 +27,7 @@ void ContextMenu::Show(ui::Point position)
 
 	if(position.X+Size.X > WINDOWW)
 		position.X -= std::min(position.X, Size.X);
-	if(position.Y+Size.Y > YRES+MENUSIZE)
+	if(position.Y+Size.Y > SCREENH+MENUSIZE)
 		position.Y -= std::min(position.Y, Size.Y);
 	Position = position;
 

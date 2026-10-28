@@ -153,16 +153,16 @@ void ConfigCRAYWindow::DoDraw() {
 	int gapendx = pos.X + gap_val * isign_angle(cos(angle));
 	int gapendy = pos.Y + gap_val * isign_angle(sin(angle));
 
-	g->draw_line(pos.X, pos.Y, endx, endy, 255, 0, 0, 255);
-	g->draw_line(pos.X, pos.Y, gapendx, gapendy, 135, 0, 0, 255);
+	g->draw_line(sim_point(pos.X), sim_point(pos.Y), sim_point(endx), sim_point(endy), 255, 0, 0, 255);
+	g->draw_line(sim_point(pos.X), sim_point(pos.Y), sim_point(gapendx), sim_point(gapendy), 135, 0, 0, 255);
 
 	String minilabel = String::Build(distance, "px / ", gap_val + distance, " px");
-	g->drawtext((pos.X + endx) / 2 - g->textwidth(minilabel) / 2, (pos.Y + endy) / 2 - 8,
+	g->drawtext(sim_point((pos.X + endx) / 2) - g->textwidth(minilabel) / 2, sim_point((pos.Y + endy) / 2) - 8,
 		minilabel, 255, 255, 255, 255);
-	g->drawcircle(pos.X, pos.Y, 4, 4, 255, 255, 255, 255);
+	g->drawcircle(sim_point(pos.X), sim_point(pos.Y), 4, 4, 255, 255, 255, 255);
 
-	g->clearrect(XRES, 0, WINDOWW - XRES, WINDOWH);
-	g->clearrect(0, YRES - 1, WINDOWW, WINDOWH - YRES + 1);
+	g->clearrect(SCREENW, 0, WINDOWW - SCREENW, WINDOWH);
+	g->clearrect(0, SCREENH - 1, WINDOWW, WINDOWH - SCREENH + 1);
 	ui::Window::DoDraw();
 }
 
@@ -174,8 +174,8 @@ void ConfigCRAYWindow::DoMouseMove(int x, int y, int dx, int dy) {
 
 		if (Position.X < 0) Position.X = 0;
 		if (Position.Y < 0) Position.Y = 0;
-		if (Position.X + Size.X > XRES) Position.X = XRES - Size.X;
-		if (Position.Y + Size.Y > YRES) Position.Y = YRES - Size.Y;
+		if (Position.X + Size.X > SCREENW) Position.X = SCREENW - Size.X;
+		if (Position.Y + Size.Y > SCREENH) Position.Y = SCREENH - Size.Y;
 		messageLabel->ClearSelection(); // Avoid selecting while dragging
 	} else if (setting_dir) {
 		angle = atan2(y - pos.Y, x - pos.X);

@@ -168,14 +168,16 @@ void SignWindow::DoDraw()
 		Graphics * g = GetGraphics();
 
 		String text = currentSign.getDisplayText(sim, x, y, w, h);
+		x *= SIMSCALE; // to the screen
+		y *= SIMSCALE;
 		g->clearrect(x, y, w+1, h);
 		g->drawrect(x, y, w+1, h, 192, 192, 192, 255);
 		g->drawtext(x+3, y+4, text, 255, 255, 255, 255);
 
 		if (currentSign.ju != sign::None)
 		{
-			x = currentSign.x;
-			y = currentSign.y;
+			x = currentSign.x * SIMSCALE;
+			y = currentSign.y * SIMSCALE;
 			dx = 1 - currentSign.ju;
 			dy = (currentSign.y > 18) ? -1 : 1;
 			for (int j=0; j<4; j++)
@@ -197,7 +199,7 @@ void SignWindow::DoMouseMove(int x, int y, int dx, int dy) {
 		ui::Window::DoMouseMove(x, y, dx, dy);
 	else
 	{
-		ui::Point pos = tool->gameModel->AdjustZoomCoords(ui::Point(x, y));
+		ui::Point pos = tool->gameModel->AdjustZoomCoords(ui::Point(x, y) / SIMSCALE); // from the screen
 		if(pos.X < XRES && pos.Y < YRES)
 		{
 			movingSign->x = pos.X;

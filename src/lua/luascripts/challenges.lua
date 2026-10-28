@@ -339,6 +339,8 @@ end
 function challenges.start(id)
 	local def = byId[id]
 	if not def then error("challenges: no challenge " .. tostring(id)) end
+	-- the challenges are built for the classic world (the page's World size setting can change it)
+	if sim.XRES ~= 612 or sim.YRES ~= 384 then error("challenges: they need the classic 612x384 world") end
 	if current and not current.result then challenge.finish() end
 	if current and current.def.cleanup then current.def.cleanup() end
 	sim.clearSim()

@@ -7,15 +7,18 @@
 #define PI_4 3.141592f / 4.0f
 
 StressField::StressField(Simulation * simulation) : sim(simulation) {
-    
+    stress_map.Resize(XRES, YRES);
+    stress_map_x.Resize(XRES, YRES);
+    stress_map_y.Resize(XRES, YRES);
+    gravitational_stress_map.Resize(XRES/CELL, YRES/CELL);
 }
 
 void StressField::Clear() {
     if (!enabled) return;
-    std::fill(&stress_map[0][0], &stress_map[0][0] + sizeof(stress_map) / sizeof(stress_map[0][0]), 0.0f);
-    std::fill(&stress_map_x[0][0], &stress_map_x[0][0] + sizeof(stress_map_x) / sizeof(stress_map_x[0][0]), 0.0f);
-    std::fill(&stress_map_y[0][0], &stress_map_y[0][0] + sizeof(stress_map_y) / sizeof(stress_map_y[0][0]), 0.0f);
-    std::fill(&gravitational_stress_map[0][0], &gravitational_stress_map[0][0] + sizeof(gravitational_stress_map) / sizeof(gravitational_stress_map[0][0]), 0.0f);
+    stress_map.Clear();
+    stress_map_x.Clear();
+    stress_map_y.Clear();
+    gravitational_stress_map.Clear();
 }
 
 

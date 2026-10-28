@@ -418,7 +418,7 @@ void Gravity::update_grav(void)
 
 
 
-bool Gravity::grav_mask_r(int x, int y, char checkmap[YRES/CELL][XRES/CELL], char shape[YRES/CELL][XRES/CELL])
+bool Gravity::grav_mask_r(int x, int y, GridView<char> checkmap, GridView<char> shape)
 {
 	int x1, x2;
 	bool ret = false;
@@ -501,13 +501,12 @@ void Gravity::mask_free(mask_el *c_mask_el)
 
 void Gravity::gravity_mask()
 {
-	char checkmap[YRES/CELL][XRES/CELL];
+	WorldGrid<char> checkmap(XRES/CELL, YRES/CELL); // zeroed; on the heap, as big worlds make it big
 	unsigned maskvalue;
 	mask_el *t_mask_el = nullptr;
 	mask_el *c_mask_el = nullptr;
 	if (!gravmask)
 		return;
-	memset(checkmap, 0, sizeof(checkmap));
 	for (int x = 0; x < XRES / CELL; x++)
 	{
 		for(int y = 0; y < YRES / CELL; y++)
@@ -534,7 +533,7 @@ void Gravity::gravity_mask()
 					c_mask_el->next = nullptr;
 				}
 				// Fill the shape
-				if (grav_mask_r(x, y, checkmap, reinterpret_cast<char(*)[XRES/CELL]>(c_mask_el->shape)))
+				if (grav_mask_r(x, y, checkmap, GridView<char>{ c_mask_el->shape, XRES/CELL }))
 					c_mask_el->shapeout = 1;
 			}
 		}

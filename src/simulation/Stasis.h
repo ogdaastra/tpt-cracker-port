@@ -1,6 +1,7 @@
 #ifndef STASIS_H
 #define STASIS_H
 #include "Config.h"
+#include "simulation/WorldGrid.h"
 
 class Simulation;
 
@@ -9,9 +10,9 @@ public:
     Simulation &sim;
 
     //Arrays from the simulation    
-    float vx[YRES / STASIS_CELL][XRES / STASIS_CELL];
-    float vy[YRES / STASIS_CELL][XRES / STASIS_CELL];
-    float strength[YRES / STASIS_CELL][XRES / STASIS_CELL];
+    WorldGrid<float> vx;
+    WorldGrid<float> vy;
+    WorldGrid<float> strength;
 
     void Clear();
     Stasis(Simulation &sim);

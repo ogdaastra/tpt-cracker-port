@@ -41,8 +41,9 @@ export function collect(page) {
 	return out;
 }
 
-export async function openGame(page, { dismissIntro = true } = {}) {
-	await page.goto(START);
+export async function openGame(page, { dismissIntro = true, query = '' } = {}) {
+	// query: extra address parameters, e.g. 'world=308x192x2' (World size)
+	await page.goto(query ? `${START}${START.includes('?') ? '&' : '?'}${query}` : START);
 	// 'running' is set when the game has presented its first frame (SDL input listeners exist by then)
 	await page.waitForFunction(() => window.tptPage && ((window.tptPage.state === 'running' && window.tptPage.module) || window.tptPage.state === 'failed'), null, { timeout: 60_000 });
 	const state = await page.evaluate(() => window.tptPage.state);
@@ -73,6 +74,22 @@ function aim(n, edge, size, gameSize) {
 	if (toGame(t) > want) t--;
 	else if (toGame(t) < want) t++;
 	return Math.trunc(edge) + t;
+}
+
+// The centre of simulation pixel (x, y) on the page in any world size: the world is drawn at its pixel size
+// (window.tptPage.world.scale) from the canvas's top left, so it is screen pixel x * scale + scale / 2.
+export async function worldPoint(page, x, y) {
+	const box = await page.locator('#canvas').boundingBox();
+	const { scale, cw, ch } = await page.evaluate(() => ({ scale: window.tptPage.world.scale, cw: document.querySelector('#canvas').width, ch: document.querySelector('#canvas').height }));
+	const half = Math.floor(scale / 2);
+	return { x: aim(x * scale + half, box.x, box.width, cw), y: aim(y * scale + half, box.y, box.height, ch) };
+}
+
+// Canvas pixel (x, y) on the page, for any canvas size (gamePoint assumes the classic 646x424)
+export async function screenPoint(page, x, y) {
+	const box = await page.locator('#canvas').boundingBox();
+	const [cw, ch] = await page.evaluate(() => [document.querySelector('#canvas').width, document.querySelector('#canvas').height]);
+	return { x: aim(x, box.x, box.width, cw), y: aim(y, box.y, box.height, ch) };
 }
 
 export async function gamePoint(page, x, y) {
