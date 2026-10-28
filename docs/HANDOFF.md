@@ -394,3 +394,7 @@ playwright/index.mjs`, ports 8811/8822); adjust before use. Run with node from a
   promised.
 - N5 sound: off by default with a speaker button and volume. N6 rewind: last 30 s, slider + hotkey, memory
   capped. N7: touch drawing, pinch zoom, two-finger pan, on-screen buttons.
+- 28 Oct, after N9-N12: Orlando chose what comes next, in this order: (1) turbo for more elements (read and
+  clear more update functions for `turboAllowed`), (2) more challenges, (3) faster drawing (GPU stage 2,
+  `NEXT-PLANS.md` section 6, pixel tests against the CPU renderer), (4) turbo on by default on computers with
+  4+ cores.
