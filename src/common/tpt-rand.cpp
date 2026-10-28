@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <ctime>
 
+thread_local RNG *tptThreadRNG = nullptr;
+
 /* xoroshiro128+ by David Blackman and Sebastiano Vigna */
 
 static inline uint64_t rotl(const uint64_t x, int k)

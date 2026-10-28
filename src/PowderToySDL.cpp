@@ -1304,6 +1304,13 @@ extern "C"
 		remove(ByteString::Build(STAMPS_DIR, PATH_SEP, name, ".stm").c_str());
 	}
 
+	// The last tpt_benchmark's simulated frames split into BeforeSim, UpdateParticles and AfterSim, ms in total
+	static double benchmarkSplit[3];
+	EMSCRIPTEN_KEEPALIVE double tpt_benchmark_split(int part)
+	{
+		return part >= 0 && part < 3 ? benchmarkSplit[part] : 0;
+	}
+
 	// Runs the simulation (what = 0) or the particle renderer (what = 1) for the given number of frames
 	// as fast as possible and returns the milliseconds taken; for benchmarks
 	// (tests/browser/perf.spec.mjs). Ignores pause, like single-frame stepping.
@@ -1314,14 +1321,21 @@ extern "C"
 		auto *sim = webGameController->GetModel()->GetSimulation();
 		auto *ren = webGameController->GetModel()->GetRenderer();
 		auto start = emscripten_get_now();
+		benchmarkSplit[0] = benchmarkSplit[1] = benchmarkSplit[2] = 0;
 		for (int i = 0; i < frames; i++)
 		{
 			if (what == 0)
 			{
 				sim->framerender = 1;
+				double t0 = emscripten_get_now();
 				sim->BeforeSim();
+				double t1 = emscripten_get_now();
 				sim->UpdateParticles(0, NPART - 1);
+				double t2 = emscripten_get_now();
 				sim->AfterSim();
+				benchmarkSplit[0] += t1 - t0;
+				benchmarkSplit[1] += t2 - t1;
+				benchmarkSplit[2] += emscripten_get_now() - t2;
 			}
 			else
 			{
@@ -1332,6 +1346,35 @@ extern "C"
 		}
 		sim->framerender = 0;
 		return emscripten_get_now() - start;
+	}
+
+	// Turbo mode (Simulation::TurboFrame, simulation/Turbo.h): the particle update on this many threads, 0 for
+	// off. Without threads (the single-threaded build) the same work runs on the main thread, with the same
+	// results. Returns the setting.
+	EMSCRIPTEN_KEEPALIVE int tpt_turbo(int threads)
+	{
+		if (!webGameController)
+			return -1;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		if (threads >= 0)
+			sim->turboThreads = std::min(threads, 8);
+		return sim->turboThreads;
+	}
+
+	// What turbo mode did: frames run in turbo mode, then for the last one tiles, tiles updated in parallel,
+	// particles updated in parallel, particles updated on one thread afterwards, moves put off, and how many
+	// times a special particle was changed in parallel (must be 0). Space separated; valid until the next call.
+	EMSCRIPTEN_KEEPALIVE const char *tpt_turbo_info()
+	{
+		static std::string out;
+		if (!webGameController)
+			return "";
+		auto &t = webGameController->GetModel()->GetSimulation()->turboStats;
+		out = std::to_string(t.frames) + " " + std::to_string(t.tiles) + " " + std::to_string(t.parallelTiles) + " " +
+			std::to_string(t.parallelParticles) + " " + std::to_string(t.serialParticles) + " " +
+			std::to_string(t.deferredMoves) + " " + std::to_string(t.specialTouched) + " " +
+			std::to_string(t.msPrepare) + " " + std::to_string(t.msParallel) + " " + std::to_string(t.msAfter);
+		return out.c_str();
 	}
 
 	// What happened in the simulation since the last call, for the page's sound effects: particles that appeared

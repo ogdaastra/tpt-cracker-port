@@ -1,4 +1,5 @@
 #include "Simulation.h"
+#include "Turbo.h"
 
 #include <iostream>
 #include <cmath>
@@ -3456,7 +3457,9 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
 
 	int t = parts[i].type;
 	if (t > 0 && t < PT_NUM)
-		soundVanished[t]++;
+		CountVanished(t);
+	if (turboThread && t > 0 && t < PT_NUM && turboSpecial[t])
+		turboThread->specialTouched++;
 	if (t && elements[t].ChangeType)
 	{
 		(*(elements[t].ChangeType))(this, i, x, y, t, PT_NONE);
@@ -3502,9 +3505,14 @@ void Simulation::kill_part(int i, bool ignore_iwall)//kills particle number i
 			vehicles.erase(pos);
 	}
 
-	elementCount[t]--;
+	CountElement(t, -1);
 
 	parts[i].type = PT_NONE;
+	if (turboThread)
+	{
+		turboThread->tile->freed.push_back(i);
+		return;
+	}
 	parts[i].life = pfree;
 	pfree = i;
 }
@@ -3528,14 +3536,26 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 			return false;
 	}
 
+	if (turboThread && (turboSpecial[parts[i].type] || turboSpecial[t]))
+		turboThread->specialTouched++;
 	if (elements[parts[i].type].ChangeType)
 		(*(elements[parts[i].type].ChangeType))(this, i, x, y, parts[i].type, t);
 	if (elements[t].ChangeType)
 		(*(elements[t].ChangeType))(this, i, x, y, parts[i].type, t);
 
-	if (parts[i].type > 0 && parts[i].type < PT_NUM && elementCount[parts[i].type])
-		elementCount[parts[i].type]--;
-	elementCount[t]++;
+	if (turboThread)
+	{
+		// the counts are added up after the parallel phases (the check for 0 needs the total)
+		if (parts[i].type > 0 && parts[i].type < PT_NUM)
+			turboThread->elementCount[parts[i].type]--;
+		turboThread->elementCount[t]++;
+	}
+	else
+	{
+		if (parts[i].type > 0 && parts[i].type < PT_NUM && elementCount[parts[i].type])
+			elementCount[parts[i].type]--;
+		elementCount[t]++;
+	}
 
 	if (elements[t].Properties & PROP_VEHICLE) {
 		// Erase self from vehicles vec
@@ -3547,8 +3567,8 @@ bool Simulation::part_change_type(int i, int x, int y, int t)
 	}
 
 	if (parts[i].type > 0 && parts[i].type < PT_NUM)
-		soundVanished[parts[i].type]++;
-	soundAppeared[t]++;
+		CountVanished(parts[i].type);
+	CountAppeared(t);
 	parts[i].type = t;
 	if (elements[t].Properties & TYPE_ENERGY)
 	{
@@ -3641,24 +3661,21 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 		{
 			return -1;
 		}
-		if (pfree == -1)
+		i = PopFreeParticle();
+		if (i == -1)
 			return -1;
-		i = pfree;
-		pfree = parts[i].life;
 	}
 	else if (p == -2)//creating from brush
 	{
-		if (pfree == -1)
+		i = PopFreeParticle();
+		if (i == -1)
 			return -1;
-		i = pfree;
-		pfree = parts[i].life;
 	}
 	else if (p == -3)//skip pmap checks, e.g. for sing explosion
 	{
-		if (pfree == -1)
+		i = PopFreeParticle();
+		if (i == -1)
 			return -1;
-		i = pfree;
-		pfree = parts[i].life;
 	}
 	else
 	{
@@ -3674,20 +3691,24 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 
 		oldType = parts[p].type;
 
+		if (turboThread && turboSpecial[oldType])
+			turboThread->specialTouched++;
 		if (elements[oldType].ChangeType)
 			(*(elements[oldType].ChangeType))(this, p, oldX, oldY, oldType, t);
 		if (oldType)
-			elementCount[oldType]--;
+			CountElement(oldType, -1);
 
 		i = p;
 	}
 
-	if (i>parts_lastActiveIndex) parts_lastActiveIndex = i;
+	NoteActiveParticle(i);
+	if (turboThread && turboSpecial[t])
+		turboThread->specialTouched++;
 
 	parts[i] = elements[t].DefaultProperties;
 	parts[i].type = t;
 	if (t > 0 && t < PT_NUM)
-		soundAppeared[t]++;
+		CountAppeared(t);
 	parts[i].x = (float)x;
 	parts[i].y = (float)y;
 
@@ -3732,7 +3753,7 @@ int Simulation::create_part(int p, int x, int y, int t, int v)
 	else if (t == PT_STKM2)
 		player2.stkmID = i;
 
-	elementCount[t]++;
+	CountElement(t, 1);
 	return i;
 }
 
@@ -3781,6 +3802,13 @@ void Simulation::create_gain_photon(int pp)//photons from PHOT going through GLO
 	float xx, yy;
 	int i, lr, temp_bin, nx, ny;
 
+	// only energy particles make these, and they are never updated in parallel
+	if (turboThread)
+	{
+		turboThread->specialTouched++;
+		return;
+	}
+
 	if (pfree == -1)
 		return;
 	i = pfree;
@@ -3824,6 +3852,13 @@ void Simulation::create_cherenkov_photon(int pp)//photons from NEUT going throug
 {
 	int i, lr, nx, ny;
 	float r;
+
+	// only energy particles make these, and they are never updated in parallel
+	if (turboThread)
+	{
+		turboThread->specialTouched++;
+		return;
+	}
 
 	if (pfree == -1)
 		return;
@@ -3883,18 +3918,6 @@ void Simulation::delete_part(int x, int y)//calls kill_part with the particle lo
 
 void Simulation::UpdateParticles(int start, int end)
 {
-	int i, j, x, y, t, nx, ny, r, surround_space, s, rt, nt;
-	float mv, dx, dy, nrx, nry, dp, ctemph, ctempl, gravtot;
-	int fin_x, fin_y, clear_x, clear_y, stagnant;
-	float fin_xf, fin_yf, clear_xf, clear_yf;
-	float nn, ct1, ct2, swappage;
-	float pt = R_TEMP;
-	float c_heat = 0.0f;
-	int h_count = 0;
-	int surround[8];
-	int surround_hconduct[8];
-	bool transitionOccurred;
-	
 	// Update all moving solids before the particles
 	auto itr = MOVINGSOLID::solids.begin();
 	while (itr != MOVINGSOLID::solids.end()) {
@@ -3919,18 +3942,82 @@ void Simulation::UpdateParticles(int start, int end)
 	// Recalc Circuits
 	CIRCUITS::update_all_circuits();
 
+	if (!(turboThreads && start == 0 && end >= NPART - 1 && TurboFrame()))
+		UpdateParticleLoop<0>(start, end);
+
+	emfield->Update();
+	stressField->AggregateStress(start, end, parts_lastActiveIndex);
+
+	//'f' was pressed (single frame)
+	if (framerender)
+		framerender--;
+}
+
+// The particle loop of UpdateParticles, apart so that turbo mode (Turbo.cpp) can run it on parts of the
+// world. Mode 0: particles start to end, the usual loop. Mode 1: list[start..end], a tile updated in parallel
+// (turboThread is set); a move longer than TURBO_MAX_MOVE is put off. Mode 2: moves[start..end], the moves put
+// off, made afterwards. Mode 3: like 0, but skipping the particles turbo mode already updated this frame.
+template<int Mode>
+void Simulation::UpdateParticleLoop(int start, int end, const int *list, const TurboDeferredMove *moves)
+{
+	int i, j, x, y, t, nx, ny, r, surround_space, s, rt, nt;
+	float mv, dx, dy, nrx, nry, dp, ctemph, ctempl, gravtot;
+	float pGravX, pGravY, pGravD, gel_scale;
+	int fin_x, fin_y, clear_x, clear_y, stagnant;
+	float fin_xf, fin_yf, clear_xf, clear_yf;
+	float nn, ct1, ct2, swappage;
+	float pt = R_TEMP;
+	float c_heat = 0.0f;
+	int h_count = 0;
+	int surround[8];
+	int surround_hconduct[8];
+	bool transitionOccurred;
+	
 	//the main particle loop function, goes over all particles.
 	unsigned char update_count;
-	for (i = start; i <= end && i <= parts_lastActiveIndex; i++) {
+	for (int k = start; (Mode == 0 || Mode == 3) ? (k <= end && k <= parts_lastActiveIndex) : k <= end; k++) {
+		if constexpr (Mode == 1)
+		{
+			i = list[k];
+			turboDone[i] = turboFrameId;
+		}
+		else if constexpr (Mode == 2)
+			i = moves[k].i;
+		else
+			i = k;
+		if constexpr (Mode == 3)
+		{
+			if (turboDone[i] == turboFrameId)
+				continue;
+			if (parts[i].type)
+				turboSerialCount++;
+		}
 		if (parts[i].type)
 		{
+			if constexpr (Mode == 2)
+			{
+				// the particle's update ran in parallel; skip the move if something has changed it since
+				auto &move = moves[k];
+				if (parts[i].type != move.t || (int)(parts[i].x+0.5f) != move.x || (int)(parts[i].y+0.5f) != move.y)
+					continue;
+				t = move.t;
+				x = move.x;
+				y = move.y;
+				nt = move.nt;
+				surround_space = move.surround_space;
+				pGravX = move.pGravX;
+				pGravY = move.pGravY;
+				update_count = move.update_count;
+				goto turbo_move;
+			}
 
 			// Some elements update n times per frame
 			update_count = 0;
 			update_loop_begin:
 			++update_count;
 
-			debug_mostRecentlyUpdated = i;
+			if constexpr (Mode != 1)
+				debug_mostRecentlyUpdated = i;
 			t = parts[i].type;
 
 			x = (int)(parts[i].x+0.5f);
@@ -4007,7 +4094,9 @@ void Simulation::UpdateParticles(int start, int end)
 				}
 			}
 
-			float pGravX = 0, pGravY = 0, pGravD = 0;
+			pGravX = 0;
+			pGravY = 0;
+			pGravD = 0;
 			if (!(elements[t].Properties & TYPE_SOLID) && (elements[t].Gravity || elements[t].NewtonianGravity))
 			{
 				// GetGravityField sets both components in every gravity mode (Newtonian gravity included); the copy of
@@ -4071,7 +4160,7 @@ void Simulation::UpdateParticles(int start, int end)
 					}
 				}
 
-			float gel_scale = 1.0f;
+			gel_scale = 1.0f;
 			if (t==PT_GEL)
 				gel_scale = parts[i].tmp*2.55f;
 
@@ -4630,7 +4719,16 @@ killed:
 			if (!parts[i].vx&&!parts[i].vy)//if its not moving, skip to next particle, movement code it next
 				continue;
 
+		turbo_move:
 			mv = fmaxf(fabsf(parts[i].vx), fabsf(parts[i].vy));
+			if constexpr (Mode == 1)
+			{
+				if (!(mv <= TURBO_MAX_MOVE)) // or NaN
+				{
+					turboThread->tile->deferred.push_back({ i, t, x, y, nt, surround_space, pGravX, pGravY, update_count });
+					continue;
+				}
+			}
 			if (mv < ISTP || std::isnan(mv)) // upstream 51508113: NaN velocity looped forever
 			{
 				clear_x = x;
@@ -5203,13 +5301,6 @@ movedone:
 			continue;
 		}
 	}
-
-	emfield->Update();
-	stressField->AggregateStress(start, end, parts_lastActiveIndex);
-
-	//'f' was pressed (single frame)
-	if (framerender)
-		framerender--;
 }
 
 bool Simulation::UserMayChange(int x, int y) const
@@ -5862,6 +5953,7 @@ void Simulation::AfterSim()
 
 Simulation::~Simulation()
 {
+	TurboFree();
 	delete grav;
 	delete air;
 	delete stasis;
@@ -6059,3 +6151,7 @@ static_assert(PMAPBITS <= 16, "PMAPBITS is too large");
 // * Whoever runs into a problem with this (e.g. with XRES = 612, YRES = 384 and
 //   PMAPBITS = 13) should just remove the check and take responsibility otherwise.
 static_assert(ce_log2(XRES_MAX) + ce_log2(YRES_MAX) + PMAPBITS <= 31, "not enough space in pmap");
+
+template void Simulation::UpdateParticleLoop<1>(int, int, const int *, const TurboDeferredMove *);
+template void Simulation::UpdateParticleLoop<2>(int, int, const int *, const TurboDeferredMove *);
+template void Simulation::UpdateParticleLoop<3>(int, int, const int *, const TurboDeferredMove *);
