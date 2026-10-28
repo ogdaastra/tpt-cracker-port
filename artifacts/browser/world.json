@@ -36,7 +36,7 @@
       "inside": 1,
       "beside": 0,
       "lowest": 571,
-      "halfWaterMsPerFrame": 65.9
+      "halfWaterMsPerFrame": 67
     },
     "1224x768x1": {
       "landed": [
@@ -47,7 +47,7 @@
       "inside": 1,
       "beside": 0,
       "lowest": 763,
-      "halfWaterMsPerFrame": 115.4
+      "halfWaterMsPerFrame": 120.4
     }
   },
   "carried": {

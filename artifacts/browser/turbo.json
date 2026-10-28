@@ -1,0 +1,301 @@
+{
+  "scenes": {
+    "pond": {
+      "one": {
+        "hash": "82b7ac6fa9cc1ce6",
+        "particles": 78012,
+        "turboFrames": 200,
+        "last": {
+          "frames": 200,
+          "tiles": 126,
+          "parallelTiles": 56,
+          "parallel": 77980,
+          "serial": 32,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "82b7ac6fa9cc1ce6",
+        "particles": 78012,
+        "turboFrames": 200,
+        "last": {
+          "frames": 400,
+          "tiles": 126,
+          "parallelTiles": 56,
+          "parallel": 77980,
+          "serial": 32,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "82b7ac6fa9cc1ce6",
+        "particles": 78012,
+        "turboFrames": 200,
+        "last": {
+          "frames": 600,
+          "tiles": 126,
+          "parallelTiles": 56,
+          "parallel": 77980,
+          "serial": 32,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    },
+    "fire": {
+      "one": {
+        "hash": "97eaaa7d7b26d8b0",
+        "particles": 71972,
+        "turboFrames": 200,
+        "last": {
+          "frames": 800,
+          "tiles": 126,
+          "parallelTiles": 126,
+          "parallel": 71968,
+          "serial": 114,
+          "deferred": 180,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "97eaaa7d7b26d8b0",
+        "particles": 71972,
+        "turboFrames": 200,
+        "last": {
+          "frames": 1000,
+          "tiles": 126,
+          "parallelTiles": 126,
+          "parallel": 71968,
+          "serial": 114,
+          "deferred": 180,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "97eaaa7d7b26d8b0",
+        "particles": 71972,
+        "turboFrames": 200,
+        "last": {
+          "frames": 1200,
+          "tiles": 126,
+          "parallelTiles": 126,
+          "parallel": 71968,
+          "serial": 114,
+          "deferred": 180,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    },
+    "mixed": {
+      "one": {
+        "hash": "59fe067429b77f66",
+        "particles": 55669,
+        "turboFrames": 200,
+        "last": {
+          "frames": 1400,
+          "tiles": 126,
+          "parallelTiles": 19,
+          "parallel": 19456,
+          "serial": 36213,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "59fe067429b77f66",
+        "particles": 55669,
+        "turboFrames": 200,
+        "last": {
+          "frames": 1600,
+          "tiles": 126,
+          "parallelTiles": 19,
+          "parallel": 19456,
+          "serial": 36213,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "59fe067429b77f66",
+        "particles": 55669,
+        "turboFrames": 200,
+        "last": {
+          "frames": 1800,
+          "tiles": 126,
+          "parallelTiles": 19,
+          "parallel": 19456,
+          "serial": 36213,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    },
+    "tilted": {
+      "one": {
+        "hash": "a4965b030b9ea1cf",
+        "particles": 43941,
+        "turboFrames": 200,
+        "last": {
+          "frames": 2000,
+          "tiles": 54,
+          "parallelTiles": 25,
+          "parallel": 43910,
+          "serial": 31,
+          "deferred": 2,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "a4965b030b9ea1cf",
+        "particles": 43941,
+        "turboFrames": 200,
+        "last": {
+          "frames": 2200,
+          "tiles": 54,
+          "parallelTiles": 25,
+          "parallel": 43910,
+          "serial": 31,
+          "deferred": 2,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "a4965b030b9ea1cf",
+        "particles": 43941,
+        "turboFrames": 200,
+        "last": {
+          "frames": 2400,
+          "tiles": 54,
+          "parallelTiles": 25,
+          "parallel": 43910,
+          "serial": 31,
+          "deferred": 2,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    },
+    "floating": {
+      "one": {
+        "hash": "745a54ff0bfd8531",
+        "particles": 59691,
+        "turboFrames": 200,
+        "last": {
+          "frames": 2600,
+          "tiles": 54,
+          "parallelTiles": 54,
+          "parallel": 59689,
+          "serial": 2,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "745a54ff0bfd8531",
+        "particles": 59691,
+        "turboFrames": 200,
+        "last": {
+          "frames": 2800,
+          "tiles": 54,
+          "parallelTiles": 54,
+          "parallel": 59689,
+          "serial": 2,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "745a54ff0bfd8531",
+        "particles": 59691,
+        "turboFrames": 200,
+        "last": {
+          "frames": 3000,
+          "tiles": 54,
+          "parallelTiles": 54,
+          "parallel": 59689,
+          "serial": 2,
+          "deferred": 0,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    },
+    "loop": {
+      "one": {
+        "hash": "d92a03845c086a07",
+        "particles": 76705,
+        "turboFrames": 200,
+        "last": {
+          "frames": 3200,
+          "tiles": 126,
+          "parallelTiles": 66,
+          "parallel": 39905,
+          "serial": 36800,
+          "deferred": 613,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "four": {
+        "hash": "d92a03845c086a07",
+        "particles": 76705,
+        "turboFrames": 200,
+        "last": {
+          "frames": 3400,
+          "tiles": 126,
+          "parallelTiles": 66,
+          "parallel": 39905,
+          "serial": 36800,
+          "deferred": 613,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      },
+      "again": {
+        "hash": "d92a03845c086a07",
+        "particles": 76705,
+        "turboFrames": 200,
+        "last": {
+          "frames": 3600,
+          "tiles": 126,
+          "parallelTiles": 66,
+          "parallel": 39905,
+          "serial": 36800,
+          "deferred": 613,
+          "specialTouched": 0
+        },
+        "specialTouched": 0
+      }
+    }
+  },
+  "speed": {
+    "world": "916x576",
+    "cores": 4,
+    "off": {
+      "count": 257872,
+      "after": 257872,
+      "ms": 78.7
+    },
+    "on": {
+      "count": 257872,
+      "after": 257872,
+      "ms": 32.6
+    },
+    "faster": 2.41
+  }
+}

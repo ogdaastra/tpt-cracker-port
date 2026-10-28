@@ -5,6 +5,8 @@
 // the threaded one.
 //   node samecheck.mjs http://127.0.0.1:8831/ http://127.0.0.1:8832/
 // (serve each dist/ copy with tests/browser/serve.mjs <dir> <port>)
+// Turbo mode: add turbo=N to an address (N threads); threads=1 keeps the threaded build, e.g.
+//   node samecheck.mjs 'http://127.0.0.1:8833/?turbo=1' 'http://127.0.0.1:8833/?turbo=4&threads=1'
 import { createHash } from 'node:crypto';
 import { chromium } from '/home/user/tpt-cracker-port/tests/browser/node_modules/playwright/index.mjs';
 
@@ -86,11 +88,16 @@ const DUMP = (path) => `
 	local f = io.open("${path}", "w") f:write(table.concat(out, "\\n")) f:close()`;
 
 async function run(url) {
+	// options in the address: turbo=N runs turbo mode on N threads; threads=1 keeps the threaded build (otherwise
+	// the single-threaded one is used)
+	const options = new URL(url).searchParams;
 	const browser = await chromium.launch();
 	const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-	await page.goto(url + (url.includes('?') ? '&' : '?') + 'threads=0');
+	await page.goto(options.get('threads') === '1' ? url : url + (url.includes('?') ? '&' : '?') + 'threads=0');
 	await page.waitForFunction(() => window.tptPage && window.tptPage.state === 'running', null, { timeout: 60000 });
 	await page.waitForTimeout(1000);
+	if (options.has('turbo'))
+		await page.evaluate((n) => window.tptPage.module.ccall('tpt_turbo', 'number', ['number'], [n]), Number(options.get('turbo')));
 	let n = 0;
 	const lua = async (code) => {
 		const out = `/tmp/samecheck${++n}.done`;

@@ -1008,3 +1008,69 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   would refuse is refused; Classic → Medium carries a block to (148, 84), reload keeps the size, back to
   Classic carries it to (300, 180)); and an address asking for a refused size gives the classic world on
   both sides. Full suite on this build: 71 passed, 2 skipped (the two opt-in performance tests).
+
+## 36. Turbo mode: the particle update on every core (N11)
+
+- **Asked for** by Orlando on 26 Oct (from the ideas list: "the simulation on every CPU core"). Off by default;
+  the page's **Turbo** button turns it on. Classic Powder Toy updates particles one after another, in index
+  order; turbo mode updates parts of the world at the same time, so things move a little differently (not
+  wrongly). With turbo off nothing changed: `samecheck.mjs` against the world-size build gives ALL SAME at
+  all 32 checkpoints.
+- **How** (`src/simulation/Turbo.h`, `Turbo.cpp`):
+  - The world is cut into square tiles, coloured 3 × 3. In each of 9 phases the tiles of one colour are
+    updated at the same time; two tiles of the same colour have two whole tiles between them.
+  - A tile is bigger than what one particle update can reach, so no two threads touch the same particle,
+    pixel or air cell. The reach is the move (at most 8 pixels; longer moves are put off and made afterwards)
+    plus the liquid search (30 sideways, then 30 down). That gives 44-pixel tiles with normal gravity and
+    72 with a custom pull; without liquids, 20.
+  - Only particles of elements on a read-and-checked list are updated in parallel (`turboAllowed`): powders,
+    liquids, gases and solids without an update function, the water family, fire, plasma, lava, ice, snow,
+    wood, coal, plant, CO2, noble gas. Each one's update was read for how far it reaches and what it turns
+    things into.
+  - "Special" elements are never changed in parallel: anything with a type-change or create-allowed
+    callback, vehicles, stick figures, fighters, moving solids, ION, anything with a Lua callback. A tile only
+    runs in parallel if no special particle (and no detector wall, whose flood fill spreads) is within reach.
+  - Everything else, and any particle that drifted out of its tile before its turn, is updated afterwards on
+    one thread, in index order.
+  - Shared state goes through helpers that keep it per thread and add it up afterwards: the free particle list
+    (each tile gets its own free slots), element counts, the sound counters, the highest particle index. Each
+    tile has its own random number generator (`RNG::Ref()` returns it while set on the thread).
+  - Nothing therefore depends on how many threads there are or which does what. The result is the same on
+    1 thread as on 4, every run.
+- **Kept on one thread**:
+  - The whole frame, while the electromagnetic or stress fields or water equalisation are on, and under
+    5,000 particles.
+  - Liquids, under Newtonian or radial gravity (their search can bend far).
+  - Particles in a faster time field (they update several times a frame).
+  - Tiles near the edges when edges loop.
+  - `create_gain_photon` and `create_cherenkov_photon` (only energy particles reach them).
+- **The loop**: `UpdateParticles`' particle loop became `UpdateParticleLoop<Mode>` (Mode 0 is the old loop,
+  unchanged). Mode 1 runs a tile's list, Mode 2 makes the moves that were put off, Mode 3 runs whatever is
+  left in index order.
+- **Measured** (threaded build, this 4-core machine; ms per simulated frame, median of 5 runs):
+
+  | Scene | Off | Turbo, 4 cores | Faster |
+  |---|---|---|---|
+  | Classic, lower half water | 30.5 | 14.8 | 2.1× |
+  | Classic, lower half sand and dust | 20.1 | 12.3 | 1.6× |
+  | Large 916 × 576, sand and water (`turbo.spec.mjs`) | 74.4 | 28.9 | 2.6× |
+  | Huge 1224 × 768, lower half water | 110.2 | 58.9 | 1.9× |
+  | Huge, sand and dust | 101.1 | 60.2 | 1.7× |
+
+  The parallel part itself runs about 3.4× faster on 4 cores. What doesn't scale yet is the work before the
+  particle loop, still on one thread: at Huge, 13.6 ms rebuilding the particle maps (`RecalcFreeParticles`)
+  and 5.1 ms of air. That is the next thing to parallelise.
+- **Exports**: `tpt_turbo(threads)` (0 = off, -1 = read) and `tpt_turbo_info()` (frames, tiles, parallel tiles,
+  particles in parallel and on one thread, moves put off, special particles changed in parallel (must stay
+  0), ms preparing / in parallel / afterwards). `tpt_benchmark_split(k)`: the last benchmark's BeforeSim,
+  UpdateParticles and AfterSim times. `samecheck.mjs` takes `?turbo=N` and `threads=1` in an address.
+- **Page**: **Turbo** button (threaded build only; "Turbo: unavailable" in the single-threaded one), using
+  `navigator.hardwareConcurrency` threads (2 to 8), kept in the browser (`tptTurbo`).
+- **Tests** (`turbo.spec.mjs`, 4 tests):
+  - Six scenes (pond; fire with wood, coal, plants, ice, snow, CO2, lava and plasma; a mix with SOAP, sparks,
+    a detector wall, a time field, photons and a stick figure; custom gravity; no gravity; looping edges).
+    Each gives the same state hash on 1 thread and on 4, twice, with no special particle changed in parallel.
+    The moves put off and the one-thread pass are both exercised.
+  - A closed box of 257,872 particles keeps every particle, and turbo is faster (asserted with 4+ cores).
+  - The button turns turbo on and off, shows the cores, and is kept after reload.
+  - The single-threaded build has no turbo.

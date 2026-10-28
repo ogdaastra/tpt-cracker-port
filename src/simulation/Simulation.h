@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "Particle.h"
+#include "Turbo.h"
 #include "Stickman.h"
 #include "WallType.h"
 #include "Sign.h"
@@ -82,6 +83,77 @@ public:
 	// Called at the end of every simulated frame when set (the page's rewind buffer)
 	void (*afterSimHook)(Simulation *sim) = nullptr;
 	unsigned int soundVanished[PT_NUM] = {};
+
+	// Turbo mode (Turbo.h, Turbo.cpp): threads to update the particles on (0 = off), element types whose
+	// changes reach beyond their neighbourhood (never updated, created or removed in parallel), and what the
+	// last frame did
+	int turboThreads = 0;
+	bool turboSpecial[PT_NUM] = {};
+	std::vector<unsigned int> turboDone; // turboFrameId for the particles updated in parallel this frame
+	unsigned int turboFrameId = 0;
+	int turboSerialCount = 0; // particles the last turbo frame updated on one thread
+	struct TurboStats
+	{
+		int frames = 0, tiles = 0, parallelTiles = 0, parallelParticles = 0, serialParticles = 0, deferredMoves = 0;
+		int specialTouched = 0; // must stay 0: a special particle was changed in parallel
+		double msPrepare = 0, msParallel = 0, msAfter = 0; // summed over the frames
+		bool lastFrameTurbo = false;
+	} turboStats;
+	bool turboElementOk[PT_NUM] = {}; // updated in parallel this frame
+	TurboState *turboState = nullptr;
+	bool TurboFrame();
+	bool TurboParticleOk(const Particle &p) const;
+	void TurboUpdateList(const int *list, int count);
+	void TurboFree();
+
+	// The shared counters a particle update changes; in parallel they are kept per thread and added up after
+	void CountElement(int t, int delta)
+	{
+		if (turboThread)
+			turboThread->elementCount[t] += delta;
+		else
+			elementCount[t] += delta;
+	}
+	void CountAppeared(int t)
+	{
+		if (turboThread)
+			turboThread->soundAppeared[t]++;
+		else
+			soundAppeared[t]++;
+	}
+	void CountVanished(int t)
+	{
+		if (turboThread)
+			turboThread->soundVanished[t]++;
+		else
+			soundVanished[t]++;
+	}
+	void NoteActiveParticle(int i)
+	{
+		if (turboThread)
+		{
+			if (i > turboThread->lastActive)
+				turboThread->lastActive = i;
+		}
+		else if (i > parts_lastActiveIndex)
+			parts_lastActiveIndex = i;
+	}
+	// A free particle slot, or -1; in parallel, one of the tile's own
+	int PopFreeParticle()
+	{
+		if (turboThread)
+		{
+			auto *tile = turboThread->tile;
+			if (tile->poolNext >= tile->pool.size())
+				return -1;
+			return tile->pool[tile->poolNext++];
+		}
+		if (pfree == -1)
+			return -1;
+		int i = pfree;
+		pfree = parts[i].life;
+		return i;
+	}
 	int ISWIRE;
 	bool force_stacking_check;
 	int emp_decor;
@@ -226,6 +298,8 @@ public:
 	int parts_avg(int ci, int ni, int t);
 	void create_arc(int sx, int sy, int dx, int dy, int midpoints, int variance, int type, int flags);
 	void UpdateParticles(int start, int end); // range inclusive on both ends
+	template<int Mode>
+	void UpdateParticleLoop(int start, int end, const int *list = nullptr, const TurboDeferredMove *moves = nullptr);
 	void SimulateGoL();
 	void RecalcFreeParticles(bool do_life_dec);
 	void CheckStacking();

@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world', 'btn-turbo']) {
 			$(id).disabled = true;
 		}
 	}
@@ -1058,6 +1058,45 @@
 	});
 	window.tptPage.recorder = { start: startRecording, stop: stopRecording, screenshot: takeScreenshot, videoType };
 
+	// ------------------------------------------------------------------ turbo mode
+	// Off by default. On, the game updates the particles on every core (tpt_turbo, simulation/Turbo.h): a
+	// world with many particles runs faster, and things move a little differently from classic Powder Toy.
+	// Only the threaded build has threads.
+	const TURBO_KEY = 'tptTurbo';
+	const turbo = { on: storageGet(TURBO_KEY) === '1', threads: Math.max(2, Math.min(8, navigator.hardwareConcurrency || 4)), available: false };
+	window.tptPage.turbo = turbo;
+
+	function showTurbo() {
+		const b = $('btn-turbo');
+		b.textContent = !turbo.available ? 'Turbo: unavailable' : turbo.on ? `Turbo: on (${turbo.threads} cores)` : 'Turbo: off';
+		b.setAttribute('aria-pressed', String(turbo.on && turbo.available));
+	}
+
+	function setTurbo(on) {
+		turbo.on = on;
+		storageSet(TURBO_KEY, on ? '1' : '0');
+		if (turbo.available && mod) {
+			mod.ccall('tpt_turbo', 'number', ['number'], [on ? turbo.threads : 0]);
+		}
+		showTurbo();
+	}
+
+	// first frame: threads only in the threaded build
+	function turboSetup() {
+		turbo.available = wasmFile === 'powder-mt.wasm';
+		const b = $('btn-turbo');
+		b.disabled = !turbo.available;
+		if (!turbo.available) {
+			b.title = 'Turbo needs the threaded version of the game, which this browser or address does not run';
+		}
+		setTurbo(turbo.on);
+	}
+
+	$('btn-turbo').addEventListener('click', () => {
+		setTurbo(!turbo.on);
+		canvas.focus();
+	});
+
 	// ------------------------------------------------------------------ sound effects
 	// Off by default. The game counts the particles that appear and vanish (tpt_sound_events); every 50 ms the
 	// page reads the counts and plays at most one sound of each kind, louder for more, made with WebAudio from
@@ -1903,6 +1942,7 @@
 					$('btn-challenges').title = 'Challenges need the Classic world size (World size…)';
 				}
 				restoreCarriedWorld().catch((e) => rememberError('world size: ' + e));
+				turboSetup();
 				rewindSetup();
 				// Ctrl+Z goes back as far as this much memory of undo steps allows (thousands of steps in most
 				// sessions, fewer when the whole screen keeps changing); less on devices with little memory

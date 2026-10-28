@@ -75,8 +75,8 @@ Key technical facts:
   merge when green. This handoff document is in the same PR (it's documentation; mention it in the body).
 - **Update, 25 Oct (session "Ember", the one after Spark):** PR #9 = N1 + this document. N2 (saves gallery)
   and the portal-test fix were built and tested on top and go in the next PR (see N2 below, `PORT_LOG.md`
-  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33, tilt to pour (N9) section 34, world size (N10) section 35; the
-  next free section is **36**. On 26 Oct Orlando picked from an ideas list: N9 tilt to pour, N10
+  section 26). PR #10 (N2) is merged. N3 is `PORT_LOG.md` section 27, N4 section 28, N5 section 29, N6 section 30, N7 section 31, two CI test fixes section 32, deep undo (N8) section 33, tilt to pour (N9) section 34, world size (N10) section 35, turbo mode (N11) section 36; the
+  next free section is **37**. On 26 Oct Orlando picked from an ideas list: N9 tilt to pour, N10
   customisable world size (small worlds so he doesn't live in the zoom, and big ones), N11 turbo mode
   (multi-core simulation), N12 GPU eye candy, in that order; deep undo goes live automatically. All seven planned features are done; N8 (deep undo) was asked for on 26 Oct.
 - **The notebook.** The user made a private repo, **`ogdaastra/friend-notes`** ("a little page for my
@@ -240,6 +240,14 @@ grids are `WorldGrid`/`GridView` (`src/simulation/WorldGrid.h`), and `SIMSCALE` 
 add an array sized by `XRES`/`YRES`/`NPART`, make it a `WorldGrid` or a vector sized at start** (or use the
 `_MAX` sizes); never use `sizeof` on a grid. The GUI lays out with `SCREENW`/`SCREENH`, and the simulation
 uses `XRES`/`YRES`; mouse positions reach tools in simulation pixels. Known limits are in section 35.
+
+### N11 Turbo mode: DONE (Ember; `PORT_LOG.md` section 36)
+The particle update on every core, off by default (page button). **Before adding an element to `turboAllowed`
+in `src/simulation/Turbo.cpp`, read its update function and everything it calls**: it must reach at most
+`TURBO_ELEMENT_REACH` pixels, use no shared state other than what Turbo.h routes per thread (no statics, no
+global arrays, no flood fills), and turn things only into non-special types. `turbo.spec.mjs` (same result on 1
+and 4 threads, special particles never touched in parallel) must stay green. Turbo off must stay bit-identical
+(`samecheck.mjs`). Next step if wanted: parallelise `RecalcFreeParticles` and the air update.
 
 ## 5. Environment setup (a new container has none of this)
 
