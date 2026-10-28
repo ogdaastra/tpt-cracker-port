@@ -82,6 +82,7 @@ async function runScene(page, scene, threads) {
 }
 
 test('turbo: the same result on one thread and on four, run after run; special particles never changed in parallel', async ({ page }) => {
+	test.skip(!!process.env.TPT_START_PATH, 'file:// pages are never cross-origin isolated: no threads');
 	test.setTimeout(600_000);
 	const log = h.collect(page);
 	await h.openGame(page);
@@ -104,6 +105,7 @@ test('turbo: the same result on one thread and on four, run after run; special p
 });
 
 test('turbo: nothing lost or doubled, a big world runs faster, off gives back the classic simulation', async ({ page }) => {
+	test.skip(!!process.env.TPT_START_PATH, 'file:// pages are never cross-origin isolated: no threads');
 	test.setTimeout(300_000);
 	await h.openGame(page, { query: 'world=916x576x1' });
 	const water = `sim.edgeMode(1) ${fill(4, 288, 911, 571, '(x % 5 == 0) and elem.DEFAULT_PT_SAND or elem.DEFAULT_PT_WATR')}`;
@@ -131,6 +133,7 @@ test('turbo: nothing lost or doubled, a big world runs faster, off gives back th
 });
 
 test('turbo: the Turbo button turns it on and off, says how many cores, and is kept after reload', async ({ page }) => {
+	test.skip(!!process.env.TPT_START_PATH, 'file:// pages are never cross-origin isolated: no threads');
 	await h.openGame(page);
 	const button = page.locator('#btn-turbo');
 	await expect(button).toBeEnabled();
