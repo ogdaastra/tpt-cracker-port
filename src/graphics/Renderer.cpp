@@ -2082,6 +2082,15 @@ void Renderer::ScaleToScreen()
 	}
 }
 
+void Renderer::KeepSimFrame()
+{
+	if (!keepSimFrame)
+		return;
+	simFrame.resize(size_t(SCREENW) * SCREENH);
+	for (int y = 0; y < SCREENH; y++)
+		std::copy(vid + y * VIDXRES, vid + y * VIDXRES + SCREENW, simFrame.begin() + size_t(y) * SCREENW);
+}
+
 VideoBuffer Renderer::DumpFrame()
 {
 	VideoBuffer newBuffer(XRES, YRES);

@@ -5,66 +5,66 @@
       "type": "won",
       "ink": 0,
       "id": "heat-kettle",
-      "frames": 230,
+      "frames": 260,
       "solved": true,
-      "stepped": 240,
-      "ms": 559,
-      "bestProgress": 0.986222
+      "stepped": 300,
+      "ms": 726,
+      "bestProgress": 0.988444
     },
     "heat-deep-freeze": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "heat-deep-freeze",
-      "frames": 110,
+      "frames": 100,
       "solved": true,
       "stepped": 120,
-      "ms": 295,
-      "bestProgress": 0.869444
+      "ms": 299,
+      "bestProgress": 0.920556
     },
     "heat-ice-wall": {
-      "stars": 3,
+      "stars": 2,
       "type": "won",
       "ink": 0,
       "id": "heat-ice-wall",
-      "frames": 1200,
+      "frames": 1330,
       "solved": true,
-      "stepped": 1200,
-      "ms": 5302,
-      "bestProgress": 0.6
+      "stepped": 1320,
+      "ms": 5918,
+      "bestProgress": 0.97
     },
     "heat-cool-down": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "heat-cool-down",
-      "frames": 290,
+      "frames": 350,
       "solved": true,
-      "stepped": 300,
-      "ms": 699,
-      "bestProgress": 0.979925
+      "stepped": 360,
+      "ms": 836,
+      "bestProgress": 0.994076
     },
     "heat-relay": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "heat-relay",
-      "frames": 1140,
+      "frames": 1130,
       "solved": true,
       "stepped": 1140,
-      "ms": 2693,
-      "bestProgress": 0.815
+      "ms": 2662,
+      "bestProgress": 0.7875
     },
     "heat-glassworks": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "heat-glassworks",
-      "frames": 30,
+      "frames": 40,
       "solved": true,
       "stepped": 60,
-      "ms": 210,
-      "bestProgress": 0
+      "ms": 170,
+      "bestProgress": 0.84
     },
     "elec-first-light": {
       "stars": 3,
@@ -85,7 +85,7 @@
       "frames": 150,
       "solved": true,
       "stepped": 180,
-      "ms": 456,
+      "ms": 321,
       "bestProgress": 0
     },
     "elec-through-wall": {
@@ -96,7 +96,7 @@
       "frames": 20,
       "solved": true,
       "stepped": 60,
-      "ms": 176,
+      "ms": 132,
       "bestProgress": 0
     },
     "elec-switch": {
@@ -107,7 +107,7 @@
       "frames": 70,
       "solved": true,
       "stepped": 120,
-      "ms": 231,
+      "ms": 223,
       "bestProgress": 0.5
     },
     "elec-neon-sign": {
@@ -118,7 +118,7 @@
       "frames": 20,
       "solved": true,
       "stepped": 60,
-      "ms": 164,
+      "ms": 144,
       "bestProgress": 0
     },
     "elec-heat-switch": {
@@ -129,7 +129,7 @@
       "frames": 110,
       "solved": true,
       "stepped": 120,
-      "ms": 233,
+      "ms": 222,
       "bestProgress": 0
     },
     "elec-christmas": {
@@ -140,7 +140,7 @@
       "frames": 240,
       "solved": true,
       "stepped": 240,
-      "ms": 516,
+      "ms": 471,
       "bestProgress": 0.8
     },
     "elec-electrolysis": {
@@ -148,32 +148,32 @@
       "type": "won",
       "ink": 0,
       "id": "elec-electrolysis",
-      "frames": 70,
+      "frames": 60,
       "solved": true,
-      "stepped": 120,
-      "ms": 583,
-      "bestProgress": 0.9
+      "stepped": 60,
+      "ms": 270,
+      "bestProgress": 0.21
     },
     "explosives-demolition": {
       "stars": 2,
       "type": "won",
       "ink": 0,
       "id": "explosives-demolition",
-      "frames": 780,
+      "frames": 770,
       "solved": true,
       "stepped": 780,
-      "ms": 2173,
-      "bestProgress": 0.936636
+      "ms": 2117,
+      "bestProgress": 0.934297
     },
     "explosives-chain": {
       "stars": 2,
       "type": "won",
       "ink": 0,
       "id": "explosives-chain",
-      "frames": 1250,
+      "frames": 1270,
       "solved": true,
       "stepped": 1260,
-      "ms": 1792,
+      "ms": 1715,
       "bestProgress": 0.8
     },
     "explosives-fireworks": {
@@ -184,7 +184,7 @@
       "frames": 30,
       "solved": true,
       "stepped": 60,
-      "ms": 149,
+      "ms": 129,
       "bestProgress": 0
     },
     "explosives-crater": {
@@ -195,29 +195,29 @@
       "frames": 100,
       "solved": true,
       "stepped": 120,
-      "ms": 439,
-      "bestProgress": 0.356481
+      "ms": 430,
+      "bestProgress": 0.342593
     },
     "explosives-surgical": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "explosives-surgical",
-      "frames": 460,
+      "frames": 450,
       "solved": true,
       "stepped": 480,
-      "ms": 956,
-      "bestProgress": 0.9625
+      "ms": 950,
+      "bestProgress": 0.787037
     },
     "explosives-hotter-than-sun": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "explosives-hotter-than-sun",
-      "frames": 20,
+      "frames": 10,
       "solved": true,
       "stepped": 60,
-      "ms": 133,
+      "ms": 166,
       "bestProgress": 0
     },
     "chem-fill-glass": {
@@ -228,7 +228,7 @@
       "frames": 100,
       "solved": true,
       "stepped": 120,
-      "ms": 311,
+      "ms": 385,
       "bestProgress": 1
     },
     "chem-salt-water": {
@@ -236,22 +236,22 @@
       "type": "won",
       "ink": 0,
       "id": "chem-salt-water",
-      "frames": 970,
+      "frames": 860,
       "solved": true,
-      "stepped": 1020,
-      "ms": 2372,
-      "bestProgress": 0.995
+      "stepped": 900,
+      "ms": 2241,
+      "bestProgress": 0.997
     },
     "chem-acid-etch": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "chem-acid-etch",
-      "frames": 750,
+      "frames": 690,
       "solved": true,
-      "stepped": 780,
-      "ms": 1875,
-      "bestProgress": 0.985556
+      "stepped": 720,
+      "ms": 1519,
+      "bestProgress": 0.975556
     },
     "chem-salt-flats": {
       "stars": 3,
@@ -261,8 +261,8 @@
       "frames": 90,
       "solved": true,
       "stepped": 120,
-      "ms": 343,
-      "bestProgress": 0.14
+      "ms": 373,
+      "bestProgress": 0.31
     },
     "chem-neutralise": {
       "stars": 3,
@@ -272,8 +272,8 @@
       "frames": 350,
       "solved": true,
       "stepped": 360,
-      "ms": 706,
-      "bestProgress": 0.991111
+      "ms": 705,
+      "bestProgress": 0.957778
     },
     "chem-rust": {
       "stars": 3,
@@ -283,8 +283,8 @@
       "frames": 40,
       "solved": true,
       "stepped": 60,
-      "ms": 162,
-      "bestProgress": 0.51
+      "ms": 187,
+      "bestProgress": 0.64
     },
     "chem-tnt": {
       "stars": 3,
@@ -294,7 +294,7 @@
       "frames": 30,
       "solved": true,
       "stepped": 60,
-      "ms": 158,
+      "ms": 241,
       "bestProgress": 0
     },
     "chem-oil-spill": {
@@ -305,7 +305,7 @@
       "frames": 30,
       "solved": true,
       "stepped": 60,
-      "ms": 452,
+      "ms": 426,
       "bestProgress": 0
     },
     "chem-lava-stone": {
@@ -313,11 +313,11 @@
       "type": "won",
       "ink": 0,
       "id": "chem-lava-stone",
-      "frames": 150,
+      "frames": 160,
       "solved": true,
       "stepped": 180,
-      "ms": 615,
-      "bestProgress": 0.135556
+      "ms": 551,
+      "bestProgress": 0.966667
     },
     "chem-make-water": {
       "stars": 3,
@@ -327,7 +327,7 @@
       "frames": 130,
       "solved": true,
       "stepped": 180,
-      "ms": 720,
+      "ms": 771,
       "bestProgress": 0
     },
     "chem-desalination": {
@@ -335,22 +335,22 @@
       "type": "won",
       "ink": 0,
       "id": "chem-desalination",
-      "frames": 90,
+      "frames": 100,
       "solved": true,
       "stepped": 120,
       "ms": 314,
-      "bestProgress": 0.193333
+      "bestProgress": 0.54
     },
     "mach-clone": {
       "stars": 2,
       "type": "won",
       "ink": 0,
       "id": "mach-clone",
-      "frames": 1130,
+      "frames": 1100,
       "solved": true,
       "stepped": 1140,
-      "ms": 2013,
-      "bestProgress": 0.994
+      "ms": 2070,
+      "bestProgress": 0.986
     },
     "mach-portals": {
       "stars": 3,
@@ -360,8 +360,8 @@
       "frames": 50,
       "solved": true,
       "stepped": 60,
-      "ms": 186,
-      "bestProgress": 0.73
+      "ms": 219,
+      "bestProgress": 0.736667
     },
     "mach-sorting": {
       "stars": 3,
@@ -371,7 +371,7 @@
       "frames": 630,
       "solved": true,
       "stepped": 660,
-      "ms": 2143,
+      "ms": 2071,
       "bestProgress": 1
     },
     "mach-pressure": {
@@ -382,7 +382,7 @@
       "frames": 750,
       "solved": true,
       "stepped": 780,
-      "ms": 864,
+      "ms": 832,
       "bestProgress": 0.95
     },
     "mach-vacuum": {
@@ -393,7 +393,7 @@
       "frames": 410,
       "solved": true,
       "stepped": 420,
-      "ms": 514,
+      "ms": 440,
       "bestProgress": 0.933333
     },
     "grav-black-hole": {
@@ -404,30 +404,30 @@
       "frames": 290,
       "solved": true,
       "stepped": 300,
-      "ms": 547,
-      "bestProgress": 0.869834
+      "ms": 616,
+      "bestProgress": 0.874061
     },
     "grav-white-hole": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "grav-white-hole",
-      "frames": 710,
+      "frames": 700,
       "solved": true,
       "stepped": 720,
-      "ms": 1135,
-      "bestProgress": 0.99894
+      "ms": 1092,
+      "bestProgress": 0.999823
     },
     "life-green-thumb": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "life-green-thumb",
-      "frames": 140,
+      "frames": 130,
       "solved": true,
       "stepped": 180,
-      "ms": 513,
-      "bestProgress": 0.7975
+      "ms": 431,
+      "bestProgress": 0.845
     },
     "life-glider": {
       "stars": 3,
@@ -437,7 +437,7 @@
       "frames": 300,
       "solved": true,
       "stepped": 300,
-      "ms": 587,
+      "ms": 594,
       "bestProgress": 0
     },
     "life-outbreak": {
@@ -448,7 +448,7 @@
       "frames": 1800,
       "solved": true,
       "stepped": 1800,
-      "ms": 5215,
+      "ms": 4335,
       "bestProgress": 0.983333
     },
     "life-tree": {
@@ -456,11 +456,11 @@
       "type": "won",
       "ink": 0,
       "id": "life-tree",
-      "frames": 110,
+      "frames": 100,
       "solved": true,
       "stepped": 120,
-      "ms": 447,
-      "bestProgress": 0.666667
+      "ms": 315,
+      "bestProgress": 0.88
     },
     "life-aquarium": {
       "stars": 3,
@@ -470,7 +470,7 @@
       "frames": 1800,
       "solved": true,
       "stepped": 1800,
-      "ms": 3978,
+      "ms": 3882,
       "bestProgress": 0.983333
     },
     "life-wildfire": {
@@ -481,7 +481,7 @@
       "frames": 1800,
       "solved": true,
       "stepped": 1800,
-      "ms": 7702,
+      "ms": 6595,
       "bestProgress": 0.983333
     },
     "char-fighters": {
@@ -489,10 +489,10 @@
       "type": "won",
       "ink": 0,
       "id": "char-fighters",
-      "frames": 190,
+      "frames": 170,
       "solved": true,
-      "stepped": 240,
-      "ms": 498,
+      "stepped": 180,
+      "ms": 352,
       "bestProgress": 0
     },
     "char-shelter": {
@@ -503,7 +503,7 @@
       "frames": 1800,
       "solved": true,
       "stepped": 1800,
-      "ms": 2949,
+      "ms": 2592,
       "bestProgress": 0.983333
     },
     "puzzle-tower": {
@@ -514,7 +514,7 @@
       "frames": 10,
       "solved": true,
       "stepped": 60,
-      "ms": 113,
+      "ms": 61,
       "bestProgress": 0
     },
     "puzzle-speedrun": {
@@ -525,19 +525,19 @@
       "frames": 50,
       "solved": true,
       "stepped": 60,
-      "ms": 211,
-      "bestProgress": 0.488889
+      "ms": 173,
+      "bestProgress": 0.473148
     },
     "puzzle-ramp": {
       "stars": 3,
       "type": "won",
       "ink": 0,
       "id": "puzzle-ramp",
-      "frames": 1750,
+      "frames": 1400,
       "solved": true,
-      "stepped": 1740,
-      "ms": 2532,
-      "bestProgress": 0.973333
+      "stepped": 1440,
+      "ms": 2179,
+      "bestProgress": 0.926667
     },
     "puzzle-minimalist": {
       "stars": 3,
@@ -547,7 +547,7 @@
       "frames": 10,
       "solved": true,
       "stepped": 60,
-      "ms": 170,
+      "ms": 139,
       "bestProgress": 0
     }
   },
@@ -557,7 +557,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 5400,
-      "ms": 10744,
+      "ms": 9765,
       "bestProgress": 0
     },
     "heat-deep-freeze": {
@@ -565,7 +565,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 6347,
+      "ms": 6313,
       "bestProgress": 0
     },
     "heat-ice-wall": {
@@ -573,7 +573,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 14540,
+      "ms": 13916,
       "bestProgress": 0
     },
     "heat-cool-down": {
@@ -581,7 +581,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4208,
+      "ms": 4437,
       "bestProgress": 0
     },
     "heat-relay": {
@@ -589,7 +589,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 7200,
-      "ms": 13155,
+      "ms": 14536,
       "bestProgress": 0
     },
     "heat-glassworks": {
@@ -597,7 +597,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4671,
+      "ms": 5246,
       "bestProgress": 0
     },
     "elec-first-light": {
@@ -605,7 +605,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 1942,
+      "ms": 2058,
       "bestProgress": 0
     },
     "elec-two-lights": {
@@ -613,7 +613,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 1947,
+      "ms": 2202,
       "bestProgress": 0
     },
     "elec-through-wall": {
@@ -621,7 +621,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2062,
+      "ms": 2523,
       "bestProgress": 0
     },
     "elec-switch": {
@@ -629,7 +629,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2201,
+      "ms": 2082,
       "bestProgress": 0
     },
     "elec-neon-sign": {
@@ -637,7 +637,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 3042,
+      "ms": 3306,
       "bestProgress": 0
     },
     "elec-heat-switch": {
@@ -645,7 +645,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2123,
+      "ms": 2376,
       "bestProgress": 0
     },
     "elec-christmas": {
@@ -653,7 +653,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2400,
-      "ms": 2914,
+      "ms": 3447,
       "bestProgress": 0
     },
     "elec-electrolysis": {
@@ -661,7 +661,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 11045,
+      "ms": 13249,
       "bestProgress": 0
     },
     "explosives-demolition": {
@@ -669,7 +669,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 5700,
+      "ms": 6264,
       "bestProgress": 0
     },
     "explosives-chain": {
@@ -677,7 +677,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4089,
+      "ms": 4490,
       "bestProgress": 0
     },
     "explosives-fireworks": {
@@ -685,7 +685,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2385,
+      "ms": 2948,
       "bestProgress": 0
     },
     "explosives-crater": {
@@ -693,7 +693,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 4611,
+      "ms": 6350,
       "bestProgress": 0
     },
     "explosives-surgical": {
@@ -701,7 +701,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 4576,
+      "ms": 4951,
       "bestProgress": 0
     },
     "explosives-hotter-than-sun": {
@@ -709,7 +709,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4735,
+      "ms": 4995,
       "bestProgress": 0
     },
     "chem-fill-glass": {
@@ -717,7 +717,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2043,
+      "ms": 2138,
       "bestProgress": 0
     },
     "chem-salt-water": {
@@ -725,7 +725,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 6165,
+      "ms": 6041,
       "bestProgress": 0
     },
     "chem-acid-etch": {
@@ -733,7 +733,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4592,
+      "ms": 5118,
       "bestProgress": 0
     },
     "chem-salt-flats": {
@@ -741,7 +741,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 5400,
-      "ms": 10064,
+      "ms": 10738,
       "bestProgress": 0
     },
     "chem-neutralise": {
@@ -749,7 +749,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 5400,
-      "ms": 9149,
+      "ms": 9292,
       "bestProgress": 0
     },
     "chem-rust": {
@@ -757,7 +757,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4248,
+      "ms": 4549,
       "bestProgress": 0
     },
     "chem-tnt": {
@@ -765,7 +765,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 4500,
+      "ms": 4588,
       "bestProgress": 0
     },
     "chem-oil-spill": {
@@ -773,7 +773,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 25387,
+      "ms": 23154,
       "bestProgress": 0
     },
     "chem-lava-stone": {
@@ -781,7 +781,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 5117,
+      "ms": 5122,
       "bestProgress": 0
     },
     "chem-make-water": {
@@ -789,7 +789,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2400,
-      "ms": 9544,
+      "ms": 9936,
       "bestProgress": 0
     },
     "chem-desalination": {
@@ -797,7 +797,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 7200,
-      "ms": 13903,
+      "ms": 13928,
       "bestProgress": 0
     },
     "mach-clone": {
@@ -805,7 +805,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 3823,
+      "ms": 3809,
       "bestProgress": 0.05
     },
     "mach-portals": {
@@ -813,7 +813,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 8553,
+      "ms": 9221,
       "bestProgress": 0
     },
     "mach-sorting": {
@@ -821,7 +821,7 @@
       "type": "lost",
       "reason": "too much water in the bin",
       "stepped": 180,
-      "ms": 651,
+      "ms": 571,
       "bestProgress": 1
     },
     "mach-pressure": {
@@ -829,7 +829,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2400,
-      "ms": 3086,
+      "ms": 2883,
       "bestProgress": 0
     },
     "mach-vacuum": {
@@ -837,7 +837,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 2400,
-      "ms": 2713,
+      "ms": 2795,
       "bestProgress": 0
     },
     "grav-black-hole": {
@@ -845,7 +845,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 6414,
+      "ms": 6335,
       "bestProgress": 0
     },
     "grav-white-hole": {
@@ -853,7 +853,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 5417,
+      "ms": 5213,
       "bestProgress": 0
     },
     "life-green-thumb": {
@@ -861,7 +861,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 7107,
+      "ms": 7398,
       "bestProgress": 0
     },
     "life-glider": {
@@ -869,7 +869,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4083,
+      "ms": 4260,
       "bestProgress": 0
     },
     "life-outbreak": {
@@ -877,7 +877,7 @@
       "type": "lost",
       "reason": "the virus reached the town",
       "stepped": 360,
-      "ms": 1125,
+      "ms": 1093,
       "bestProgress": 0.183333
     },
     "life-tree": {
@@ -885,31 +885,31 @@
       "type": "lost",
       "reason": "time",
       "stepped": 5400,
-      "ms": 8881,
+      "ms": 8122,
       "bestProgress": 0
     },
     "life-aquarium": {
       "id": "life-aquarium",
       "type": "lost",
       "reason": "the fish died",
-      "stepped": 180,
-      "ms": 354,
-      "bestProgress": 0.0666667
+      "stepped": 780,
+      "ms": 1191,
+      "bestProgress": 0.416667
     },
     "life-wildfire": {
       "id": "life-wildfire",
       "type": "lost",
       "reason": "the forest burned",
-      "stepped": 1020,
-      "ms": 4346,
-      "bestProgress": 0.533333
+      "stepped": 1140,
+      "ms": 4912,
+      "bestProgress": 0.6
     },
     "char-fighters": {
       "id": "char-fighters",
       "type": "lost",
       "reason": "time",
       "stepped": 2700,
-      "ms": 3432,
+      "ms": 3688,
       "bestProgress": 0
     },
     "char-shelter": {
@@ -917,15 +917,15 @@
       "type": "lost",
       "reason": "the stickman got badly burned",
       "stepped": 660,
-      "ms": 960,
-      "bestProgress": 0.35
+      "ms": 1028,
+      "bestProgress": 0.333333
     },
     "puzzle-tower": {
       "id": "puzzle-tower",
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2132,
+      "ms": 2072,
       "bestProgress": 0
     },
     "puzzle-speedrun": {
@@ -933,7 +933,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 5136,
+      "ms": 5047,
       "bestProgress": 0
     },
     "puzzle-ramp": {
@@ -941,7 +941,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 3600,
-      "ms": 4790,
+      "ms": 5454,
       "bestProgress": 0
     },
     "puzzle-minimalist": {
@@ -949,7 +949,7 @@
       "type": "lost",
       "reason": "time",
       "stepped": 1800,
-      "ms": 2135,
+      "ms": 1940,
       "bestProgress": 0
     }
   },

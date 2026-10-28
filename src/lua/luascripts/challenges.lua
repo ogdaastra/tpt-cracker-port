@@ -1324,7 +1324,7 @@ add{
 
 add{
 	id = "life-aquarium", cat = "life", diff = 2, title = "Aquarium",
-	text = "The fish tank is dry. Keep at least 3 fish alive for 30 seconds.",
+	text = "The fish tank is dry. Get water to the fish within 5 seconds and keep at least 3 of them alive in it for 30 seconds.",
 	tools = { "WATR", "DSTW" }, ink = 3000, survive = 30, failText = "the fish died",
 	hints = { "Fish need water. Quickly!" },
 	setup = function(S)
@@ -1332,7 +1332,26 @@ add{
 		S.tank(256, 280, 355, 369, "GLAS")
 		for k = 0, 4 do S.part(266 + k * 20, 365, "FISH") end
 	end,
-	check = function(C) return C.count("FISH") >= 3 and 1 or 0 end,
+	-- a fish out of water only dies by chance (1 in 600 a frame), so a dry tank kept 3 of 5 alive for 30 seconds
+	-- about once in 900 tries: after 5 seconds only fish touching water (as FISH.cpp sees it) count
+	check = function(C, st)
+		if C.count("FISH") < 3 then return 0 end
+		if st.frame < 5 * 60 then return 1 end
+		local water = { [elem.DEFAULT_PT_WATR] = true, [elem.DEFAULT_PT_DSTW] = true, [elem.DEFAULT_PT_SLTW] = true, [elem.DEFAULT_PT_CBNW] = true }
+		local wet = C.count("FISH", nil, nil, nil, nil, function(i)
+			local x, y = sim.partPosition(i)
+			x, y = math.floor(x + 0.5), math.floor(y + 0.5)
+			for dy = -1, 1 do
+				for dx = -1, 1 do
+					local r = sim.pmap(x + dx, y + dy)
+					if r and water[sim.partProperty(r, "type")] then return true end
+				end
+			end
+			return false
+		end)
+		if wet < 3 then return 0, "the fish are out of water" end
+		return 1
+	end,
 	solution = function(S) S.box(256, 345, 355, 369, "WATR") end,
 }
 

@@ -83,7 +83,7 @@ The definitions, each with a reference solution that the browser tests play, are
 | Glider | ●●○○○ | Build a Game of Life glider that flies into the box on the right. | GOL (Life) | 12 | 60 s |
 | Outbreak | ●●○○○ | Stop the virus: keep it out of the town for 30 seconds. | WALL wall, SOAP, WATR | no limit | 30 s to hold |
 | Plant a tree | ●●○○○ | Grow 150 particles of tree (wood and leaves) from a seed. | SEED, WATR | 600 | 90 s |
-| Aquarium | ●●○○○ | The fish tank is dry. Keep at least 3 fish alive for 30 seconds. | WATR, DSTW | 3000 | 30 s to hold |
+| Aquarium | ●●○○○ | The fish tank is dry. Get water to the fish within 5 seconds and keep at least 3 of them alive in it for 30 seconds. | WATR, DSTW | 3000 | 30 s to hold |
 | Wildfire | ●●○○○ | A fire will start in the forest. Save 60% of the trees. | WATR, WALL wall, SAND | 2000 | 30 s to hold |
 
 ## Characters (2)

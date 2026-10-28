@@ -24,6 +24,7 @@
 		<button type="button" id="btn-sound" disabled aria-pressed="false" title="Sound effects for sparks, fire, explosions, steam and acid">Sound: off</button>
 		<input type="range" id="sound-volume" min="0" max="100" value="60" aria-label="Sound volume" title="Sound volume" hidden>
 		<button type="button" id="btn-turbo" disabled aria-pressed="false" title="Simulate on every processor core: faster with many particles; results differ slightly from classic Powder Toy">Turbo: off</button>
+		<button type="button" id="btn-effects" disabled title="Glow, heat haze, shockwaves and night lighting, drawn by the graphics card">Effects…</button>
 		<button type="button" id="btn-world" disabled title="Make the world smaller (bigger pixels, no zooming) or bigger">World size…</button>
 		<button type="button" id="btn-elements" disabled aria-controls="elements" aria-expanded="false" title="Show or hide the element browser">Elements</button>
 		<button type="button" id="btn-fullscreen" disabled>Fullscreen</button>
@@ -78,6 +79,7 @@
 <main id="stage">
 	<div id="game">
 		<canvas id="canvas" tabindex="0" aria-label="The Powder Toy simulation"></canvas>
+		<canvas id="fx-canvas" aria-hidden="true" hidden></canvas>
 	</div>
 
 	<aside id="elements" aria-label="Element browser" hidden>
@@ -165,6 +167,24 @@
 			<button value="screenshot" id="record-screenshot">Screenshot (PNG)</button>
 			<button value="cancel">Cancel</button>
 			<button value="start" id="record-start" class="primary">Start recording</button>
+		</p>
+	</form>
+</dialog>
+
+<dialog id="effects-dialog" aria-labelledby="effects-title">
+	<form method="dialog" id="effects-form">
+		<h2 id="effects-title">Effects</h2>
+		<p class="hint">Drawn by the graphics card over the simulation; the simulation itself is unchanged. The menus
+			are left as they are.</p>
+		<label><input type="checkbox" name="glow"> Glow: fire, lava, sparks and hot things light up around them</label>
+		<label class="slider">Glow strength <input type="range" name="glowStrength" min="0" max="100" value="50"></label>
+		<label><input type="checkbox" name="haze"> Heat haze: the air shimmers above hot things</label>
+		<label><input type="checkbox" name="shock"> Shockwaves: pressure bends the picture</label>
+		<label><input type="checkbox" name="night"> Night: dark, lit only by what glows</label>
+		<label class="slider">Darkness <input type="range" name="darkness" min="0" max="100" value="80"></label>
+		<p class="hint" id="effects-status"></p>
+		<p class="dialog-buttons">
+			<button value="close" class="primary">Close</button>
 		</p>
 	</form>
 </dialog>
