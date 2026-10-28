@@ -40,7 +40,7 @@
 		const tail = recentErrors.length ? '\n\nRecent messages:\n' + recentErrors.join('\n') : '';
 		$('failure-details').textContent = String(details || '(none)') + tail;
 		$('failure').hidden = false;
-		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world', 'btn-turbo']) {
+		for (const id of ['btn-import', 'btn-export', 'btn-fullscreen', 'btn-elements', 'btn-record', 'btn-challenges', 'btn-sound', 'btn-rewind', 'btn-world', 'btn-turbo', 'btn-effects']) {
 			$(id).disabled = true;
 		}
 	}
@@ -900,12 +900,29 @@
 		out.height = Math.round(sh / ratio * scale);
 		const ctx = out.getContext('2d', { willReadFrequently: false });
 		ctx.imageSmoothingEnabled = false; // keep the pixels sharp when scaling up
-		return { canvas: out, ctx, copy: () => ctx.drawImage(canvas, 0, 0, sw, sh, 0, 0, out.width, out.height) };
+		// with effects on, record what is shown: the effects canvas (drawn just before, in the same frame)
+		return { canvas: out, ctx, copy: () => ctx.drawImage(effects.active ? fxCanvas : canvas, 0, 0, sw, sh, 0, 0, out.width, out.height) };
+	}
+
+	// The game calls Module.tptOnFrame right after it draws a frame while tpt_set_frame_callback is on. The
+	// effects draw first, so a recording copies the frame with them.
+	const frameListeners = { effects: null, recorder: null };
+	function updateFrameHook() {
+		const on = Boolean(frameListeners.effects || frameListeners.recorder);
+		mod.tptOnFrame = on ? () => {
+			if (frameListeners.effects) {
+				frameListeners.effects();
+			}
+			if (frameListeners.recorder) {
+				frameListeners.recorder();
+			}
+		} : null;
+		mod.ccall('tpt_set_frame_callback', null, ['number'], [on ? 1 : 0]);
 	}
 
 	function setFrameCallback(fn) {
-		mod.tptOnFrame = fn;
-		mod.ccall('tpt_set_frame_callback', null, ['number'], [fn ? 1 : 0]);
+		frameListeners.recorder = fn;
+		updateFrameHook();
 	}
 
 	function takeScreenshot(area, scale) {
@@ -1057,6 +1074,318 @@
 		refocus();
 	});
 	window.tptPage.recorder = { start: startRecording, stop: stopRecording, screenshot: takeScreenshot, videoType };
+
+	// ------------------------------------------------------------------ visual effects
+	// Glow, heat haze, shockwaves and night lighting, drawn with WebGL2 on a canvas over the game's (the mouse
+	// goes through it). Each frame: the game's frame as a texture, and two maps the game fills, one texel per
+	// air cell (tpt_fx_fields): the light particles give off, and the air's pressure and heat. The light is
+	// blurred into a glow and a wider light; one pass then bends the picture by the heat (haze) and the pressure
+	// differences (shockwaves), darkens it for night, and adds the glow. Only the simulation area is changed;
+	// distortion stops while a dialog is open and inside the zoom window. The simulation is not affected.
+	const EFFECTS_KEY = 'tptEffects';
+	const fxCanvas = $('fx-canvas');
+	const effects = { glow: false, glowStrength: 0.5, haze: false, shock: false, night: false, darkness: 0.8, supported: false, active: false, frames: 0, error: '' };
+	window.tptPage.effects = effects;
+	try {
+		const saved = JSON.parse(storageGet(EFFECTS_KEY));
+		if (saved && typeof saved === 'object') {
+			for (const k of ['glow', 'haze', 'shock', 'night']) {
+				effects[k] = saved[k] === true;
+			}
+			for (const k of ['glowStrength', 'darkness']) {
+				if (typeof saved[k] === 'number' && saved[k] >= 0 && saved[k] <= 1) {
+					effects[k] = saved[k];
+				}
+			}
+		}
+	} catch (e) {
+		// nothing saved: all off
+	}
+	const fx = { gl: null, programs: {}, textures: {}, targets: {}, size: [0, 0], fieldSize: [0, 0], start: performance.now() };
+
+	const FX_VERTEX = `#version 300 es
+		out vec2 uv;
+		void main() {
+			vec2 p = vec2(gl_VertexID == 1 ? 3.0 : -1.0, gl_VertexID == 2 ? 3.0 : -1.0);
+			uv = p * 0.5 + 0.5;
+			gl_Position = vec4(p, 0.0, 1.0);
+		}`;
+	// separable Gaussian blur, 9 taps folded into 5 with linear filtering
+	const FX_BLUR = `#version 300 es
+		precision mediump float;
+		uniform sampler2D tex;
+		uniform vec2 dir;
+		in vec2 uv;
+		out vec4 colour;
+		void main() {
+			vec4 s = texture(tex, uv) * 0.2270270270;
+			s += (texture(tex, uv + dir * 1.3846153846) + texture(tex, uv - dir * 1.3846153846)) * 0.3162162162;
+			s += (texture(tex, uv + dir * 3.2307692308) + texture(tex, uv - dir * 3.2307692308)) * 0.0702702703;
+			colour = s;
+		}`;
+	const FX_COMPOSITE = `#version 300 es
+		precision highp float;
+		uniform sampler2D frame, sim, glow, wide, air;
+		uniform vec2 canvasSize, simSize, fieldSize;
+		uniform vec4 zoom;
+		uniform float pixel, still, time, glowK, hazeK, shockK, nightK;
+		in vec2 uv;
+		out vec4 colour;
+		// the game's pixels are 0xAARRGGBB: bytes B, G, R, A
+		vec4 frameAt(vec2 px) { return vec4(texture(frame, px / canvasSize).bgr, 1.0); }
+		vec4 simAt(vec2 px) { return vec4(texture(sim, px / simSize).bgr, 1.0); }
+		void main() {
+			vec2 px = vec2(uv.x, 1.0 - uv.y) * canvasSize; // pixels from the top left
+			if (px.x >= simSize.x || px.y >= simSize.y) {
+				colour = frameAt(px);
+				return;
+			}
+			vec4 shown = frameAt(px);
+			// text, tools and windows drawn over the simulation are left as they are
+			if (shown.rgb != simAt(px).rgb) {
+				colour = shown;
+				return;
+			}
+			vec2 suv = px / simSize; // the simulation area, top left 0
+			bool inZoom = zoom.z > 0.0 && px.x >= zoom.x && px.y >= zoom.y && px.x < zoom.x + zoom.z && px.y < zoom.y + zoom.w;
+			vec2 offset = vec2(0.0);
+			if (still < 0.5 && !inZoom) {
+				vec2 t = 1.0 / fieldSize;
+				// haze rises: the heat a little below makes the air shimmer here
+				float heat = texture(air, suv + vec2(0.0, 1.5 * t.y)).g;
+				offset += hazeK * heat * pixel * 1.8 * vec2(sin(px.y * 0.35 / pixel + time * 7.0 + sin(px.x * 0.11 / pixel)), 0.6 * cos(px.x * 0.27 / pixel + time * 5.0));
+				// shockwaves: the picture bends where the pressure changes
+				float pl = texture(air, suv - vec2(t.x, 0.0)).r, pr = texture(air, suv + vec2(t.x, 0.0)).r;
+				float pu = texture(air, suv - vec2(0.0, t.y)).r, pd = texture(air, suv + vec2(0.0, t.y)).r;
+				offset += shockK * pixel * 40.0 * vec2(pr - pl, pd - pu);
+			}
+			vec4 c = simAt(clamp(px + offset, vec2(0.5), simSize - 0.5));
+			vec3 g = texture(glow, suv).rgb;
+			if (nightK > 0.0) {
+				vec3 lit = vec3(1.0 - nightK) + texture(wide, suv).rgb * 2.5 + g * 1.5;
+				c.rgb *= min(lit, vec3(1.0));
+			}
+			// glow adds like light: never past white, and less over what already glows (it is a halo)
+			float self = max(max(c.r, c.g), c.b);
+			c.rgb = 1.0 - (1.0 - c.rgb) * (1.0 - min(g * glowK * (1.0 - 0.6 * self), vec3(1.0)));
+			colour = vec4(c.rgb, 1.0);
+		}`;
+
+	function fxProgram(gl, fragment) {
+		const program = gl.createProgram();
+		for (const [type, source] of [[gl.VERTEX_SHADER, FX_VERTEX], [gl.FRAGMENT_SHADER, fragment]]) {
+			const shader = gl.createShader(type);
+			gl.shaderSource(shader, source);
+			gl.compileShader(shader);
+			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+				throw new Error(gl.getShaderInfoLog(shader));
+			}
+			gl.attachShader(program, shader);
+		}
+		gl.linkProgram(program);
+		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+			throw new Error(gl.getProgramInfoLog(program));
+		}
+		const uniforms = {};
+		for (let k = 0; k < gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS); k++) {
+			const name = gl.getActiveUniform(program, k).name;
+			uniforms[name] = gl.getUniformLocation(program, name);
+		}
+		return { program, uniforms };
+	}
+
+	function fxTexture(gl, filter) {
+		const texture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, texture);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		return texture;
+	}
+
+	function fxSetup() {
+		const gl = fxCanvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
+		if (!gl) {
+			return false;
+		}
+		try {
+			fx.programs.blur = fxProgram(gl, FX_BLUR);
+			fx.programs.composite = fxProgram(gl, FX_COMPOSITE);
+		} catch (e) {
+			effects.error = String(e && e.message || e);
+			return false;
+		}
+		fx.textures.frame = fxTexture(gl, gl.NEAREST);
+		fx.textures.sim = fxTexture(gl, gl.NEAREST);
+		for (const name of ['light', 'air', 'glow', 'wide', 'scratch']) {
+			fx.textures[name] = fxTexture(gl, gl.LINEAR);
+			fx.targets[name] = gl.createFramebuffer();
+		}
+		fx.gl = gl;
+		fxCanvas.addEventListener('webglcontextlost', () => {
+			effects.supported = false;
+			effects.error = 'The graphics card stopped the effects (WebGL context lost).';
+			setEffectsActive(false);
+		});
+		return true;
+	}
+
+	// blur source into target (both field-sized), step in texels
+	function fxBlur(source, target, step) {
+		const gl = fx.gl, p = fx.programs.blur, [w, h] = fx.fieldSize;
+		gl.useProgram(p.program);
+		gl.viewport(0, 0, w, h);
+		gl.activeTexture(gl.TEXTURE0);
+		gl.uniform1i(p.uniforms.tex, 0);
+		for (const [from, to, dir] of [[source, 'scratch', [step / w, 0]], ['scratch', target, [0, step / h]]]) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, fx.targets[to]);
+			gl.bindTexture(gl.TEXTURE_2D, fx.textures[from]);
+			gl.uniform2f(p.uniforms.dir, dir[0], dir[1]);
+			gl.drawArrays(gl.TRIANGLES, 0, 3);
+		}
+	}
+
+	function fxFrame() {
+		const gl = fx.gl;
+		if (!gl || !effects.active) {
+			return;
+		}
+		const w = canvas.width, h = canvas.height;
+		if (fx.size[0] !== w || fx.size[1] !== h) {
+			fxCanvas.width = w;
+			fxCanvas.height = h;
+			fx.size = [w, h];
+		}
+		// the same size and transform as the game's canvas (it shares its grid cell)
+		fxCanvas.style.width = canvas.style.width;
+		fxCanvas.style.height = canvas.style.height;
+		fxCanvas.style.transform = canvas.style.transform;
+		fxCanvas.style.imageRendering = canvas.style.imageRendering;
+
+		const info = mod.ccall('tpt_fx_info', 'string', [], []).split(' ').map(Number);
+		const [xres, yres, simScale, cell, dialog, zoomOn, zx, zy, zw, zh] = info;
+		const ratio = w / (xres * simScale + SIDE_BARS); // the game's own scale option
+		const pixel = simScale * ratio;
+		const cw = xres / cell, ch = yres / cell;
+		const ptr = mod.ccall('tpt_fx_fields', 'number', [], []);
+		const framePtr = mod.ccall('tpt_fx_frame', 'number', [], []);
+		const simPtr = mod.ccall('tpt_fx_sim_frame', 'number', [], []);
+		if (!simPtr) {
+			return; // kept from the next frame on
+		}
+		const sw = xres * simScale, sh = yres * simScale;
+		const fw = xres * simScale + SIDE_BARS, fh = Math.round(h / ratio); // the game's window, unscaled
+		const heap = mod.HEAPU8;
+		// WebGL takes no views of shared memory (the threaded build): copy those
+		const view = (from, bytes) => heap.buffer instanceof ArrayBuffer ? heap.subarray(from, from + bytes) : heap.slice(from, from + bytes);
+		const light = view(ptr, cw * ch * 4), air = view(ptr + cw * ch * 4, cw * ch * 4);
+
+		gl.activeTexture(gl.TEXTURE0);
+		gl.bindTexture(gl.TEXTURE_2D, fx.textures.frame);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, fw, fh, 0, gl.RGBA, gl.UNSIGNED_BYTE, view(framePtr, fw * fh * 4));
+		gl.bindTexture(gl.TEXTURE_2D, fx.textures.sim);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, sw, sh, 0, gl.RGBA, gl.UNSIGNED_BYTE, view(simPtr, sw * sh * 4));
+		const sized = fx.fieldSize[0] === cw && fx.fieldSize[1] === ch;
+		fx.fieldSize = [cw, ch];
+		for (const [name, data] of [['light', light], ['air', air]]) {
+			gl.bindTexture(gl.TEXTURE_2D, fx.textures[name]);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cw, ch, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+		}
+		if (!sized) {
+			for (const name of ['glow', 'wide', 'scratch']) {
+				gl.bindTexture(gl.TEXTURE_2D, fx.textures[name]);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, cw, ch, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+				gl.bindFramebuffer(gl.FRAMEBUFFER, fx.targets[name]);
+				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fx.textures[name], 0);
+			}
+		}
+		if (effects.glow || effects.night) {
+			fxBlur('light', 'glow', 1);
+		}
+		if (effects.night) {
+			fxBlur('glow', 'wide', 4);
+			fxBlur('wide', 'wide', 8);
+		}
+
+		const p = fx.programs.composite;
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		gl.viewport(0, 0, w, h);
+		gl.useProgram(p.program);
+		[['frame', 'frame'], ['sim', 'sim'], ['glow', 'glow'], ['wide', 'wide'], ['air', 'air']].forEach(([uniform, texture], unit) => {
+			gl.activeTexture(gl.TEXTURE0 + unit);
+			gl.bindTexture(gl.TEXTURE_2D, fx.textures[texture]);
+			gl.uniform1i(p.uniforms[uniform], unit);
+		});
+		gl.uniform2f(p.uniforms.canvasSize, w, h);
+		gl.uniform2f(p.uniforms.simSize, xres * pixel, yres * pixel);
+		gl.uniform2f(p.uniforms.fieldSize, cw, ch);
+		gl.uniform4f(p.uniforms.zoom, zx * pixel, zy * pixel, zoomOn ? zw * pixel : 0, zh * pixel);
+		gl.uniform1f(p.uniforms.pixel, pixel);
+		gl.uniform1f(p.uniforms.still, dialog);
+		gl.uniform1f(p.uniforms.time, (performance.now() - fx.start) / 1000);
+		gl.uniform1f(p.uniforms.glowK, effects.glow ? effects.glowStrength * 1.1 : 0);
+		gl.uniform1f(p.uniforms.hazeK, effects.haze ? 1 : 0);
+		gl.uniform1f(p.uniforms.shockK, effects.shock ? 1 : 0);
+		gl.uniform1f(p.uniforms.nightK, effects.night ? effects.darkness : 0);
+		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		fxCanvas.hidden = false;
+		effects.frames++;
+	}
+
+	function setEffectsActive(on) {
+		effects.active = on && effects.supported;
+		if (!effects.active && mod) {
+			mod.ccall('tpt_fx_off', null, [], []);
+		}
+		if (!effects.active) {
+			fxCanvas.hidden = true; // shown again once it has drawn a frame
+		}
+		frameListeners.effects = effects.active ? fxFrame : null;
+		if (mod) {
+			updateFrameHook();
+		}
+	}
+
+	function showEffects() {
+		const any = effects.glow || effects.haze || effects.shock || effects.night;
+		$('btn-effects').textContent = any && effects.supported ? 'Effects: on' : 'Effects…';
+		const form = $('effects-form');
+		for (const k of ['glow', 'haze', 'shock', 'night']) {
+			form[k].checked = effects[k];
+		}
+		form.glowStrength.value = String(Math.round(effects.glowStrength * 100));
+		form.darkness.value = String(Math.round(effects.darkness * 100));
+		$('effects-status').textContent = effects.supported ? '' : 'This browser has no WebGL2, which the effects need. ' + effects.error;
+	}
+
+	function applyEffects() {
+		storageSet(EFFECTS_KEY, JSON.stringify({ glow: effects.glow, glowStrength: effects.glowStrength, haze: effects.haze, shock: effects.shock, night: effects.night, darkness: effects.darkness }));
+		setEffectsActive(effects.glow || effects.haze || effects.shock || effects.night);
+		showEffects();
+	}
+
+	// first frame
+	function effectsSetup() {
+		effects.supported = fxSetup();
+		$('btn-effects').disabled = false;
+		applyEffects();
+	}
+
+	$('btn-effects').addEventListener('click', () => {
+		showEffects();
+		$('effects-dialog').showModal();
+	});
+	$('effects-form').addEventListener('input', () => {
+		const form = $('effects-form');
+		for (const k of ['glow', 'haze', 'shock', 'night']) {
+			effects[k] = form[k].checked;
+		}
+		effects.glowStrength = Number(form.glowStrength.value) / 100;
+		effects.darkness = Number(form.darkness.value) / 100;
+		applyEffects();
+	});
+	$('effects-dialog').addEventListener('close', () => canvas.focus());
 
 	// ------------------------------------------------------------------ turbo mode
 	// Off by default. On, the game updates the particles on every core (tpt_turbo, simulation/Turbo.h): a
@@ -1943,6 +2272,7 @@
 				}
 				restoreCarriedWorld().catch((e) => rememberError('world size: ' + e));
 				turboSetup();
+				effectsSetup();
 				rewindSetup();
 				// Ctrl+Z goes back as far as this much memory of undo steps allows (thousands of steps in most
 				// sessions, fewer when the whole screen keeps changing); less on devices with little memory

@@ -184,10 +184,15 @@ void CalculateMousePosition(int *x, int *y)
 // Set by the page while it records the canvas (tpt_set_frame_callback): the WebGL canvas can only be read
 // back in the same task that drew it, so the page copies each frame from Module.tptOnFrame.
 static bool webFrameCallback = false;
+// The frame last drawn (WINDOWW x WINDOWH, 0xAARRGGBB), for the page's effects (tpt_fx_frame)
+static pixel *webLastFrame = nullptr;
 #endif
 
 void blit(pixel * vid)
 {
+#ifdef __EMSCRIPTEN__
+	webLastFrame = vid;
+#endif
 	SDL_UpdateTexture(sdl_texture, NULL, vid, WINDOWW * sizeof (Uint32));
 	// need to clear the renderer if there are black edges (fullscreen, or resizable window)
 	if (fullscreen || resizable)
@@ -1374,6 +1379,122 @@ extern "C"
 			std::to_string(t.parallelParticles) + " " + std::to_string(t.serialParticles) + " " +
 			std::to_string(t.deferredMoves) + " " + std::to_string(t.specialTouched) + " " +
 			std::to_string(t.msPrepare) + " " + std::to_string(t.msParallel) + " " + std::to_string(t.msAfter);
+		return out.c_str();
+	}
+
+	// The page's visual effects (web/tpt-web.js, effects): what glows and what the air is doing, one texel per
+	// air cell (CELL x CELL simulation pixels), filled when called (right after a frame is drawn). Two RGBA
+	// maps, one after the other, each (XRES / CELL) x (YRES / CELL):
+	//  - light: the colour particles in the cell give off. Hot things glow by their temperature (from dark red
+	//    at about 525 C, the Draper point, to white), flames, sparks and other light sources by their colour.
+	//  - air: R pressure (128 = 0, 2 per unit), G the hottest particle's heat for haze (0 below 100 C,
+	//    255 from 1600 C), B and A unused.
+	// Returns the address of the first map.
+	static std::vector<unsigned char> fxFields;
+	EMSCRIPTEN_KEEPALIVE unsigned char *tpt_fx_fields()
+	{
+		if (!webGameController)
+			return nullptr;
+		auto *sim = webGameController->GetModel()->GetSimulation();
+		const int cw = XRES / CELL, ch = YRES / CELL, n = cw * ch;
+		fxFields.assign(size_t(n) * 8, 0);
+		unsigned char *light = fxFields.data(), *air = light + n * 4;
+		std::vector<float> hottest(n, 0.0f);
+		auto add = [&](int cell, float r, float g, float b) {
+			auto *px = light + cell * 4;
+			px[0] = (unsigned char)std::max(float(px[0]), std::min(255.0f, r));
+			px[1] = (unsigned char)std::max(float(px[1]), std::min(255.0f, g));
+			px[2] = (unsigned char)std::max(float(px[2]), std::min(255.0f, b));
+			px[3] = 255;
+		};
+		for (int i = 0; i <= sim->parts_lastActiveIndex; i++)
+		{
+			auto &p = sim->parts[i];
+			int t = p.type;
+			if (!t)
+				continue;
+			int x = (int)(p.x + 0.5f), y = (int)(p.y + 0.5f);
+			if (x < 0 || y < 0 || x >= XRES || y >= YRES)
+				continue;
+			int cell = (y / CELL) * cw + x / CELL;
+			hottest[cell] = std::max(hottest[cell], p.temp);
+			auto colour = sim->elements[t].Colour;
+			float k = 0;
+			switch (t)
+			{
+			case PT_FIRE: case PT_CFLM: case PT_EMBR:
+				k = std::min(1.0f, 0.35f + p.life / 120.0f);
+				break;
+			case PT_PLSM: case PT_LAVA: case PT_LIGH: case PT_THDR: case PT_SPRK: case PT_PHOT: case PT_BRAY: case PT_GLOW:
+				k = 1.0f;
+				break;
+			}
+			if (k > 0)
+				add(cell, PIXR(colour) * k, PIXG(colour) * k, PIXB(colour) * k);
+			// glowing hot: dark red from 798 K, through orange and yellow, to white by about 3000 K
+			if (p.temp > 798.0f && !(sim->elements[t].Properties & (TYPE_GAS | TYPE_ENERGY)))
+			{
+				float h = std::min(1.0f, (p.temp - 798.0f) / 2200.0f);
+				add(cell, 255.0f * std::min(1.0f, 0.35f + h * 2.0f), 255.0f * std::max(0.0f, h * 1.6f - 0.25f), 255.0f * std::max(0.0f, h * 1.5f - 0.6f));
+			}
+		}
+		for (int cy = 0; cy < ch; cy++)
+			for (int cx = 0; cx < cw; cx++)
+			{
+				int cell = cy * cw + cx;
+				auto *px = air + cell * 4;
+				px[0] = (unsigned char)std::clamp(128.0f + sim->pv[cy][cx] * 2.0f, 0.0f, 255.0f);
+				px[1] = (unsigned char)std::clamp((hottest[cell] - 373.15f) / 1500.0f * 255.0f, 0.0f, 255.0f);
+				px[3] = 255;
+			}
+		return fxFields.data();
+	}
+
+	// The frame the game last drew: WINDOWW x WINDOWH pixels, 0xAARRGGBB (bytes B, G, R, A). The effects read it
+	// from here rather than from the canvas, which the browser may already have cleared once it has shown it.
+	EMSCRIPTEN_KEEPALIVE pixel *tpt_fx_frame()
+	{
+		return webLastFrame;
+	}
+
+	// The simulation area as drawn before the text and tools over it (SCREENW x SCREENH, like tpt_fx_frame), kept
+	// from the next frame on once asked for; null until then
+	EMSCRIPTEN_KEEPALIVE pixel *tpt_fx_sim_frame()
+	{
+		if (!webGameController)
+			return nullptr;
+		auto *ren = webGameController->GetModel()->GetRenderer();
+		ren->keepSimFrame = true;
+		return ren->simFrame.empty() ? nullptr : ren->simFrame.data();
+	}
+
+	// Stops keeping that copy (effects off)
+	EMSCRIPTEN_KEEPALIVE void tpt_fx_off()
+	{
+		if (webGameController)
+			webGameController->GetModel()->GetRenderer()->keepSimFrame = false;
+	}
+
+	// Where the effects may bend the picture: "XRES YRES SIMSCALE CELL dialog zoom zx zy zw zh" (dialog: a window
+	// other than the game is open; zoom: the zoom window is shown at zx, zy, zw x zh, in simulation pixels)
+	EMSCRIPTEN_KEEPALIVE const char *tpt_fx_info()
+	{
+		static std::string out;
+		if (!webGameController)
+			return "";
+		auto *model = webGameController->GetModel();
+		bool dialog = ui::Engine::Ref().GetWindow() != (ui::Window *)webGameController->GetView();
+		int zx = 0, zy = 0, zs = 0;
+		if (model->GetZoomEnabled())
+		{
+			auto pos = model->GetZoomWindowPosition();
+			zx = pos.X;
+			zy = pos.Y;
+			zs = model->GetZoomSize() * model->GetZoomFactor();
+		}
+		out = std::to_string(XRES) + " " + std::to_string(YRES) + " " + std::to_string(SIMSCALE) + " " + std::to_string(CELL) + " " +
+			std::to_string(dialog ? 1 : 0) + " " + std::to_string(model->GetZoomEnabled() ? 1 : 0) + " " +
+			std::to_string(zx) + " " + std::to_string(zy) + " " + std::to_string(zs) + " " + std::to_string(zs);
 		return out.c_str();
 	}
 

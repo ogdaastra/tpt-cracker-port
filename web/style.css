@@ -99,9 +99,9 @@ button.recording::before { content: "\25CF  "; }
 }
 
 #game {
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	/* a grid, so the effects canvas can share the game canvas's cell and land on exactly the same pixels */
+	display: grid;
+	place-items: center;
 	flex: 1;
 	min-width: 0;
 	align-self: stretch;
@@ -433,3 +433,15 @@ dialog h2 { margin-top: 0; font-size: 16px; }
 #touch-bar button[hidden] { display: none; }
 #touch-bar .touch-hint { color: var(--muted); font-size: 12px; }
 #canvas { touch-action: none; transform-origin: center center; }
+
+/* Effects: a WebGL canvas drawn over the game's, the same size and place; the mouse goes through to the game */
+#canvas, #fx-canvas { grid-area: 1 / 1; }
+#fx-canvas {
+	pointer-events: none;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	transform-origin: center center;
+}
+#effects-dialog label { display: block; margin: 4px 0; }
+#effects-dialog label.slider { margin-left: 1.8em; color: var(--muted); }
+#effects-dialog input[type=range] { vertical-align: middle; width: 10em; }

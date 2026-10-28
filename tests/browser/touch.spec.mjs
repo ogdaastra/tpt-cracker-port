@@ -12,7 +12,7 @@ const count = (page) => h.loopLua(page, '(function() local n = 0 for i in sim.pa
 
 // CDP touch events: several fingers at once, which page.touchscreen can't do
 async function touches(page, cdp, frames) {
-	const box = await page.locator('canvas').boundingBox();
+	const box = await page.locator('#canvas').boundingBox();
 	const at = ([fx, fy], id) => ({ x: box.x + box.width * fx, y: box.y + box.height * fy, id });
 	for (const [type, points] of frames) {
 		await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points.map((p, i) => at(p, i)) });
@@ -66,7 +66,7 @@ test('touch: draw with one finger, zoom and pan with two (no drawing), taps land
 
 	// zoomed in, a one-pixel tap creates the particle under the finger
 	await h.loopLua(page, '(function() sim.clearSim() tpt.brushx = 0 tpt.brushy = 0 return 0 end)()');
-	const box = await page.locator('canvas').boundingBox(); // the transformed rectangle
+	const box = await page.locator('#canvas').boundingBox(); // the transformed rectangle
 	const tap = { x: box.x + box.width * 0.4, y: box.y + box.height * 0.45 };
 	await page.touchscreen.tap(tap.x, tap.y);
 	await page.waitForTimeout(400);
@@ -81,7 +81,7 @@ test('touch: draw with one finger, zoom and pan with two (no drawing), taps land
 	// Reset zoom
 	await page.click('#touch-bar [data-touch=zoom-reset]');
 	expect(await page.evaluate(() => window.tptPage.touch.view.scale)).toBe(1);
-	expect(await page.locator('canvas').evaluate((c) => c.style.transform)).toBe('');
+	expect(await page.locator('#canvas').evaluate((c) => c.style.transform)).toBe('');
 
 	// the bar: brush size, pause, undo, eraser, elements
 	await h.loopLua(page, '(function() tpt.brushx = 8 tpt.brushy = 8 return 0 end)()');

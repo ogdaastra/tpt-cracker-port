@@ -2243,6 +2243,7 @@ void GameView::OnDraw()
 		// everything above is in simulation pixels (and the screenshot and recording take them at that size);
 		// a small world is enlarged to fill the screen before the screen-space text below
 		ren->ScaleToScreen();
+		ren->KeepSimFrame();
 
 		if (logEntries.size())
 		{

@@ -102,6 +102,11 @@ public:
 	void SetSample(int x, int y);
 
 	pixel * vid;
+	// The page's effects: a copy of the simulation area as drawn, before the text and tools drawn over it
+	// (KeepSimFrame, called by GameView::OnDraw); the effects change only pixels that are still the same
+	bool keepSimFrame = false;
+	std::vector<pixel> simFrame;
+	void KeepSimFrame();
 	pixel * persistentVid;
 	pixel * warpVid;
 	void blendpixel(int x, int y, int r, int g, int b, int a);

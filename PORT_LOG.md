@@ -1074,3 +1074,40 @@ Rule for this section: every change must leave the simulation bit-for-bit the sa
   - A closed box of 257,872 particles keeps every particle, and turbo is faster (asserted with 4+ cores).
   - The button turns turbo on and off, shows the cores, and is kept after reload.
   - The single-threaded build has no turbo.
+
+## 37. Effects: glow, heat haze, shockwaves and night lighting (N12)
+
+- **Asked for** by Orlando on 26 Oct: "gpu eye candy and the various things that go along with it". Off by
+  default; **Effects…** on the page turns each one on. Drawn by the graphics card (WebGL2) over the game; the
+  simulation is not changed, and the effects never touch the menus.
+- **How**:
+  - A second canvas (`#fx-canvas`) shares the game canvas's grid cell, so it lands on exactly the same pixels.
+    It ignores the mouse, so every click still reaches the game.
+  - The game calls the page right after each frame (the recorder's frame hook, now shared). Each frame the
+    page uploads the frame and a copy of the simulation area as the particles were drawn, before the game's
+    text and tools are drawn over them (`Renderer::KeepSimFrame` in `GameView::OnDraw`, `tpt_fx_sim_frame`).
+    It also uploads two small maps, one texel per air cell (`tpt_fx_fields`):
+    - what particles give off: hot things by their temperature, from dark red at 525 °C (the Draper point)
+      to white, and flames, plasma, lava, sparks, photons, lightning and the like by their colour;
+    - the air's pressure, and the hottest particle's heat.
+  - The frame is read from the game's own pixel buffer (`tpt_fx_frame`), not from its canvas: the browser may
+    already have cleared the canvas once it was shown, and a WebGL2 upload of it came back black.
+  - The light map is blurred into a glow and, for night, a much wider light. One shader pass then:
+    - bends the picture by the heat (haze rising and shimmering) and by pressure differences (shockwaves);
+    - darkens it for night, except where something glows;
+    - adds the glow like light (never past white, and less over what already glows).
+  - A pixel where the frame differs from the clean copy of the simulation is text, a tool outline or a window
+    drawn over it: it is shown exactly as drawn. Bending also stops while a dialog is open and inside the
+    zoom window.
+  - Recordings and screenshots taken with Record… include the effects (the recorder copies the effects canvas).
+- **Settings** are kept in the browser (`tptEffects`): glow and its strength, haze, shockwaves, night and its
+  darkness.
+- **Tests** (`effects.spec.mjs`, 3 tests). Each compares what is shown (the effects canvas, read right after it
+  is drawn) with the game's own pixel buffer, in the same frame:
+  - Glow brightens the ring beside 2,500 K metal (400 pixels changed), with the cold diamond, the side bar
+    and the bottom bar all 0 pixels changed.
+  - Haze changes the striped background over and above a hot block (434, then 441 pixels: it moves), and
+    0 pixels far from it.
+  - Shockwaves bend the stripes at the edge of a block of pressure (528 pixels), not inside it (0).
+  - Night darkens diamond far from lava to under 40% while diamond beside it stays lit; text drawn over the
+    simulation is unchanged (0); a click still lands on its pixel; the settings are kept after reload.

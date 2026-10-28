@@ -313,7 +313,7 @@ if host_platform == 'emscripten'
 		'-sINITIAL_MEMORY=268435456',
 		'-sSTACK_SIZE=8388608',
 		'-sEXIT_RUNTIME=0',
-		'-sEXPORTED_RUNTIME_METHODS=FS,ccall,UTF8ToString',
+		'-sEXPORTED_RUNTIME_METHODS=FS,ccall,UTF8ToString,HEAPU8',
 		'-lidbfs.js',
 		'--pre-js', em_pre_js,
 	]

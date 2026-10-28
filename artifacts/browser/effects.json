@@ -1,0 +1,62 @@
+{
+  "glow": {
+    "ring": {
+      "drawn": 0,
+      "shown": 37.20166666666667,
+      "differ": 400,
+      "hash": 2340336256
+    },
+    "cold": {
+      "drawn": 238,
+      "shown": 238,
+      "differ": 0,
+      "hash": 2602260480
+    },
+    "menus": 0,
+    "bar": 0
+  },
+  "haze": {
+    "a": {
+      "drawn": 118.83,
+      "shown": 118.15,
+      "differ": 444,
+      "hash": 29865134
+    },
+    "b": {
+      "drawn": 118.83,
+      "shown": 119.17,
+      "differ": 446,
+      "hash": 2594646330
+    },
+    "far": {
+      "drawn": 118.9762,
+      "shown": 118.9762,
+      "differ": 0,
+      "hash": 1250265286
+    }
+  },
+  "shock": {
+    "edge": 528,
+    "inside": 0
+  },
+  "night": {
+    "lit": {
+      "drawn": 181.52166666666614,
+      "shown": 129.96916666666624,
+      "differ": 120,
+      "hash": 2251584267
+    },
+    "dark": {
+      "drawn": 238,
+      "shown": 47.666666666666515,
+      "differ": 1600,
+      "hash": 3264185344
+    },
+    "text": 0,
+    "screenshot": {
+      "width": 612,
+      "height": 384,
+      "dark": 47.666666666666515
+    }
+  }
+}
